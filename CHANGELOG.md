@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.8] - 2026-02-18
+
+### Fixed
+- **`conversation.create`**: campos `assigneeId`/`teamId` agora são mapeados para `assignee_id`/`team_id` antes de enviar à API (antes eram enviados em camelCase e ignorados)
+- **`conversation.update`**: operação simplificada para aceitar apenas `priority` via `PATCH /conversations/:id` — único campo que a API aceita neste endpoint; status, assignee e team já possuem operações dedicadas (`Toggle Status`, `Assign`)
+- **`leadScoring.createRule` / `updateRule`**: campos completamente corrigidos para corresponder ao modelo real da API:
+  - `score` → `points` (campo correto no modelo `LeadScoreRule`)
+  - `conditionType` → `eventType` com enum correto (`message_received`, `card_created`, `stage_changed`, etc.)
+  - `conditionValue` → `conditions` (JSONB flexível com operadores: `eq`, `neq`, `in`, etc.)
+  - Removida opção `deal_stage` que não existe na API
+
 ## [0.3.7] - 2026-02-18
 
 ### Fixed

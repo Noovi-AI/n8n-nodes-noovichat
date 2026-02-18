@@ -230,7 +230,9 @@ async function handleConversationOperation(this: IExecuteFunctions, operation: s
 			const inboxId = this.getNodeParameter('inboxId', index) as string;
 			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
 			const body: any = { source_id: sourceId, inbox_id: inboxId };
-			Object.assign(body, additionalFields);
+			if (additionalFields.status) body.status = additionalFields.status;
+			if (additionalFields.assigneeId) body.assignee_id = additionalFields.assigneeId;
+			if (additionalFields.teamId) body.team_id = additionalFields.teamId;
 			return await nooviChatApiRequest.call(this, 'POST', '/conversations', body);
 		}
 		case 'get':
@@ -243,8 +245,10 @@ async function handleConversationOperation(this: IExecuteFunctions, operation: s
 			return await nooviChatApiRequest.call(this, 'GET', '/conversations', {}, { ...filters, per_page: limit });
 		}
 		case 'update': {
-			const updateFields = this.getNodeParameter('updateFields', index, {}) as any;
-			return await nooviChatApiRequest.call(this, 'PATCH', `/conversations/${conversationId}`, updateFields);
+			const priority = this.getNodeParameter('priority', index, '') as string;
+			const body: any = {};
+			if (priority) body.priority = priority;
+			return await nooviChatApiRequest.call(this, 'PATCH', `/conversations/${conversationId}`, body);
 		}
 		case 'delete':
 			return await nooviChatApiRequest.call(this, 'DELETE', `/conversations/${conversationId}`);
@@ -1004,15 +1008,14 @@ async function handleLeadScoringOperation(this: IExecuteFunctions, operation: st
 	switch (operation) {
 		case 'createRule': {
 			const ruleName = this.getNodeParameter('ruleName', index) as string;
-			const score = this.getNodeParameter('score', index) as number;
-			const conditionType = this.getNodeParameter('conditionType', index) as string;
-			const conditionValue = this.getNodeParameter('conditionValue', index) as any;
-			const parsed = parseJsonValue(conditionValue);
+			const points = this.getNodeParameter('points', index) as number;
+			const eventType = this.getNodeParameter('eventType', index) as string;
+			const conditions = this.getNodeParameter('conditions', index, '{}') as any;
 			return await nooviChatApiRequest.call(this, 'POST', '/lead_score_rules', {
 				name: ruleName,
-				score,
-				condition_type: conditionType,
-				condition_value: parsed,
+				points,
+				event_type: eventType,
+				conditions: parseJsonValue(conditions),
 			});
 		}
 		case 'getAllRules': {
@@ -1023,16 +1026,14 @@ async function handleLeadScoringOperation(this: IExecuteFunctions, operation: st
 		}
 		case 'updateRule': {
 			const ruleName = this.getNodeParameter('ruleName', index, '') as string;
-			const score = this.getNodeParameter('score', index, 0) as number;
-			const conditionType = this.getNodeParameter('conditionType', index, '') as string;
-			const conditionValue = this.getNodeParameter('conditionValue', index, '') as any;
+			const points = this.getNodeParameter('points', index, 0) as number;
+			const eventType = this.getNodeParameter('eventType', index, '') as string;
+			const conditions = this.getNodeParameter('conditions', index, '') as any;
 			const body: any = {};
 			if (ruleName) body.name = ruleName;
-			if (score) body.score = score;
-			if (conditionType) body.condition_type = conditionType;
-			if (conditionValue) {
-				body.condition_value = parseJsonValue(conditionValue);
-			}
+			if (points) body.points = points;
+			if (eventType) body.event_type = eventType;
+			if (conditions) body.conditions = parseJsonValue(conditions);
 			return await nooviChatApiRequest.call(this, 'PATCH', `/lead_score_rules/${ruleId}`, body);
 		}
 		case 'deleteRule':

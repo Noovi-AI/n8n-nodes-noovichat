@@ -131,56 +131,23 @@ export const ConversationFields: INodeProperties[] = [
 
 	// Update conversation fields
 	{
-		displayName: 'Update Fields',
-		name: 'updateFields',
-		type: 'collection',
-		placeholder: 'Add Field',
+		displayName: 'Priority',
+		name: 'priority',
+		type: 'options',
 		displayOptions: {
 			show: {
 				resource: ['conversation'],
 				operation: ['update'],
 			},
 		},
-		default: {},
 		options: [
-			{
-				displayName: 'Status',
-				name: 'status',
-				type: 'options',
-				options: [
-					{ name: 'Open', value: 'open', description: 'Active conversation awaiting response' },
-					{ name: 'Resolved', value: 'resolved', description: 'Conversation marked as resolved' },
-					{ name: 'Pending', value: 'pending', description: 'Conversation pending contact response' },
-				],
-				default: 'open',
-			},
-			{
-				displayName: 'Assignee ID',
-				name: 'assigneeId',
-				type: 'number',
-				default: 0,
-				description: 'ID of the agent to assign the conversation to',
-			},
-			{
-				displayName: 'Team ID',
-				name: 'teamId',
-				type: 'number',
-				default: 0,
-				description: 'ID of the team to assign the conversation to',
-			},
-			{
-				displayName: 'Priority',
-				name: 'priority',
-				type: 'options',
-				options: [
-					{ name: 'Urgent', value: 'urgent', description: 'Highest priority level requiring immediate attention' },
-					{ name: 'High', value: 'high', description: 'High priority conversation' },
-					{ name: 'Medium', value: 'medium', description: 'Medium priority conversation' },
-					{ name: 'Low', value: 'low', description: 'Low priority conversation' },
-				],
-				default: 'medium',
-			},
+			{ name: 'Urgent', value: 'urgent', description: 'Highest priority level requiring immediate attention' },
+			{ name: 'High', value: 'high', description: 'High priority conversation' },
+			{ name: 'Medium', value: 'medium', description: 'Medium priority conversation' },
+			{ name: 'Low', value: 'low', description: 'Low priority conversation' },
 		],
+		default: 'medium',
+		description: 'Priority of the conversation. To change status use Toggle Status; to change assignee use Assign.',
 	},
 
 	// Assign conversation

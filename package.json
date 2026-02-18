@@ -1,6 +1,6 @@
 {
   "name": "@nooviai/n8n-nodes-noovichat",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "n8n community node for NooviChat — customer engagement, pipeline CRM, lead scoring and WhatsApp integration",
   "keywords": [
     "n8n-community-node-package",
