@@ -3,4 +3,4 @@ dist/
 *.js.map
 .env
 .env.*
-PLAN.md
+doc/
