@@ -1,0 +1,84 @@
+{
+  "name": "@nooviai/n8n-nodes-noovichat",
+  "version": "0.1.0",
+  "description": "n8n community node for NooviChat — customer engagement, pipeline CRM, lead scoring and WhatsApp integration",
+  "keywords": [
+    "n8n-community-node-package",
+    "noovichat",
+    "chatwoot",
+    "whatsapp",
+    "crm",
+    "pipeline",
+    "customer-engagement",
+    "lead-scoring",
+    "follow-up",
+    "waha"
+  ],
+  "license": "MIT",
+  "homepage": "https://nooviai.com",
+  "author": {
+    "name": "NooviAI",
+    "email": "contato@nooviai.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nooviai/n8n-nodes-noovichat.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc && gulp build:icons",
+    "dev": "tsc --watch",
+    "format": "prettier nodes credentials --write",
+    "lint": "eslint nodes credentials package.json",
+    "lintfix": "eslint nodes credentials package.json --fix",
+    "prepublishOnly": "npm run build && npm run lint",
+    "test": "jest"
+  },
+  "files": [
+    "dist"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/NooviChatApi.credentials.js",
+      "dist/credentials/NooviChatWebhookApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/NooviChat/NooviChat.node.js",
+      "dist/nodes/NooviChat/NooviChatTrigger.node.js"
+    ]
+  },
+  "dependencies": {
+    "n8n-workflow": "^1.0.0"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/test/**/*.test.ts"
+    ],
+    "collectCoverageFrom": [
+      "nodes/**/*.ts",
+      "credentials/**/*.ts",
+      "!nodes/**/*.d.ts"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": ["text", "lcov"]
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "eslint-plugin-n8n-nodes-base": "^1.16.0",
+    "gulp": "^4.0.2",
+    "jest": "^29.7.0",
+    "prettier": "^3.2.4",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.3.3"
+  }
+}
