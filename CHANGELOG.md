@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-02-18
+
+### Fixed
+- **`customAttribute.update`**: campo `Display Name` agora visível na UI para a operação `update` (antes só aparecia em `create`); campo enviado à API corrigido de `display_name` para `attribute_display_name` (nome correto do strong_parameter)
+- **`webhook.update`**: campo `Webhook URL` agora visível na UI para a operação `update` (antes era impossível alterar a URL de um webhook existente)
+- **`pipeline.updateStage`**: rota `/pipelines/stages/:id` não existe na API — reescrito como operação composta (GET pipeline → modifica estágio no hash → PATCH pipeline); campo `Pipeline ID` adicionado como obrigatório para esta operação
+- **`pipeline.deleteStage`**: mesmo problema que `updateStage` — reescrito como operação composta (GET pipeline → remove estágio do hash → PATCH pipeline); campo `Pipeline ID` adicionado como obrigatório
+
 ## [0.3.9] - 2026-02-18
 
 ### Fixed

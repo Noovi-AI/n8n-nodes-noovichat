@@ -55,7 +55,7 @@ export const PipelineFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['pipeline'],
-				operation: ['get', 'update', 'delete', 'getStages', 'createStage', 'reorderStages'],
+				operation: ['get', 'update', 'delete', 'getStages', 'createStage', 'updateStage', 'deleteStage', 'reorderStages'],
 			},
 		},
 		default: '',

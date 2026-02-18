@@ -74,7 +74,7 @@ export const CustomAttributeFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['customAttribute'],
-				operation: ['create'],
+				operation: ['create', 'update'],
 			},
 		},
 		default: '',

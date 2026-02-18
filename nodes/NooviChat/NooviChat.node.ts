@@ -623,7 +623,9 @@ async function handleCustomAttributeOperation(this: IExecuteFunctions, operation
 		}
 		case 'update': {
 			const displayName = this.getNodeParameter('displayName', index, '') as string;
-			return await nooviChatApiRequest.call(this, 'PATCH', `/custom_attribute_definitions/${attributeId}`, { display_name: displayName });
+			const body: any = {};
+			if (displayName) body.attribute_display_name = displayName;
+			return await nooviChatApiRequest.call(this, 'PATCH', `/custom_attribute_definitions/${attributeId}`, body);
 		}
 		case 'delete':
 			return await nooviChatApiRequest.call(this, 'DELETE', `/custom_attribute_definitions/${attributeId}`);
@@ -718,13 +720,24 @@ async function handlePipelineOperation(this: IExecuteFunctions, operation: strin
 		case 'updateStage': {
 			const stageName = this.getNodeParameter('stageName', index, '') as string;
 			const stageColor = this.getNodeParameter('stageColor', index, '') as string;
-			const body: any = {};
-			if (stageName) body.name = stageName;
-			if (stageColor) body.color = stageColor;
-			return await nooviChatApiRequest.call(this, 'PATCH', `/pipelines/stages/${stageId}`, body);
+			// Stages are stored as a JSONB hash on the Pipeline model.
+			// There is no individual stage route; we must GET the pipeline, modify the stage, then PATCH.
+			const pipeline: any = await nooviChatApiRequest.call(this, 'GET', `/pipelines/${pipelineId}`);
+			const stages = pipeline.stages || {};
+			if (!stages[stageId]) {
+				throw new NodeOperationError(this.getNode(), `Stage "${stageId}" not found in pipeline ${pipelineId}`, { itemIndex: index });
+			}
+			if (stageName) stages[stageId].name = stageName;
+			if (stageColor) stages[stageId].color = stageColor;
+			return await nooviChatApiRequest.call(this, 'PATCH', `/pipelines/${pipelineId}`, { stages });
 		}
-		case 'deleteStage':
-			return await nooviChatApiRequest.call(this, 'DELETE', `/pipelines/stages/${stageId}`);
+		case 'deleteStage': {
+			// Same pattern: GET pipeline, remove the stage entry, PATCH with modified stages hash.
+			const pipeline: any = await nooviChatApiRequest.call(this, 'GET', `/pipelines/${pipelineId}`);
+			const stages = pipeline.stages || {};
+			delete stages[stageId];
+			return await nooviChatApiRequest.call(this, 'PATCH', `/pipelines/${pipelineId}`, { stages });
+		}
 		case 'reorderStages': {
 			const stageOrderValues = this.getNodeParameter('stageOrder.values', index, []) as Array<{ id: string }>;
 			return await nooviChatApiRequest.call(this, 'PATCH', `/pipelines/${pipelineId}/stages/reorder`, {

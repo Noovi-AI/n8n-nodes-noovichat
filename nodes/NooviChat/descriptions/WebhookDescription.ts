@@ -50,16 +50,15 @@ export const WebhookFields: INodeProperties[] = [
 		description: 'ID of the webhook',
 	},
 
-	// Create webhook fields
+	// Create/Update webhook fields
 	{
 		displayName: 'Webhook URL',
 		name: 'webhookUrl',
 		type: 'string',
-		required: true,
 		displayOptions: {
 			show: {
 				resource: ['webhook'],
-				operation: ['create'],
+				operation: ['create', 'update'],
 			},
 		},
 		default: '',
