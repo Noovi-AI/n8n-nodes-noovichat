@@ -47,7 +47,7 @@ export const WebhookFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'ID do webhook',
+		description: 'ID of the webhook',
 	},
 
 	// Create webhook fields
@@ -63,7 +63,7 @@ export const WebhookFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'URL para receber os webhooks',
+		description: 'URL that will receive the webhook POST requests',
 	},
 	{
 		displayName: 'Events',
@@ -108,7 +108,7 @@ export const WebhookFields: INodeProperties[] = [
 			{ name: 'WAHA Status Changed', value: 'waha_status_changed' },
 		],
 		default: [],
-		description: 'Eventos para disparar o webhook',
+		description: 'Events that will trigger this webhook',
 	},
 
 	// Get Many options
@@ -123,7 +123,7 @@ export const WebhookFields: INodeProperties[] = [
 			},
 		},
 		default: false,
-		description: 'Retornar todos os resultados ou limite',
+		description: 'Whether to return all results instead of applying a limit',
 	},
 	{
 		displayName: 'Limit',

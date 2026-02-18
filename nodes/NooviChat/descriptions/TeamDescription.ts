@@ -49,7 +49,7 @@ export const TeamFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'ID da equipe',
+		description: 'ID of the team',
 	},
 
 	// Create team fields
@@ -65,7 +65,7 @@ export const TeamFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Nome da equipe',
+		description: 'Name of the team',
 	},
 	{
 		displayName: 'Description',
@@ -109,7 +109,7 @@ export const TeamFields: INodeProperties[] = [
 			},
 		},
 		default: false,
-		description: 'Retornar todos os resultados ou limite',
+		description: 'Whether to return all results instead of applying a limit',
 	},
 	{
 		displayName: 'Limit',

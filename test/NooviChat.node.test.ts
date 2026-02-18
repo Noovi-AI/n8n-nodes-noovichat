@@ -170,4 +170,177 @@ describe('NooviChat Node — execute', () => {
 		const result = await node.execute.call(ctx);
 		expect(result[0][0].json).toHaveProperty('error');
 	});
+
+	// --- Conversation ---
+	it('should call POST /conversations on conversation.create', async () => {
+		const ctx = buildContext('conversation', 'create', {
+			sourceId: 'src-1',
+			inboxId: '5',
+			additionalFields: {},
+		});
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ method: 'POST', uri: expect.stringContaining('/conversations') }),
+		);
+	});
+
+	it('should call GET /conversations/:id on conversation.get', async () => {
+		const ctx = buildContext('conversation', 'get', { conversationId: '42' });
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ uri: expect.stringContaining('/conversations/42') }),
+		);
+	});
+
+	it('should call DELETE /conversations/:id on conversation.delete', async () => {
+		const ctx = buildContext('conversation', 'delete', { conversationId: '42' });
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ method: 'DELETE', uri: expect.stringContaining('/conversations/42') }),
+		);
+	});
+
+	// --- Contact ---
+	it('should call POST /contacts on contact.create', async () => {
+		const ctx = buildContext('contact', 'create', { name: 'John Doe', additionalFields: {} });
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ method: 'POST', uri: expect.stringContaining('/contacts') }),
+		);
+	});
+
+	it('should call PUT /contacts/:id on contact.update', async () => {
+		const ctx = buildContext('contact', 'update', { contactId: '7', updateFields: { name: 'Jane' } });
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ method: 'PUT', uri: expect.stringContaining('/contacts/7') }),
+		);
+	});
+
+	it('should call DELETE /contacts/:id on contact.delete', async () => {
+		const ctx = buildContext('contact', 'delete', { contactId: '7' });
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ method: 'DELETE', uri: expect.stringContaining('/contacts/7') }),
+		);
+	});
+
+	// --- Message ---
+	it('should call POST /messages on message.send', async () => {
+		const ctx = buildContext('message', 'send', {
+			conversationId: '10',
+			content: 'Hello',
+			messageType: 'outgoing',
+			private: false,
+			additionalFields: {},
+		});
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ method: 'POST', uri: expect.stringContaining('/messages') }),
+		);
+	});
+
+	it('should call DELETE /messages/:id on message.delete', async () => {
+		const ctx = buildContext('message', 'delete', { conversationId: '10', messageId: '99' });
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ method: 'DELETE', uri: expect.stringContaining('/messages/99') }),
+		);
+	});
+
+	// --- Deal ---
+	it('should call POST /pipeline_cards on deal.create', async () => {
+		const ctx = buildContext('deal', 'create', {
+			title: 'New deal',
+			pipelineId: 'p1',
+			stageId: 's1',
+			additionalFields: {},
+		});
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ method: 'POST', uri: expect.stringContaining('/pipeline_cards') }),
+		);
+	});
+
+	it('should call PATCH /pipeline_cards/:id on deal.update', async () => {
+		const ctx = buildContext('deal', 'update', { dealId: 'abc', additionalFields: { title: 'Updated' } });
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ method: 'PATCH', uri: expect.stringContaining('/pipeline_cards/abc') }),
+		);
+	});
+
+	it('should call DELETE /pipeline_cards/:id on deal.delete', async () => {
+		const ctx = buildContext('deal', 'delete', { dealId: 'abc' });
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ method: 'DELETE', uri: expect.stringContaining('/pipeline_cards/abc') }),
+		);
+	});
+
+	it('should send stage_id as integer on deal.bulkMove', async () => {
+		const ctx = buildContext('deal', 'bulkMove', {
+			'dealIds.values': [{ id: '1' }, { id: '2' }],
+			stageId: '99',
+		});
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				body: expect.objectContaining({ stage_id: 99, card_ids: [1, 2] }),
+			}),
+		);
+	});
+
+	// --- Activity ---
+	it('should call POST /pipeline/activities on activity.create', async () => {
+		const ctx = buildContext('activity', 'create', {
+			title: 'Call client',
+			activityType: 'call',
+			additionalFields: {},
+		});
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ method: 'POST', uri: expect.stringContaining('/pipeline/activities') }),
+		);
+	});
+
+	// --- Campaign ---
+	it('should call POST /campaigns on campaign.create', async () => {
+		const ctx = buildContext('campaign', 'create', {
+			title: 'Black Friday',
+			campaignType: 'one_off',
+			inboxId: 3,
+			message: 'Special offer!',
+			additionalFields: {},
+		});
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ method: 'POST', uri: expect.stringContaining('/campaigns') }),
+		);
+	});
+
+	it('should call DELETE /campaigns/:id on campaign.delete', async () => {
+		const ctx = buildContext('campaign', 'delete', { campaignId: 'c1' });
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ method: 'DELETE', uri: expect.stringContaining('/campaigns/c1') }),
+		);
+	});
+
+	// --- WAHA ---
+	it('should call GET /waha/:id/status on waha.getStatus', async () => {
+		const ctx = buildContext('waha', 'getStatus', { inboxId: '12' });
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ uri: expect.stringContaining('/waha/12/status') }),
+		);
+	});
+
+	it('should call POST /waha/:id/reconnect on waha.reconnect', async () => {
+		const ctx = buildContext('waha', 'reconnect', { inboxId: '12' });
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ method: 'POST', uri: expect.stringContaining('/waha/12/reconnect') }),
+		);
+	});
 });

@@ -218,12 +218,18 @@ export class NooviChatTrigger implements INodeType {
 					return { workflowData: [[]] };
 				}
 			}
-		} catch {
-			// No webhook credentials configured — skip signature validation
+		} catch (error: any) {
+			// Skip signature validation only when the credential is not configured.
+			// Re-throw any unexpected errors so they surface properly.
+			if (!error?.message?.includes('not found') && !error?.message?.includes('No credentials')) {
+				throw error;
+			}
 		}
 
-		// Validate event type matches what this trigger listens for
-		const webhookEvent = (body.event || body.type) as string;
+		// Validate event type matches what this trigger listens for.
+		// If the body contains no event field at all, allow it through so
+		// payloads from non-standard senders are not silently dropped.
+		const webhookEvent = (body.event || body.type) as string | undefined;
 		if (webhookEvent && webhookEvent !== event) {
 			return { workflowData: [[]] };
 		}

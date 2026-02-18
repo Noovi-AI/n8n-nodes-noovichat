@@ -1,4 +1,4 @@
-import { nooviChatApiRequest, nooviChatApiRequestAllItems, formatExecutionData } from '../nodes/NooviChat/GenericFunctions';
+import { nooviChatApiRequest, nooviChatApiRequestAllItems, formatExecutionData, parseJsonValue } from '../nodes/NooviChat/GenericFunctions';
 
 const mockRequest = jest.fn();
 const mockGetCredentials = jest.fn().mockResolvedValue({
@@ -101,13 +101,13 @@ describe('nooviChatApiRequest', () => {
 		);
 	});
 
-	it('should throw error with message on API failure', async () => {
+	it('should throw error with method and endpoint context on API failure', async () => {
 		const failRequest = jest.fn().mockRejectedValue(new Error('Unauthorized'));
 		const ctx = createContext(failRequest);
 
 		await expect(
 			nooviChatApiRequest.call(ctx, 'GET', '/conversations'),
-		).rejects.toThrow('NooviChat API Error: Unauthorized');
+		).rejects.toThrow('NooviChat API Error');
 	});
 
 	it('should handle PATCH requests', async () => {
@@ -149,9 +149,10 @@ describe('nooviChatApiRequestAllItems', () => {
 		expect(result).toEqual(items);
 	});
 
-	it('should paginate and collect all items', async () => {
-		const page1 = Array.from({ length: 15 }, (_, i) => ({ id: i + 1 }));
-		const page2 = [{ id: 16 }, { id: 17 }];
+	it('should paginate and collect all items across multiple pages', async () => {
+		// PAGE_SIZE is 25; first page full, second page partial → stop
+		const page1 = Array.from({ length: 25 }, (_, i) => ({ id: i + 1 }));
+		const page2 = [{ id: 26 }, { id: 27 }];
 
 		mockRequest
 			.mockResolvedValueOnce({ data: { payload: page1 } })
@@ -159,12 +160,12 @@ describe('nooviChatApiRequestAllItems', () => {
 
 		const result = await nooviChatApiRequestAllItems.call(createContext(), 'GET', '/contacts');
 
-		expect(result).toHaveLength(17);
+		expect(result).toHaveLength(27);
 		expect(result[0].id).toBe(1);
-		expect(result[16].id).toBe(17);
+		expect(result[26].id).toBe(27);
 	});
 
-	it('should stop when items < 15', async () => {
+	it('should stop when items < PAGE_SIZE (25)', async () => {
 		const items = Array.from({ length: 10 }, (_, i) => ({ id: i + 1 }));
 		mockRequest.mockResolvedValue({ payload: items });
 
@@ -200,8 +201,8 @@ describe('nooviChatApiRequestAllItems', () => {
 		expect(result).toEqual([]);
 	});
 
-	it('should pass page parameter incrementally', async () => {
-		const page1 = Array.from({ length: 15 }, (_, i) => ({ id: i + 1 }));
+	it('should pass page and per_page parameters incrementally', async () => {
+		const page1 = Array.from({ length: 25 }, (_, i) => ({ id: i + 1 }));
 		const page2: any[] = [];
 
 		mockRequest
@@ -210,8 +211,40 @@ describe('nooviChatApiRequestAllItems', () => {
 
 		await nooviChatApiRequestAllItems.call(createContext(), 'GET', '/conversations');
 
-		expect(mockRequest.mock.calls[0][0].qs).toEqual({ page: 1 });
-		expect(mockRequest.mock.calls[1][0].qs).toEqual({ page: 2 });
+		expect(mockRequest.mock.calls[0][0].qs).toEqual({ page: 1, per_page: 25 });
+		expect(mockRequest.mock.calls[1][0].qs).toEqual({ page: 2, per_page: 25 });
+	});
+});
+
+describe('parseJsonValue', () => {
+	it('should parse a JSON string to object', () => {
+		expect(parseJsonValue('{"key":"value"}')).toEqual({ key: 'value' });
+	});
+
+	it('should parse a JSON string array', () => {
+		expect(parseJsonValue('[1,2,3]')).toEqual([1, 2, 3]);
+	});
+
+	it('should return an object unchanged', () => {
+		const obj = { a: 1 };
+		expect(parseJsonValue(obj)).toBe(obj);
+	});
+
+	it('should return an array unchanged', () => {
+		const arr = [1, 2, 3];
+		expect(parseJsonValue(arr)).toBe(arr);
+	});
+
+	it('should return an invalid JSON string unchanged (no throw)', () => {
+		expect(parseJsonValue('not-json')).toBe('not-json');
+	});
+
+	it('should return empty string unchanged', () => {
+		expect(parseJsonValue('')).toBe('');
+	});
+
+	it('should return null unchanged', () => {
+		expect(parseJsonValue(null)).toBeNull();
 	});
 });
 

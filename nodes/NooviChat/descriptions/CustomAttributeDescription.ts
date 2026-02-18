@@ -47,7 +47,7 @@ export const CustomAttributeFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'ID do atributo personalizado',
+		description: 'ID of the custom attribute',
 	},
 
 	// Create fields
@@ -63,7 +63,7 @@ export const CustomAttributeFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Nome do atributo',
+		description: 'Internal name of the attribute (snake_case, no spaces)',
 	},
 	{
 		displayName: 'Display Name',
@@ -101,7 +101,7 @@ export const CustomAttributeFields: INodeProperties[] = [
 			{ name: 'Checkbox', value: 'checkbox' },
 		],
 		default: 'text',
-		description: 'Tipo do atributo',
+		description: 'Data type of the attribute',
 	},
 	{
 		displayName: 'Model',
@@ -134,7 +134,7 @@ export const CustomAttributeFields: INodeProperties[] = [
 			},
 		},
 		default: false,
-		description: 'Retornar todos os resultados ou limite',
+		description: 'Whether to return all results instead of applying a limit',
 	},
 	{
 		displayName: 'Limit',

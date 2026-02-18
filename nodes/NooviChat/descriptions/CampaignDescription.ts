@@ -50,7 +50,7 @@ export const CampaignFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'ID da campanha',
+		description: 'ID of the campaign',
 	},
 
 	// Create campaign fields
@@ -84,7 +84,7 @@ export const CampaignFields: INodeProperties[] = [
 			{ name: 'Ongoing', value: 'ongoing' },
 		],
 		default: 'one_off',
-		description: 'Tipo da campanha',
+		description: 'Campaign type: one_off for a single scheduled send, ongoing for trigger-based campaigns',
 	},
 	{
 		displayName: 'Inbox ID',
@@ -98,7 +98,7 @@ export const CampaignFields: INodeProperties[] = [
 			},
 		},
 		default: 0,
-		description: 'ID da inbox para enviar a campanha',
+		description: 'ID of the inbox to send the campaign from',
 	},
 	{
 		displayName: 'Message',
@@ -112,7 +112,7 @@ export const CampaignFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Mensagem da campanha',
+		description: 'Campaign message content',
 		typeOptions: {
 			rows: 4,
 		},
@@ -135,7 +135,7 @@ export const CampaignFields: INodeProperties[] = [
 				name: 'audience',
 				type: 'json',
 				default: '[]',
-				description: 'Lista de IDs de contatos (ex: [{"type":"contact","id":1}])',
+				description: 'Audience contact list as JSON (e.g. [{"type":"contact","id":1}])',
 			},
 			{
 				displayName: 'Description',
@@ -149,7 +149,7 @@ export const CampaignFields: INodeProperties[] = [
 				name: 'scheduledAt',
 				type: 'dateTime',
 				default: '',
-				description: 'Data e hora de envio agendado. Deixe vazio para enviar imediatamente.',
+				description: 'Scheduled send date and time. Leave empty to send immediately.',
 			},
 		],
 	},
@@ -171,7 +171,7 @@ export const CampaignFields: INodeProperties[] = [
 				name: 'audience',
 				type: 'json',
 				default: '[]',
-				description: 'Lista de IDs de contatos (ex: [{"type":"contact","id":1}])',
+				description: 'Audience contact list as JSON (e.g. [{"type":"contact","id":1}])',
 			},
 			{
 				displayName: 'Description',
@@ -193,7 +193,7 @@ export const CampaignFields: INodeProperties[] = [
 				name: 'scheduledAt',
 				type: 'dateTime',
 				default: '',
-				description: 'Nova data e hora de envio agendado',
+				description: 'New scheduled send date and time',
 			},
 			{
 				displayName: 'Title',
@@ -217,7 +217,7 @@ export const CampaignFields: INodeProperties[] = [
 			},
 		},
 		default: false,
-		description: 'Retornar todos os resultados ou limite',
+		description: 'Whether to return all results instead of applying a limit',
 	},
 	{
 		displayName: 'Limit',

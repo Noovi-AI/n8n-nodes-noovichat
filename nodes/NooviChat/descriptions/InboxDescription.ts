@@ -50,7 +50,7 @@ export const InboxFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'ID da inbox',
+		description: 'ID of the inbox',
 	},
 
 	// Create inbox fields
@@ -66,7 +66,7 @@ export const InboxFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Nome da inbox',
+		description: 'Name of the inbox',
 	},
 	{
 		displayName: 'Channel',
@@ -80,18 +80,18 @@ export const InboxFields: INodeProperties[] = [
 			},
 		},
 		options: [
-			{ name: 'Website', value: 'Channel::WebWidget' },
-			{ name: 'WhatsApp', value: 'Channel::Whatsapp' },
-			{ name: 'Facebook', value: 'Channel::FacebookPage' },
-			{ name: 'Twitter', value: 'Channel::TwitterProfile' },
-			{ name: 'Email', value: 'Channel::Email' },
-			{ name: 'SMS', value: 'Channel::Sms' },
-			{ name: 'API', value: 'Channel::Api' },
-			{ name: 'Telegram', value: 'Channel::Telegram' },
-			{ name: 'LINE', value: 'Channel::Line' },
+			{ name: 'Website', value: 'Channel::WebWidget', description: 'Web chat widget embedded in your website' },
+			{ name: 'WhatsApp', value: 'Channel::Whatsapp', description: 'WhatsApp channel via WAHA or other providers' },
+			{ name: 'Facebook', value: 'Channel::FacebookPage', description: 'Facebook Page Messenger' },
+			{ name: 'Twitter', value: 'Channel::TwitterProfile', description: 'Twitter / X DMs' },
+			{ name: 'Email', value: 'Channel::Email', description: 'Email inbox' },
+			{ name: 'SMS', value: 'Channel::Sms', description: 'SMS channel' },
+			{ name: 'API', value: 'Channel::Api', description: 'Generic API channel for custom integrations' },
+			{ name: 'Telegram', value: 'Channel::Telegram', description: 'Telegram bot channel' },
+			{ name: 'LINE', value: 'Channel::Line', description: 'LINE messaging channel' },
 		],
 		default: 'Channel::WebWidget',
-		description: 'Tipo do canal',
+		description: 'Channel type for the inbox',
 	},
 
 	// Update Agents
@@ -122,7 +122,7 @@ export const InboxFields: INodeProperties[] = [
 			},
 		},
 		default: false,
-		description: 'Retornar todos os resultados ou limite',
+		description: 'Whether to return all results instead of applying a limit',
 	},
 	{
 		displayName: 'Limit',

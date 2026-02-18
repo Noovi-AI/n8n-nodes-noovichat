@@ -6,7 +6,7 @@ import {
 	NodeOperationError,
 } from 'n8n-workflow';
 
-import { nooviChatApiRequest, nooviChatApiRequestAllItems, formatExecutionData } from './GenericFunctions';
+import { nooviChatApiRequest, nooviChatApiRequestAllItems, formatExecutionData, parseJsonValue } from './GenericFunctions';
 
 // Import all descriptions
 import { ConversationOperations, ConversationFields } from './descriptions/ConversationDescription';
@@ -196,11 +196,7 @@ export class NooviChat implements INodeType {
 						throw new NodeOperationError(this.getNode(), `Unknown resource: "${resource}"`, { itemIndex: i });
 				}
 
-				if (Array.isArray(responseData)) {
-					returnData.push(...formatExecutionData(responseData, i));
-				} else {
-					returnData.push(...formatExecutionData(responseData, i));
-				}
+				returnData.push(...formatExecutionData(responseData, i));
 			} catch (error: any) {
 				if (this.continueOnFail()) {
 					returnData.push({
@@ -272,7 +268,7 @@ async function handleConversationOperation(this: IExecuteFunctions, operation: s
 		}
 		case 'filter': {
 			const filterPayload = this.getNodeParameter('filterPayload', index) as any;
-			const parsed = typeof filterPayload === 'string' ? JSON.parse(filterPayload) : filterPayload;
+			const parsed = parseJsonValue(filterPayload);
 			if (returnAll) {
 				return await nooviChatApiRequestAllItems.call(this, 'POST', '/conversations/filter', parsed);
 			}
@@ -347,9 +343,7 @@ async function handleContactOperation(this: IExecuteFunctions, operation: string
 			if (additionalFields.inboxId) body.inbox_id = additionalFields.inboxId;
 			if (additionalFields.identifier) body.identifier = additionalFields.identifier;
 			if (additionalFields.customAttributes) {
-				body.custom_attributes = typeof additionalFields.customAttributes === 'string' 
-					? JSON.parse(additionalFields.customAttributes) 
-					: additionalFields.customAttributes;
+				body.custom_attributes = parseJsonValue(additionalFields.customAttributes);
 			}
 			return await nooviChatApiRequest.call(this, 'POST', '/contacts', body);
 		}
@@ -372,9 +366,7 @@ async function handleContactOperation(this: IExecuteFunctions, operation: string
 			if (updateFields.phoneNumber) body.phone_number = updateFields.phoneNumber;
 			if (updateFields.priority) body.priority = updateFields.priority;
 			if (updateFields.customAttributes) {
-				body.custom_attributes = typeof updateFields.customAttributes === 'string'
-					? JSON.parse(updateFields.customAttributes)
-					: updateFields.customAttributes;
+				body.custom_attributes = parseJsonValue(updateFields.customAttributes);
 			}
 			return await nooviChatApiRequest.call(this, 'PUT', `/contacts/${contactId}`, body);
 		}
@@ -391,7 +383,7 @@ async function handleContactOperation(this: IExecuteFunctions, operation: string
 		}
 		case 'filter': {
 			const filterPayload = this.getNodeParameter('filterPayload', index) as any;
-			const parsed = typeof filterPayload === 'string' ? JSON.parse(filterPayload) : filterPayload;
+			const parsed = parseJsonValue(filterPayload);
 			if (returnAll) {
 				return await nooviChatApiRequestAllItems.call(this, 'POST', '/contacts/filter', parsed);
 			}
@@ -782,12 +774,12 @@ async function handleDealOperation(this: IExecuteFunctions, operation: string, i
 			const title = this.getNodeParameter('title', index) as string;
 			const pipelineId = this.getNodeParameter('pipelineId', index) as string;
 			const stageId = this.getNodeParameter('stageId', index) as string;
-			const af = this.getNodeParameter('additionalFields', index, {}) as any;
+			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
 			const body: any = { title, pipeline_id: pipelineId, stage_id: stageId };
-			if (af.contactId) body.contact_id = af.contactId;
-			if (af.value) body.value = af.value;
-			if (af.expectedCloseDate) body.expected_close_date = af.expectedCloseDate;
-			if (af.assigneeId) body.assignee_id = af.assigneeId;
+			if (additionalFields.contactId) body.contact_id = additionalFields.contactId;
+			if (additionalFields.value) body.value = additionalFields.value;
+			if (additionalFields.expectedCloseDate) body.expected_close_date = additionalFields.expectedCloseDate;
+			if (additionalFields.assigneeId) body.assignee_id = additionalFields.assigneeId;
 			return await nooviChatApiRequest.call(this, 'POST', '/pipeline_cards', body);
 		}
 		case 'get':
@@ -806,12 +798,12 @@ async function handleDealOperation(this: IExecuteFunctions, operation: string, i
 			return await nooviChatApiRequest.call(this, 'GET', '/pipeline_cards', {}, qs);
 		}
 		case 'update': {
-			const af = this.getNodeParameter('additionalFields', index, {}) as any;
+			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
 			const body: any = {};
-			if (af.title) body.title = af.title;
-			if (af.value) body.value = af.value;
-			if (af.expectedCloseDate) body.expected_close_date = af.expectedCloseDate;
-			if (af.assigneeId) body.assignee_id = af.assigneeId;
+			if (additionalFields.title) body.title = additionalFields.title;
+			if (additionalFields.value) body.value = additionalFields.value;
+			if (additionalFields.expectedCloseDate) body.expected_close_date = additionalFields.expectedCloseDate;
+			if (additionalFields.assigneeId) body.assignee_id = additionalFields.assigneeId;
 			return await nooviChatApiRequest.call(this, 'PATCH', `/pipeline_cards/${dealId}`, body);
 		}
 		case 'delete':
@@ -833,9 +825,9 @@ async function handleDealOperation(this: IExecuteFunctions, operation: string, i
 		case 'bulkUpdate': {
 			const dealIdValues = this.getNodeParameter('dealIds.values', index, []) as Array<{ id: string }>;
 			const updateFields = this.getNodeParameter('updateFields', index) as any;
-			const parsed = typeof updateFields === 'string' ? JSON.parse(updateFields) : updateFields;
+			const parsed = parseJsonValue(updateFields);
 			return await nooviChatApiRequest.call(this, 'PATCH', '/pipeline_cards/bulk_update', {
-				card_ids: dealIdValues.map(d => parseInt(d.id)),
+				card_ids: dealIdValues.map(d => parseInt(d.id, 10)),
 				...parsed,
 			});
 		}
@@ -843,14 +835,14 @@ async function handleDealOperation(this: IExecuteFunctions, operation: string, i
 			const dealIdValues = this.getNodeParameter('dealIds.values', index, []) as Array<{ id: string }>;
 			const stageId = this.getNodeParameter('stageId', index) as string;
 			return await nooviChatApiRequest.call(this, 'POST', '/pipeline_cards/bulk_move', {
-				card_ids: dealIdValues.map(d => parseInt(d.id)),
-				stage_id: stageId,
+				card_ids: dealIdValues.map(d => parseInt(d.id, 10)),
+				stage_id: parseInt(stageId, 10),
 			});
 		}
 		case 'bulkDelete': {
 			const dealIdValues = this.getNodeParameter('dealIds.values', index, []) as Array<{ id: string }>;
 			return await nooviChatApiRequest.call(this, 'DELETE', '/pipeline_cards/bulk_delete', {
-				card_ids: dealIdValues.map(d => parseInt(d.id)),
+				card_ids: dealIdValues.map(d => parseInt(d.id, 10)),
 			});
 		}
 		case 'getLeadScore':
@@ -947,12 +939,12 @@ async function handleActivityOperation(this: IExecuteFunctions, operation: strin
 		case 'create': {
 			const title = this.getNodeParameter('title', index) as string;
 			const activityType = this.getNodeParameter('activityType', index) as string;
-			const af = this.getNodeParameter('additionalFields', index, {}) as any;
+			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
 			const body: any = { title, type: activityType };
-			if (af.description) body.description = af.description;
-			if (af.dueAt) body.due_at = af.dueAt;
-			if (af.assigneeId) body.assignee_id = af.assigneeId;
-			if (af.dealId) body.deal_id = af.dealId;
+			if (additionalFields.description) body.description = additionalFields.description;
+			if (additionalFields.dueAt) body.due_at = additionalFields.dueAt;
+			if (additionalFields.assigneeId) body.assignee_id = additionalFields.assigneeId;
+			if (additionalFields.dealId) body.deal_id = additionalFields.dealId;
 			return await nooviChatApiRequest.call(this, 'POST', '/pipeline/activities', body);
 		}
 		case 'get':
@@ -964,12 +956,12 @@ async function handleActivityOperation(this: IExecuteFunctions, operation: strin
 			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/activities', {}, { per_page: limit });
 		}
 		case 'update': {
-			const af = this.getNodeParameter('additionalFields', index, {}) as any;
+			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
 			const body: any = {};
-			if (af.title) body.title = af.title;
-			if (af.description) body.description = af.description;
-			if (af.dueAt) body.due_at = af.dueAt;
-			if (af.assigneeId) body.assignee_id = af.assigneeId;
+			if (additionalFields.title) body.title = additionalFields.title;
+			if (additionalFields.description) body.description = additionalFields.description;
+			if (additionalFields.dueAt) body.due_at = additionalFields.dueAt;
+			if (additionalFields.assigneeId) body.assignee_id = additionalFields.assigneeId;
 			return await nooviChatApiRequest.call(this, 'PATCH', `/pipeline/activities/${activityId}`, body);
 		}
 		case 'delete':
@@ -1005,7 +997,7 @@ async function handleLeadScoringOperation(this: IExecuteFunctions, operation: st
 			const score = this.getNodeParameter('score', index) as number;
 			const conditionType = this.getNodeParameter('conditionType', index) as string;
 			const conditionValue = this.getNodeParameter('conditionValue', index) as any;
-			const parsed = typeof conditionValue === 'string' ? JSON.parse(conditionValue) : conditionValue;
+			const parsed = parseJsonValue(conditionValue);
 			return await nooviChatApiRequest.call(this, 'POST', '/lead_score_rules', {
 				name: ruleName,
 				score,
@@ -1029,7 +1021,7 @@ async function handleLeadScoringOperation(this: IExecuteFunctions, operation: st
 			if (score) body.score = score;
 			if (conditionType) body.condition_type = conditionType;
 			if (conditionValue) {
-				body.condition_value = typeof conditionValue === 'string' ? JSON.parse(conditionValue) : conditionValue;
+				body.condition_value = parseJsonValue(conditionValue);
 			}
 			return await nooviChatApiRequest.call(this, 'PATCH', `/lead_score_rules/${ruleId}`, body);
 		}
@@ -1058,12 +1050,12 @@ async function handleCampaignOperation(this: IExecuteFunctions, operation: strin
 			const campaignType = this.getNodeParameter('campaignType', index) as string;
 			const inboxId = this.getNodeParameter('inboxId', index) as number;
 			const message = this.getNodeParameter('message', index) as string;
-			const af = this.getNodeParameter('additionalFields', index, {}) as any;
+			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
 			const body: any = { title, type: campaignType, inbox_id: inboxId, message };
-			if (af.description) body.description = af.description;
-			if (af.scheduledAt) body.scheduled_at = af.scheduledAt;
-			if (af.audience) {
-				body.audience = typeof af.audience === 'string' ? JSON.parse(af.audience) : af.audience;
+			if (additionalFields.description) body.description = additionalFields.description;
+			if (additionalFields.scheduledAt) body.scheduled_at = additionalFields.scheduledAt;
+			if (additionalFields.audience) {
+				body.audience = parseJsonValue(additionalFields.audience);
 			}
 			return await nooviChatApiRequest.call(this, 'POST', '/campaigns', body);
 		}
@@ -1076,14 +1068,14 @@ async function handleCampaignOperation(this: IExecuteFunctions, operation: strin
 			return await nooviChatApiRequest.call(this, 'GET', '/campaigns', {}, { per_page: limit });
 		}
 		case 'update': {
-			const af = this.getNodeParameter('additionalFields', index, {}) as any;
+			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
 			const body: any = {};
-			if (af.title) body.title = af.title;
-			if (af.description) body.description = af.description;
-			if (af.message) body.message = af.message;
-			if (af.scheduledAt) body.scheduled_at = af.scheduledAt;
-			if (af.audience) {
-				body.audience = typeof af.audience === 'string' ? JSON.parse(af.audience) : af.audience;
+			if (additionalFields.title) body.title = additionalFields.title;
+			if (additionalFields.description) body.description = additionalFields.description;
+			if (additionalFields.message) body.message = additionalFields.message;
+			if (additionalFields.scheduledAt) body.scheduled_at = additionalFields.scheduledAt;
+			if (additionalFields.audience) {
+				body.audience = parseJsonValue(additionalFields.audience);
 			}
 			return await nooviChatApiRequest.call(this, 'PATCH', `/campaigns/${campaignId}`, body);
 		}
@@ -1184,7 +1176,7 @@ async function handleWahaOperation(this: IExecuteFunctions, operation: string, i
 			return await nooviChatApiRequest.call(this, 'POST', `/waha/${inboxId}/disconnect`);
 		case 'updateConfig': {
 			const config = this.getNodeParameter('config', index) as any;
-			const parsed = typeof config === 'string' ? JSON.parse(config) : config;
+			const parsed = parseJsonValue(config);
 			return await nooviChatApiRequest.call(this, 'PATCH', `/waha/${inboxId}/config`, parsed);
 		}
 		case 'getSettings':

@@ -10,6 +10,22 @@ import {
 
 type NooviChatContext = IExecuteFunctions | IHookFunctions | IWebhookFunctions;
 
+// Number of items per page sent to the API. Stop pagination when the
+// response contains fewer items than this value.
+const PAGE_SIZE = 25;
+
+/** Parse a value that may arrive as a JSON string or already as an object. */
+export function parseJsonValue(value: unknown): any {
+	if (typeof value === 'string' && value.trim() !== '') {
+		try {
+			return JSON.parse(value);
+		} catch {
+			return value;
+		}
+	}
+	return value;
+}
+
 export async function nooviChatApiRequest(
 	this: NooviChatContext,
 	method: IHttpRequestMethods,
@@ -43,8 +59,11 @@ export async function nooviChatApiRequest(
 	try {
 		return await this.helpers.request(options);
 	} catch (error: any) {
+		const statusCode: number | undefined = error?.statusCode ?? error?.response?.statusCode;
+		const context = `${method} ${endpoint}`;
+		const detail = statusCode ? ` (HTTP ${statusCode})` : '';
 		throw new Error(
-			`NooviChat API Error: ${error.message || 'Unknown error'}`,
+			`NooviChat API Error${detail} [${context}]: ${error.message || 'Unknown error'}`,
 		);
 	}
 }
@@ -60,7 +79,7 @@ export async function nooviChatApiRequestAllItems(
 	let page = 1;
 
 	for (;;) {
-		const currentQs = { ...qs, page };
+		const currentQs = { ...qs, page, per_page: PAGE_SIZE };
 		const response = await nooviChatApiRequest.call(this, method, endpoint, body, currentQs);
 		const items = response.data?.payload || response.data || response.payload || response;
 
@@ -69,12 +88,12 @@ export async function nooviChatApiRequestAllItems(
 		}
 
 		returnData.push(...items);
-		page++;
 
-		// NooviChat paginates with ~15 items per page
-		if (items.length < 15) {
+		if (items.length < PAGE_SIZE) {
 			break;
 		}
+
+		page++;
 	}
 
 	return returnData;

@@ -50,7 +50,7 @@ export const LeadScoringFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'ID da regra',
+		description: 'ID of the rule',
 	},
 
 	// Create rule fields
@@ -66,7 +66,7 @@ export const LeadScoringFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Nome da regra',
+		description: 'Name of the rule',
 	},
 	{
 		displayName: 'Score',
@@ -86,6 +86,7 @@ export const LeadScoringFields: INodeProperties[] = [
 		displayName: 'Condition Type',
 		name: 'conditionType',
 		type: 'options',
+		required: true,
 		displayOptions: {
 			show: {
 				resource: ['leadScoring'],
@@ -126,7 +127,7 @@ export const LeadScoringFields: INodeProperties[] = [
 			},
 		},
 		default: false,
-		description: 'Retornar todos os resultados ou limite',
+		description: 'Whether to return all results instead of applying a limit',
 	},
 	{
 		displayName: 'Limit',

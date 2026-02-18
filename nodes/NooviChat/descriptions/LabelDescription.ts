@@ -47,7 +47,7 @@ export const LabelFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'ID da etiqueta',
+		description: 'ID of the label',
 	},
 
 	// Create label fields
@@ -76,7 +76,7 @@ export const LabelFields: INodeProperties[] = [
 			},
 		},
 		default: '#0066FF',
-		description: 'Cor da etiqueta em formato hexadecimal',
+		description: 'Label color in hexadecimal format',
 	},
 	{
 		displayName: 'Description',
@@ -104,7 +104,7 @@ export const LabelFields: INodeProperties[] = [
 			},
 		},
 		default: false,
-		description: 'Retornar todos os resultados ou limite',
+		description: 'Whether to return all results instead of applying a limit',
 	},
 	{
 		displayName: 'Limit',
