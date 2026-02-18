@@ -420,8 +420,8 @@ async function handleInboxOperation(this: IExecuteFunctions, operation: string, 
 	switch (operation) {
 		case 'create': {
 			const name = this.getNodeParameter('name', index) as string;
-			const channel = this.getNodeParameter('channel', index) as string;
-			return await nooviChatApiRequest.call(this, 'POST', '/inboxes', { name, channel });
+			const channelType = this.getNodeParameter('channel', index) as string;
+			return await nooviChatApiRequest.call(this, 'POST', '/inboxes', { name, channel: { type: channelType } });
 		}
 		case 'get':
 			return await nooviChatApiRequest.call(this, 'GET', `/inboxes/${inboxId}`);
@@ -609,10 +609,10 @@ async function handleCustomAttributeOperation(this: IExecuteFunctions, operation
 			const attributeType = this.getNodeParameter('attributeType', index) as string;
 			const model = this.getNodeParameter('model', index) as string;
 			return await nooviChatApiRequest.call(this, 'POST', '/custom_attribute_definitions', {
-				attribute_name: attributeName,
-				display_name: displayName,
-				attribute_type: attributeType,
-				model,
+				attribute_key: attributeName,
+				attribute_display_name: displayName,
+				attribute_display_type: attributeType,
+				attribute_model: model,
 			});
 		}
 		case 'getAll': {

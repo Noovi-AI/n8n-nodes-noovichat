@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.9] - 2026-02-18
+
+### Fixed
+- **`inbox.create`**: campo `channel` agora enviado como objeto `{ type: 'web_widget' }` — antes era enviado como string `'Channel::WebWidget'` que a API rejeita. Valores corrigidos para snake_case (`web_widget`, `email`, `api`, `sms`, `telegram`, `line`, `whatsapp`, `waha_whatsapp`)
+- **`inbox.update`**: campo `Name` agora aparece na UI (estava visível apenas no `create`)
+- **`customAttribute.create`**: nomes dos campos corrigidos para corresponder ao strong_parameters da API:
+  - `attribute_name` → `attribute_key`
+  - `display_name` → `attribute_display_name`
+  - `attribute_type` → `attribute_display_type`
+  - `model` → `attribute_model`
+- **`WebhookDescription`**: eventos de pipeline renomeados de "Deal" para "Card" (faltou nesta descrição, foi corrigido apenas no Trigger anteriormente)
+
 ## [0.3.8] - 2026-02-18
 
 ### Fixed

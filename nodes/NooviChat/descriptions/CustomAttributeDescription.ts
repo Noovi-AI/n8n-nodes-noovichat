@@ -52,7 +52,7 @@ export const CustomAttributeFields: INodeProperties[] = [
 
 	// Create fields
 	{
-		displayName: 'Attribute Name',
+		displayName: 'Attribute Key',
 		name: 'attributeName',
 		type: 'string',
 		required: true,
@@ -63,7 +63,8 @@ export const CustomAttributeFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Internal name of the attribute (snake_case, no spaces)',
+		placeholder: 'e.g., customer_tier',
+		description: 'Internal key of the attribute (snake_case, no spaces). Sent as attribute_key to the API.',
 	},
 	{
 		displayName: 'Display Name',
@@ -77,7 +78,8 @@ export const CustomAttributeFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Display name of the attribute',
+		placeholder: 'e.g., Customer Tier',
+		description: 'Human-readable label shown in the UI. Sent as attribute_display_name to the API.',
 	},
 	{
 		displayName: 'Attribute Type',

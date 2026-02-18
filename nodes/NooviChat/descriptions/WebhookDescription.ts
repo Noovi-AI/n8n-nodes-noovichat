@@ -91,12 +91,12 @@ export const WebhookFields: INodeProperties[] = [
 			{ name: 'Contact Updated', value: 'contact_updated' },
 			// Widget events
 			{ name: 'Webwidget Triggered', value: 'webwidget_triggered' },
-			// NooviChat exclusive — Pipeline/Deal events
-			{ name: 'Deal Created', value: 'pipeline_card_created' },
-			{ name: 'Deal Lost', value: 'pipeline_card_lost' },
-			{ name: 'Deal Stage Changed', value: 'pipeline_card_stage_changed' },
-			{ name: 'Deal Updated', value: 'pipeline_card_updated' },
-			{ name: 'Deal Won', value: 'pipeline_card_won' },
+			// NooviChat exclusive — Pipeline/Card events
+			{ name: 'Card Created', value: 'pipeline_card_created' },
+			{ name: 'Card Lost', value: 'pipeline_card_lost' },
+			{ name: 'Card Stage Changed', value: 'pipeline_card_stage_changed' },
+			{ name: 'Card Updated', value: 'pipeline_card_updated' },
+			{ name: 'Card Won', value: 'pipeline_card_won' },
 			// NooviChat exclusive — Follow-up events
 			{ name: 'Follow-up Due', value: 'follow_up_due' },
 			{ name: 'Follow-up Overdue', value: 'follow_up_overdue' },

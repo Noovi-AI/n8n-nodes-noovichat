@@ -69,7 +69,7 @@ export const InboxFields: INodeProperties[] = [
 		description: 'Name of the inbox',
 	},
 	{
-		displayName: 'Channel',
+		displayName: 'Channel Type',
 		name: 'channel',
 		type: 'options',
 		required: true,
@@ -80,18 +80,32 @@ export const InboxFields: INodeProperties[] = [
 			},
 		},
 		options: [
-			{ name: 'Website', value: 'Channel::WebWidget', description: 'Web chat widget embedded in your website' },
-			{ name: 'WhatsApp', value: 'Channel::Whatsapp', description: 'WhatsApp channel via WAHA or other providers' },
-			{ name: 'Facebook', value: 'Channel::FacebookPage', description: 'Facebook Page Messenger' },
-			{ name: 'Twitter', value: 'Channel::TwitterProfile', description: 'Twitter / X DMs' },
-			{ name: 'Email', value: 'Channel::Email', description: 'Email inbox' },
-			{ name: 'SMS', value: 'Channel::Sms', description: 'SMS channel' },
-			{ name: 'API', value: 'Channel::Api', description: 'Generic API channel for custom integrations' },
-			{ name: 'Telegram', value: 'Channel::Telegram', description: 'Telegram bot channel' },
-			{ name: 'LINE', value: 'Channel::Line', description: 'LINE messaging channel' },
+			{ name: 'Website (Web Widget)', value: 'web_widget', description: 'Web chat widget embedded in your website' },
+			{ name: 'WhatsApp (WAHA)', value: 'waha_whatsapp', description: 'WhatsApp channel via WAHA integration' },
+			{ name: 'WhatsApp (Other)', value: 'whatsapp', description: 'WhatsApp channel via other providers' },
+			{ name: 'Email', value: 'email', description: 'Email inbox' },
+			{ name: 'API', value: 'api', description: 'Generic API channel for custom integrations' },
+			{ name: 'SMS', value: 'sms', description: 'SMS channel' },
+			{ name: 'Telegram', value: 'telegram', description: 'Telegram bot channel' },
+			{ name: 'LINE', value: 'line', description: 'LINE messaging channel' },
 		],
-		default: 'Channel::WebWidget',
+		default: 'web_widget',
 		description: 'Channel type for the inbox',
+	},
+
+	// Update inbox fields
+	{
+		displayName: 'Name',
+		name: 'name',
+		type: 'string',
+		displayOptions: {
+			show: {
+				resource: ['inbox'],
+				operation: ['update'],
+			},
+		},
+		default: '',
+		description: 'New name for the inbox',
 	},
 
 	// Update Agents
