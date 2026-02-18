@@ -106,10 +106,15 @@ export const PipelineFields: INodeProperties[] = [
 		default: '',
 		description: 'ID do estágio',
 	},
+	// Create Stage — multiple stages at once
 	{
-		displayName: 'Stage Name',
-		name: 'stageName',
-		type: 'string',
+		displayName: 'Stages',
+		name: 'stages',
+		type: 'fixedCollection',
+		typeOptions: {
+			multipleValues: true,
+			minValue: 1,
+		},
 		required: true,
 		displayOptions: {
 			show: {
@@ -117,21 +122,59 @@ export const PipelineFields: INodeProperties[] = [
 				operation: ['createStage'],
 			},
 		},
-		default: '',
-		description: 'Nome do estágio',
+		default: { values: [{ stageName: '', stageColor: '#0066FF' }] },
+		description: 'Estágios a criar. Adicione quantos quiser.',
+		options: [
+			{
+				name: 'values',
+				displayName: 'Stage',
+				values: [
+					{
+						displayName: 'Name',
+						name: 'stageName',
+						type: 'string',
+						required: true,
+						default: '',
+						description: 'Nome do estágio',
+					},
+					{
+						displayName: 'Color',
+						name: 'stageColor',
+						type: 'color',
+						default: '#0066FF',
+						description: 'Cor do estágio',
+					},
+				],
+			},
+		],
 	},
+
+	// Update Stage fields
 	{
-		displayName: 'Stage Color',
-		name: 'stageColor',
+		displayName: 'Stage Name',
+		name: 'stageName',
 		type: 'string',
 		displayOptions: {
 			show: {
 				resource: ['pipeline'],
-				operation: ['createStage', 'updateStage'],
+				operation: ['updateStage'],
+			},
+		},
+		default: '',
+		description: 'Novo nome do estágio',
+	},
+	{
+		displayName: 'Stage Color',
+		name: 'stageColor',
+		type: 'color',
+		displayOptions: {
+			show: {
+				resource: ['pipeline'],
+				operation: ['updateStage'],
 			},
 		},
 		default: '#0066FF',
-		description: 'Cor do estágio em hexadecimal',
+		description: 'Nova cor do estágio',
 	},
 
 	// Reorder stages

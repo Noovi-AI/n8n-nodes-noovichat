@@ -693,9 +693,19 @@ async function handlePipelineOperation(this: IExecuteFunctions, operation: strin
 		case 'getStages':
 			return await nooviChatApiRequest.call(this, 'GET', `/pipelines/${pipelineId}/stages`);
 		case 'createStage': {
-			const stageName = this.getNodeParameter('stageName', index) as string;
-			const stageColor = this.getNodeParameter('stageColor', index, '#0066FF') as string;
-			return await nooviChatApiRequest.call(this, 'POST', `/pipelines/${pipelineId}/stages`, { name: stageName, color: stageColor });
+			const stagesCollection = this.getNodeParameter('stages.values', index, []) as Array<{ stageName: string; stageColor: string }>;
+			if (stagesCollection.length === 0) {
+				throw new NodeOperationError(this.getNode(), 'Adicione ao menos um estágio.');
+			}
+			const created = [];
+			for (const stage of stagesCollection) {
+				const result = await nooviChatApiRequest.call(this, 'POST', `/pipelines/${pipelineId}/stages`, {
+					name: stage.stageName,
+					color: stage.stageColor || '#0066FF',
+				});
+				created.push(result);
+			}
+			return created;
 		}
 		case 'updateStage': {
 			const stageName = this.getNodeParameter('stageName', index, '') as string;
