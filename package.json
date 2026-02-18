@@ -30,7 +30,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nooviai/n8n-nodes-noovichat.git"
+    "url": "git+https://github.com/Noovi-AI/n8n-nodes-noovichat.git"
   },
   "engines": {
     "node": ">=18.0.0"
