@@ -30,8 +30,6 @@ export const CampaignOperations: INodeProperties[] = [
 			{ name: 'Get Many', value: 'getAll', action: 'Get many campaigns' },
 			{ name: 'Update', value: 'update', action: 'Update a campaign' },
 			{ name: 'Delete', value: 'delete', action: 'Delete a campaign' },
-			{ name: 'Pause', value: 'pause', action: 'Pause a campaign' },
-			{ name: 'Resume', value: 'resume', action: 'Resume a campaign' },
 		],
 		default: 'getAll',
 	},
@@ -46,7 +44,7 @@ export const CampaignFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['campaign'],
-				operation: ['get', 'update', 'delete', 'pause', 'resume'],
+				operation: ['get', 'update', 'delete'],
 			},
 		},
 		default: '',
@@ -67,24 +65,6 @@ export const CampaignFields: INodeProperties[] = [
 		},
 		default: '',
 		description: 'Title of the campaign',
-	},
-	{
-		displayName: 'Campaign Type',
-		name: 'campaignType',
-		type: 'options',
-		required: true,
-		displayOptions: {
-			show: {
-				resource: ['campaign'],
-				operation: ['create'],
-			},
-		},
-		options: [
-			{ name: 'One-off', value: 'one_off' },
-			{ name: 'Ongoing', value: 'ongoing' },
-		],
-		default: 'one_off',
-		description: 'Campaign type: one_off for a single scheduled send, ongoing for trigger-based campaigns',
 	},
 	{
 		displayName: 'Inbox ID',

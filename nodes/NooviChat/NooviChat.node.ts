@@ -1071,11 +1071,10 @@ async function handleCampaignOperation(this: IExecuteFunctions, operation: strin
 	switch (operation) {
 		case 'create': {
 			const title = this.getNodeParameter('title', index) as string;
-			const campaignType = this.getNodeParameter('campaignType', index) as string;
 			const inboxId = this.getNodeParameter('inboxId', index) as number;
 			const message = this.getNodeParameter('message', index) as string;
 			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
-			const body: any = { title, type: campaignType, inbox_id: inboxId, message };
+			const body: any = { title, inbox_id: inboxId, message };
 			if (additionalFields.description) body.description = additionalFields.description;
 			if (additionalFields.scheduledAt) body.scheduled_at = additionalFields.scheduledAt;
 			if (additionalFields.audience) {
@@ -1105,10 +1104,6 @@ async function handleCampaignOperation(this: IExecuteFunctions, operation: strin
 		}
 		case 'delete':
 			return await nooviChatApiRequest.call(this, 'DELETE', `/campaigns/${campaignId}`);
-		case 'pause':
-			return await nooviChatApiRequest.call(this, 'POST', `/campaigns/${campaignId}/pause`);
-		case 'resume':
-			return await nooviChatApiRequest.call(this, 'POST', `/campaigns/${campaignId}/resume`);
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}

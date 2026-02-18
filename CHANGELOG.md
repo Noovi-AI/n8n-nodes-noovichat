@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-02-18
+
+### Removed
+- **`campaign.pause`** e **`campaign.resume`**: removidas — rotas `POST /campaigns/:id/pause` e `/resume` não existem na API (retornavam 404)
+- **`campaign.create`**: removido campo `Campaign Type` e parâmetro `type` do body — a API não aceita este campo (filtrado pelo strong_parameters); o tipo de campanha é determinado internamente pelo servidor com base no inbox
+
 ## [0.4.0] - 2026-02-18
 
 ### Fixed
