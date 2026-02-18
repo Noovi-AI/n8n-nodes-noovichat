@@ -114,12 +114,12 @@ export const ActivityFields: INodeProperties[] = [
 				description: 'ID of the agent responsible',
 			},
 			{
-				displayName: 'Deal ID',
-				name: 'dealId',
+				displayName: 'Card ID',
+				name: 'cardId',
 				type: 'string',
 				default: '',
 				placeholder: 'e.g., abc-123',
-				description: 'ID of the deal this activity belongs to',
+				description: 'ID of the card this activity belongs to',
 			},
 			{
 				displayName: 'Description',

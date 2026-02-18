@@ -300,6 +300,9 @@ async function handleMessageOperation(this: IExecuteFunctions, operation: string
 					body.template.variables = additionalFields.templateVariables.split(',');
 				}
 			}
+			if (additionalFields.contentType) {
+				body.content_type = additionalFields.contentType;
+			}
 			if (additionalFields.attachment) {
 				body.attachments = [{ url: additionalFields.attachment }];
 			}

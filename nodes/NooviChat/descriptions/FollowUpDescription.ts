@@ -164,6 +164,21 @@ export const FollowUpFields: INodeProperties[] = [
 		},
 	},
 
+	// Get Many: optional filter by conversation
+	{
+		displayName: 'Conversation ID',
+		name: 'conversationId',
+		type: 'string',
+		displayOptions: {
+			show: {
+				resource: ['followUp'],
+				operation: ['getAll'],
+			},
+		},
+		default: '',
+		description: 'Filter follow-ups by conversation. Leave empty to list all follow-ups in the account.',
+	},
+
 	// Get Many options
 	{
 		displayName: 'Return All',

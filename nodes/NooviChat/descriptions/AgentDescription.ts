@@ -106,7 +106,7 @@ export const AgentFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['agent'],
-				operation: ['create', 'update'],
+				operation: ['update'],
 			},
 		},
 		options: [
