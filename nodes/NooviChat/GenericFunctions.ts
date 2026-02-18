@@ -19,7 +19,7 @@ export async function nooviChatApiRequest(
 ): Promise<any> {
 	const credentials = await this.getCredentials('nooviChatApi');
 	const baseUrl = (credentials.baseUrl as string).replace(/\/$/, '');
-	const accountId = credentials.accountId as number;
+	const accountId = (this as any).getNodeParameter('accountId', 0) as number;
 
 	const options: IRequestOptions = {
 		method,
@@ -59,7 +59,7 @@ export async function nooviChatApiRequestAllItems(
 	const returnData: any[] = [];
 	let page = 1;
 
-	do {
+	for (;;) {
 		const currentQs = { ...qs, page };
 		const response = await nooviChatApiRequest.call(this, method, endpoint, body, currentQs);
 		const items = response.data?.payload || response.data || response.payload || response;
@@ -75,7 +75,7 @@ export async function nooviChatApiRequestAllItems(
 		if (items.length < 15) {
 			break;
 		}
-	} while (true);
+	}
 
 	return returnData;
 }

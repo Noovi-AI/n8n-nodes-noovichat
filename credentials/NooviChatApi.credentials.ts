@@ -34,14 +34,6 @@ export class NooviChatApi implements ICredentialType {
 			description: 'Token de acesso da API (obtido em Settings > Account Settings)',
 			required: true,
 		},
-		{
-			displayName: 'Account ID',
-			name: 'accountId',
-			type: 'number',
-			default: 1,
-			description: 'ID da conta NooviChat',
-			required: true,
-		},
 	];
 
 	authenticate: IAuthenticateGeneric = {
@@ -56,7 +48,7 @@ export class NooviChatApi implements ICredentialType {
 	test: ICredentialTestRequest = {
 		request: {
 			baseURL: '={{$credentials.baseUrl}}',
-			url: '/api/v1/accounts/{{$credentials.accountId}}/agents',
+			url: '/api/v1/profile',
 			method: 'GET' as IHttpRequestMethods,
 		},
 	};

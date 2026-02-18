@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import {
 	IHookFunctions,
 	IWebhookFunctions,
@@ -44,6 +45,15 @@ export class NooviChatTrigger implements INodeType {
 			},
 		],
 		properties: [
+			// Account ID (supports expressions for multi-account workflows)
+			{
+				displayName: 'Account ID',
+				name: 'accountId',
+				type: 'number',
+				default: 1,
+				required: true,
+				description: 'ID da conta NooviChat. Aceita expressões para workflows multi-conta.',
+			},
 			{
 				displayName: 'Event',
 				name: 'event',
@@ -200,7 +210,6 @@ export class NooviChatTrigger implements INodeType {
 					return { workflowData: [[]] };
 				}
 
-				const crypto = require('crypto');
 				const expectedSignature = crypto
 					.createHmac('sha256', webhookCredentials.webhookSecret as string)
 					.update(JSON.stringify(body))

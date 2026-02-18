@@ -1,6 +1,6 @@
 {
   "name": "@nooviai/n8n-nodes-noovichat",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "n8n community node for NooviChat — customer engagement, pipeline CRM, lead scoring and WhatsApp integration",
   "keywords": [
     "n8n-community-node-package",
@@ -66,7 +66,10 @@
       "!nodes/**/*.d.ts"
     ],
     "coverageDirectory": "coverage",
-    "coverageReporters": ["text", "lcov"]
+    "coverageReporters": [
+      "text",
+      "lcov"
+    ]
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",

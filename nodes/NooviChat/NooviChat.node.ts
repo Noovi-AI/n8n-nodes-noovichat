@@ -9,24 +9,24 @@ import {
 import { nooviChatApiRequest, nooviChatApiRequestAllItems, formatExecutionData } from './GenericFunctions';
 
 // Import all descriptions
-import { ConversationResource, ConversationOperations, ConversationFields } from './descriptions/ConversationDescription';
-import { MessageResource, MessageOperations, MessageFields } from './descriptions/MessageDescription';
-import { ContactResource, ContactOperations, ContactFields } from './descriptions/ContactDescription';
-import { InboxResource, InboxOperations, InboxFields } from './descriptions/InboxDescription';
-import { AgentResource, AgentOperations, AgentFields } from './descriptions/AgentDescription';
-import { TeamResource, TeamOperations, TeamFields } from './descriptions/TeamDescription';
-import { LabelResource, LabelOperations, LabelFields } from './descriptions/LabelDescription';
-import { CannedResponseResource, CannedResponseOperations, CannedResponseFields } from './descriptions/CannedResponseDescription';
-import { CustomAttributeResource, CustomAttributeOperations, CustomAttributeFields } from './descriptions/CustomAttributeDescription';
-import { WebhookResource, WebhookOperations, WebhookFields } from './descriptions/WebhookDescription';
-import { PipelineResource, PipelineOperations, PipelineFields } from './descriptions/PipelineDescription';
-import { DealResource, DealOperations, DealFields } from './descriptions/DealDescription';
-import { FollowUpResource, FollowUpOperations, FollowUpFields } from './descriptions/FollowUpDescription';
-import { ActivityResource, ActivityOperations, ActivityFields } from './descriptions/ActivityDescription';
-import { LeadScoringResource, LeadScoringOperations, LeadScoringFields } from './descriptions/LeadScoringDescription';
-import { CampaignResource, CampaignOperations, CampaignFields } from './descriptions/CampaignDescription';
-import { SlaResource, SlaOperations, SlaFields } from './descriptions/SlaDescription';
-import { WahaResource, WahaOperations, WahaFields } from './descriptions/WahaDescription';
+import { ConversationOperations, ConversationFields } from './descriptions/ConversationDescription';
+import { MessageOperations, MessageFields } from './descriptions/MessageDescription';
+import { ContactOperations, ContactFields } from './descriptions/ContactDescription';
+import { InboxOperations, InboxFields } from './descriptions/InboxDescription';
+import { AgentOperations, AgentFields } from './descriptions/AgentDescription';
+import { TeamOperations, TeamFields } from './descriptions/TeamDescription';
+import { LabelOperations, LabelFields } from './descriptions/LabelDescription';
+import { CannedResponseOperations, CannedResponseFields } from './descriptions/CannedResponseDescription';
+import { CustomAttributeOperations, CustomAttributeFields } from './descriptions/CustomAttributeDescription';
+import { WebhookOperations, WebhookFields } from './descriptions/WebhookDescription';
+import { PipelineOperations, PipelineFields } from './descriptions/PipelineDescription';
+import { DealOperations, DealFields } from './descriptions/DealDescription';
+import { FollowUpOperations, FollowUpFields } from './descriptions/FollowUpDescription';
+import { ActivityOperations, ActivityFields } from './descriptions/ActivityDescription';
+import { LeadScoringOperations, LeadScoringFields } from './descriptions/LeadScoringDescription';
+import { CampaignOperations, CampaignFields } from './descriptions/CampaignDescription';
+import { SlaOperations, SlaFields } from './descriptions/SlaDescription';
+import { WahaOperations, WahaFields } from './descriptions/WahaDescription';
 
 export class NooviChat implements INodeType {
 	description: INodeTypeDescription = {
@@ -49,6 +49,15 @@ export class NooviChat implements INodeType {
 			},
 		],
 		properties: [
+			// Account ID (supports expressions for multi-account workflows)
+			{
+				displayName: 'Account ID',
+				name: 'accountId',
+				type: 'number',
+				default: 1,
+				required: true,
+				description: 'ID da conta NooviChat. Aceita expressões para workflows multi-conta.',
+			},
 			// Resource selector
 			{
 				displayName: 'Resource',
