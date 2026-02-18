@@ -77,7 +77,7 @@ export const CustomAttributeFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Nome de exibição',
+		description: 'Display name of the attribute',
 	},
 	{
 		displayName: 'Attribute Type',
@@ -119,7 +119,7 @@ export const CustomAttributeFields: INodeProperties[] = [
 			{ name: 'Conversation', value: 'conversation_attribute' },
 		],
 		default: 'contact_attribute',
-		description: 'Onde o atributo será usado',
+		description: 'Where this attribute will be used',
 	},
 
 	// Get Many options
@@ -148,6 +148,6 @@ export const CustomAttributeFields: INodeProperties[] = [
 			},
 		},
 		default: 50,
-		description: 'Número máximo de resultados',
+		description: 'Maximum number of results to return',
 	},
 ];

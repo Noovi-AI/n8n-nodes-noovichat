@@ -51,7 +51,7 @@ export const SlaFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'ID da política SLA',
+		description: 'SLA policy ID',
 	},
 
 	// Create policy fields
@@ -67,7 +67,7 @@ export const SlaFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Nome da política',
+		description: 'Name of the SLA policy',
 	},
 	{
 		displayName: 'First Response Time (minutes)',
@@ -81,7 +81,7 @@ export const SlaFields: INodeProperties[] = [
 			},
 		},
 		default: 60,
-		description: 'Tempo máximo para primeira resposta (minutos)',
+		description: 'Maximum time allowed for first response, in minutes',
 	},
 	{
 		displayName: 'Resolution Time (minutes)',
@@ -94,7 +94,7 @@ export const SlaFields: INodeProperties[] = [
 			},
 		},
 		default: 1440,
-		description: 'Tempo máximo para resolução (minutos)',
+		description: 'Maximum time allowed for resolution, in minutes',
 	},
 	{
 		displayName: 'Inbox IDs',
@@ -110,7 +110,7 @@ export const SlaFields: INodeProperties[] = [
 			},
 		},
 		default: {},
-		description: 'Inboxes onde a política SLA será aplicada',
+		description: 'Inboxes where this SLA policy will be applied',
 		options: [
 			{
 				name: 'values',
@@ -141,7 +141,7 @@ export const SlaFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Data inicial do período',
+		description: 'Start date of the period',
 	},
 	{
 		displayName: 'End Date',
@@ -154,7 +154,7 @@ export const SlaFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Data final do período',
+		description: 'End date of the period',
 	},
 
 	// Get Many options
@@ -183,6 +183,6 @@ export const SlaFields: INodeProperties[] = [
 			},
 		},
 		default: 50,
-		description: 'Número máximo de resultados',
+		description: 'Maximum number of results to return',
 	},
 ];

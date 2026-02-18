@@ -35,8 +35,9 @@ export class NooviChat implements INodeType {
 		icon: 'file:noovichat.svg',
 		group: ['transform'],
 		version: 1,
-		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
-		description: 'Integração com NooviChat - Customer engagement, pipeline CRM, lead scoring e WhatsApp',
+		subtitle: '={{$parameter["resource"] + " → " + $parameter["operation"]}}',
+		description: 'Interact with NooviChat — manage conversations, contacts, pipeline CRM, lead scoring, campaigns and WhatsApp',
+		documentationUrl: 'https://doc.nooviai.com/docs/noovichat/reference/',
 		defaults: {
 			name: 'NooviChat',
 		},
@@ -56,7 +57,7 @@ export class NooviChat implements INodeType {
 				type: 'number',
 				default: 1,
 				required: true,
-				description: 'ID da conta NooviChat. Aceita expressões para workflows multi-conta.',
+				description: 'NooviChat account ID. Supports expressions for multi-account workflows.',
 			},
 			// Resource selector
 			{
@@ -192,19 +193,27 @@ export class NooviChat implements INodeType {
 						responseData = await handleWahaOperation.call(this, operation, i);
 						break;
 					default:
-						throw new NodeOperationError(this.getNode(), `Resource desconhecido: ${resource}`);
+						throw new NodeOperationError(this.getNode(), `Unknown resource: "${resource}"`, { itemIndex: i });
 				}
 
 				if (Array.isArray(responseData)) {
-					returnData.push(...formatExecutionData(responseData));
+					returnData.push(...formatExecutionData(responseData, i));
 				} else {
-					returnData.push(...formatExecutionData(responseData));
+					returnData.push(...formatExecutionData(responseData, i));
 				}
 			} catch (error: any) {
 				if (this.continueOnFail()) {
-					returnData.push({ json: { error: error.message } });
+					returnData.push({
+						json: {
+							error: error.message,
+							resource,
+							operation,
+							statusCode: (error as any)?.response?.statusCode,
+						},
+						pairedItem: { item: i },
+					});
 				} else {
-					throw new NodeOperationError(this.getNode(), error.message);
+					throw new NodeOperationError(this.getNode(), error.message, { itemIndex: i });
 				}
 			}
 		}
@@ -270,7 +279,7 @@ async function handleConversationOperation(this: IExecuteFunctions, operation: s
 			return await nooviChatApiRequest.call(this, 'POST', '/conversations/filter', parsed, { per_page: limit });
 		}
 		default:
-			throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`);
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
 }
 
@@ -318,7 +327,7 @@ async function handleMessageOperation(this: IExecuteFunctions, operation: string
 			return await nooviChatApiRequest.call(this, 'DELETE', `/conversations/${conversationId}/messages/${messageId}`);
 		}
 		default:
-			throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`);
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
 }
 
@@ -399,7 +408,7 @@ async function handleContactOperation(this: IExecuteFunctions, operation: string
 		case 'getConversations':
 			return await nooviChatApiRequest.call(this, 'GET', `/contacts/${contactId}/conversations`);
 		default:
-			throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`);
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
 }
 
@@ -439,7 +448,7 @@ async function handleInboxOperation(this: IExecuteFunctions, operation: string, 
 			});
 		}
 		default:
-			throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`);
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
 }
 
@@ -475,7 +484,7 @@ async function handleAgentOperation(this: IExecuteFunctions, operation: string, 
 		case 'delete':
 			return await nooviChatApiRequest.call(this, 'DELETE', `/agents/${agentId}`);
 		default:
-			throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`);
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
 }
 
@@ -516,7 +525,7 @@ async function handleTeamOperation(this: IExecuteFunctions, operation: string, i
 			});
 		}
 		default:
-			throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`);
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
 }
 
@@ -552,7 +561,7 @@ async function handleLabelOperation(this: IExecuteFunctions, operation: string, 
 		case 'delete':
 			return await nooviChatApiRequest.call(this, 'DELETE', `/labels/${labelId}`);
 		default:
-			throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`);
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
 }
 
@@ -584,7 +593,7 @@ async function handleCannedResponseOperation(this: IExecuteFunctions, operation:
 		case 'delete':
 			return await nooviChatApiRequest.call(this, 'DELETE', `/canned_responses/${cannedResponseId}`);
 		default:
-			throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`);
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
 }
 
@@ -620,7 +629,7 @@ async function handleCustomAttributeOperation(this: IExecuteFunctions, operation
 		case 'delete':
 			return await nooviChatApiRequest.call(this, 'DELETE', `/custom_attribute_definitions/${attributeId}`);
 		default:
-			throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`);
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
 }
 
@@ -653,7 +662,7 @@ async function handleWebhookOperation(this: IExecuteFunctions, operation: string
 		case 'delete':
 			return await nooviChatApiRequest.call(this, 'DELETE', `/webhooks/${webhookId}`);
 		default:
-			throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`);
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
 }
 
@@ -695,7 +704,7 @@ async function handlePipelineOperation(this: IExecuteFunctions, operation: strin
 		case 'createStage': {
 			const stagesCollection = this.getNodeParameter('stages.values', index, []) as Array<{ stageName: string; stageColor: string }>;
 			if (stagesCollection.length === 0) {
-				throw new NodeOperationError(this.getNode(), 'Adicione ao menos um estágio.');
+				throw new NodeOperationError(this.getNode(), 'At least one stage must be added.', { itemIndex: index });
 			}
 			const created = [];
 			for (const stage of stagesCollection) {
@@ -758,7 +767,7 @@ async function handlePipelineOperation(this: IExecuteFunctions, operation: strin
 		case 'getLostReasons':
 			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/deal_status/common_reasons');
 		default:
-			throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`);
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
 }
 
@@ -849,7 +858,7 @@ async function handleDealOperation(this: IExecuteFunctions, operation: string, i
 		case 'recalculateLeadScore':
 			return await nooviChatApiRequest.call(this, 'POST', `/pipeline_cards/${dealId}/recalculate_score`);
 		default:
-			throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`);
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
 }
 
@@ -924,7 +933,7 @@ async function handleFollowUpOperation(this: IExecuteFunctions, operation: strin
 		case 'previewTemplate':
 			return await nooviChatApiRequest.call(this, 'POST', `/follow-up-templates/${templateId}/preview`);
 		default:
-			throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`);
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
 }
 
@@ -980,7 +989,7 @@ async function handleActivityOperation(this: IExecuteFunctions, operation: strin
 			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/activities/analytics', {}, qs);
 		}
 		default:
-			throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`);
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
 }
 
@@ -1033,7 +1042,7 @@ async function handleLeadScoringOperation(this: IExecuteFunctions, operation: st
 		case 'getDashboard':
 			return await nooviChatApiRequest.call(this, 'GET', '/lead_score/reports/dashboard');
 		default:
-			throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`);
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
 }
 
@@ -1085,7 +1094,7 @@ async function handleCampaignOperation(this: IExecuteFunctions, operation: strin
 		case 'resume':
 			return await nooviChatApiRequest.call(this, 'POST', `/campaigns/${campaignId}/resume`);
 		default:
-			throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`);
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
 }
 
@@ -1152,7 +1161,7 @@ async function handleSlaOperation(this: IExecuteFunctions, operation: string, in
 			return await nooviChatApiRequest.call(this, 'GET', '/applied_slas/download', {}, qs);
 		}
 		default:
-			throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`);
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
 }
 
@@ -1189,6 +1198,6 @@ async function handleWahaOperation(this: IExecuteFunctions, operation: string, i
 			});
 		}
 		default:
-			throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`);
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
 }

@@ -139,6 +139,6 @@ export const WebhookFields: INodeProperties[] = [
 			},
 		},
 		default: 50,
-		description: 'Número máximo de resultados',
+		description: 'Maximum number of results to return',
 	},
 ];

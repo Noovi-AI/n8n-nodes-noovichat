@@ -47,7 +47,7 @@ export const CannedResponseFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'ID da resposta rápida',
+		description: 'Canned response ID',
 	},
 
 	// Create fields
@@ -63,7 +63,7 @@ export const CannedResponseFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Código curto para acionar a resposta (ex: /saudacao)',
+		description: 'Short code to trigger this response (e.g., /greeting)',
 	},
 	{
 		displayName: 'Content',
@@ -77,7 +77,7 @@ export const CannedResponseFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Conteúdo da resposta rápida',
+		description: 'Content of the canned response',
 		typeOptions: {
 			rows: 4,
 		},
@@ -102,14 +102,14 @@ export const CannedResponseFields: INodeProperties[] = [
 				name: 'shortCode',
 				type: 'string',
 				default: '',
-				description: 'Novo código curto para acionar a resposta',
+				description: 'New short code to trigger this response',
 			},
 			{
 				displayName: 'Content',
 				name: 'content',
 				type: 'string',
 				default: '',
-				description: 'Novo conteúdo da resposta rápida',
+				description: 'New content for the canned response',
 				typeOptions: { rows: 4 },
 			},
 		],
@@ -141,6 +141,6 @@ export const CannedResponseFields: INodeProperties[] = [
 			},
 		},
 		default: 50,
-		description: 'Número máximo de resultados',
+		description: 'Maximum number of results to return',
 	},
 ];

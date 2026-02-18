@@ -76,7 +76,8 @@ npm install @nooviai/n8n-nodes-noovichat
 2. Fill in:
    - **Base URL** — Your NooviChat instance (e.g. `https://chat.yourdomain.com`)
    - **API Access Token** — Found in NooviChat under Settings > Account Settings
-   - **Account ID** — Your numeric account ID (usually `1`)
+
+> **Note:** Account ID is configured **per node instance** (not in credentials), which allows you to use expressions for multi-account workflows.
 
 ### Credentials — NooviChat Webhook API (optional)
 

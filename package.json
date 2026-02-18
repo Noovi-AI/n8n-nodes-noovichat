@@ -1,23 +1,31 @@
 {
   "name": "@nooviai/n8n-nodes-noovichat",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "n8n community node for NooviChat — customer engagement, pipeline CRM, lead scoring and WhatsApp integration",
   "keywords": [
     "n8n-community-node-package",
     "noovichat",
     "chatwoot",
+    "customer-engagement",
+    "customer-support",
     "whatsapp",
+    "waha",
     "crm",
     "pipeline",
-    "customer-engagement",
+    "deal-management",
     "lead-scoring",
     "follow-up",
-    "waha"
+    "campaign",
+    "sla",
+    "messaging",
+    "automation",
+    "sales",
+    "support"
   ],
   "license": "MIT",
   "homepage": "https://nooviai.com",
   "author": {
-    "name": "NooviAI",
+    "name": "Noovi.AI",
     "email": "contato@nooviai.com"
   },
   "repository": {

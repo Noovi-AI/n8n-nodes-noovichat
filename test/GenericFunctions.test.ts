@@ -220,7 +220,7 @@ describe('formatExecutionData', () => {
 		const input = { id: 1, name: 'Test' };
 		const result = formatExecutionData(input);
 
-		expect(result).toEqual([{ json: { id: 1, name: 'Test' } }]);
+		expect(result).toEqual([{ json: { id: 1, name: 'Test' }, pairedItem: { item: 0 } }]);
 	});
 
 	it('should map array items to INodeExecutionData format', () => {
@@ -228,8 +228,8 @@ describe('formatExecutionData', () => {
 		const result = formatExecutionData(input);
 
 		expect(result).toHaveLength(3);
-		expect(result[0]).toEqual({ json: { id: 1 } });
-		expect(result[2]).toEqual({ json: { id: 3 } });
+		expect(result[0]).toEqual({ json: { id: 1 }, pairedItem: { item: 0 } });
+		expect(result[2]).toEqual({ json: { id: 3 }, pairedItem: { item: 0 } });
 	});
 
 	it('should handle empty array', () => {
@@ -239,6 +239,6 @@ describe('formatExecutionData', () => {
 
 	it('should handle null gracefully', () => {
 		const result = formatExecutionData(null);
-		expect(result).toEqual([{ json: null }]);
+		expect(result).toEqual([{ json: null, pairedItem: { item: 0 } }]);
 	});
 });

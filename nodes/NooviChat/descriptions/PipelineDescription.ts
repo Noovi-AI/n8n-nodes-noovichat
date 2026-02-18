@@ -88,7 +88,7 @@ export const PipelineFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Descrição do pipeline',
+		description: 'Description of the pipeline',
 	},
 
 	// Stage fields
@@ -104,7 +104,7 @@ export const PipelineFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'ID do estágio',
+		description: 'Stage ID',
 	},
 	// Create Stage — multiple stages at once
 	{
@@ -123,7 +123,7 @@ export const PipelineFields: INodeProperties[] = [
 			},
 		},
 		default: { values: [{ stageName: '', stageColor: '#0066FF' }] },
-		description: 'Estágios a criar. Adicione quantos quiser.',
+		description: 'Stages to create. Add as many as needed.',
 		options: [
 			{
 				name: 'values',
@@ -135,14 +135,14 @@ export const PipelineFields: INodeProperties[] = [
 						type: 'string',
 						required: true,
 						default: '',
-						description: 'Nome do estágio',
+						description: 'Stage name',
 					},
 					{
 						displayName: 'Color',
 						name: 'stageColor',
 						type: 'color',
 						default: '#0066FF',
-						description: 'Cor do estágio',
+						description: 'Stage color',
 					},
 				],
 			},
@@ -161,7 +161,7 @@ export const PipelineFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Novo nome do estágio',
+		description: 'New name for the stage',
 	},
 	{
 		displayName: 'Stage Color',
@@ -174,7 +174,7 @@ export const PipelineFields: INodeProperties[] = [
 			},
 		},
 		default: '#0066FF',
-		description: 'Nova cor do estágio',
+		description: 'New color for the stage',
 	},
 
 	// Reorder stages
@@ -194,7 +194,7 @@ export const PipelineFields: INodeProperties[] = [
 			},
 		},
 		default: { values: [{ id: '' }, { id: '' }] },
-		description: 'Estágios na nova ordem, de cima para baixo',
+		description: 'Stages in the new order, from top to bottom',
 		options: [
 			{
 				name: 'values',
@@ -206,7 +206,7 @@ export const PipelineFields: INodeProperties[] = [
 						type: 'string',
 						required: true,
 						default: '',
-						description: 'ID do estágio',
+						description: 'Stage ID',
 					},
 				],
 			},
@@ -225,7 +225,7 @@ export const PipelineFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Data inicial do período de análise',
+		description: 'Start date of the analysis period',
 	},
 	{
 		displayName: 'End Date',
@@ -238,7 +238,7 @@ export const PipelineFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Data final do período de análise',
+		description: 'End date of the analysis period',
 	},
 	{
 		displayName: 'Agent IDs',
@@ -299,6 +299,6 @@ export const PipelineFields: INodeProperties[] = [
 			},
 		},
 		default: 50,
-		description: 'Número máximo de resultados',
+		description: 'Maximum number of results to return',
 	},
 ];

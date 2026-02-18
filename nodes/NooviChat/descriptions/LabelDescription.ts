@@ -63,7 +63,7 @@ export const LabelFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Título da etiqueta',
+		description: 'Title of the label',
 	},
 	{
 		displayName: 'Color',
@@ -89,7 +89,7 @@ export const LabelFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Descrição da etiqueta',
+		description: 'Description of the label',
 	},
 
 	// Get Many options
@@ -118,6 +118,6 @@ export const LabelFields: INodeProperties[] = [
 			},
 		},
 		default: 50,
-		description: 'Número máximo de resultados',
+		description: 'Maximum number of results to return',
 	},
 ];

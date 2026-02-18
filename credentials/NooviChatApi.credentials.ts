@@ -19,8 +19,8 @@ export class NooviChatApi implements ICredentialType {
 				password: false,
 			},
 			default: '',
-			placeholder: 'https://chat.seudominio.com',
-			description: 'URL da sua instância NooviChat (sem barra final)',
+			placeholder: 'https://chat.yourdomain.com',
+			description: 'URL of your NooviChat instance (no trailing slash)',
 			required: true,
 		},
 		{
@@ -31,7 +31,7 @@ export class NooviChatApi implements ICredentialType {
 				password: true,
 			},
 			default: '',
-			description: 'Token de acesso da API (obtido em Settings > Account Settings)',
+			description: 'API access token. Found in NooviChat under Settings > Account Settings > API Keys',
 			required: true,
 		},
 	];

@@ -78,7 +78,7 @@ export const TeamFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Descrição da equipe',
+		description: 'Description of the team',
 	},
 
 	// Add Members
@@ -94,7 +94,7 @@ export const TeamFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'IDs dos membros separados por vírgula',
+		description: 'Comma-separated list of member IDs',
 	},
 
 	// Get Many options
@@ -123,6 +123,6 @@ export const TeamFields: INodeProperties[] = [
 			},
 		},
 		default: 50,
-		description: 'Número máximo de resultados',
+		description: 'Maximum number of results to return',
 	},
 ];

@@ -66,7 +66,7 @@ export const CampaignFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Título da campanha',
+		description: 'Title of the campaign',
 	},
 	{
 		displayName: 'Campaign Type',
@@ -142,7 +142,7 @@ export const CampaignFields: INodeProperties[] = [
 				name: 'description',
 				type: 'string',
 				default: '',
-				description: 'Descrição interna da campanha',
+				description: 'Internal description of the campaign',
 			},
 			{
 				displayName: 'Scheduled At',
@@ -178,14 +178,14 @@ export const CampaignFields: INodeProperties[] = [
 				name: 'description',
 				type: 'string',
 				default: '',
-				description: 'Descrição interna da campanha',
+				description: 'Internal description of the campaign',
 			},
 			{
 				displayName: 'Message',
 				name: 'message',
 				type: 'string',
 				default: '',
-				description: 'Novo conteúdo da mensagem',
+				description: 'New message content',
 				typeOptions: { rows: 4 },
 			},
 			{
@@ -200,7 +200,7 @@ export const CampaignFields: INodeProperties[] = [
 				name: 'title',
 				type: 'string',
 				default: '',
-				description: 'Novo título da campanha',
+				description: 'New title for the campaign',
 			},
 		],
 	},
@@ -231,6 +231,6 @@ export const CampaignFields: INodeProperties[] = [
 			},
 		},
 		default: 50,
-		description: 'Número máximo de resultados',
+		description: 'Maximum number of results to return',
 	},
 ];

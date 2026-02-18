@@ -107,7 +107,7 @@ export const InboxFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'IDs dos agentes separados por vírgula',
+		description: 'Comma-separated list of agent IDs to assign to this inbox',
 	},
 
 	// Get Many options
@@ -136,6 +136,6 @@ export const InboxFields: INodeProperties[] = [
 			},
 		},
 		default: 50,
-		description: 'Número máximo de resultados',
+		description: 'Maximum number of results to return',
 	},
 ];

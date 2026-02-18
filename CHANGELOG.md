@@ -5,30 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - 2024-01-15
+## [Unreleased]
+
+## [0.2.0] - 2026-02-18
 
 ### Added
-- Initial release
-- Base resources (Chatwoot compatible)
-  - Conversation: Create, Get, Get Many, Update, Delete, Assign, Toggle Status, Add Label, Filter
-  - Message: Send, Get Many, Delete
-  - Contact: Create, Get, Get Many, Update, Delete, Search, Filter, Merge, Get Conversations
-  - Inbox: Create, Get, Get Many, Update, Delete, Get Agents, Update Agents
-  - Agent: Create, Get Many, Update, Delete
-  - Team: Create, Get Many, Update, Delete, Get Members, Add Members
-  - Label: Create, Get Many, Update, Delete
-  - Canned Response: Create, Get Many, Delete
-  - Custom Attribute: Create, Get Many, Update, Delete
-  - Webhook: Create, Get Many, Update, Delete
-- Exclusive NooviChat resources
-  - Pipeline: Full CRUD + stages management
-  - Deal: Full CRUD + move to stage, mark won/lost, timeline, bulk operations
-  - Follow-up: Full CRUD + templates
-  - Activity: Full CRUD + start/complete/cancel + analytics
-  - Lead Scoring: Rules management + score calculation + dashboard
-  - Campaign: Full CRUD
-  - SLA: Policies + applied SLAs + metrics
-  - WAHA: Status + connection management + configuration
-  - Pipeline Analytics: Dashboard, win rate, conversion, velocity, team performance
-- Trigger node with webhook support for all events
-- Credentials: NooviChat API and Webhook API
+- Convert date/time fields to `dateTime` type for proper date picker UI
+- Replace comma-separated ID fields with `fixedCollection` (multipleValues)
+- New operations: `followUp.get`, `leadScoring.getRule`, `deal.bulkDelete`, `campaign.pause`, `campaign.resume`
+- Group optional fields under `additionalFields` collections (Deal, Activity, Campaign)
+
+### Changed
+- Account ID moved from credentials to node parameter (supports expressions for multi-account workflows)
+
+### Fixed
+- GenericFunctions test mock updated for `getNodeParameter` method
+
+## [0.1.2] - 2026-02-17
+
+### Added
+- Bulk stage creation in `createStage` using `fixedCollection` with multiple values
+
+## [0.1.1] - 2026-02-17
+
+### Changed
+- Account ID moved from credential to node parameter to support n8n expressions
+
+## [0.1.0] - 2026-02-17
+
+### Added
+- Initial release with 18 resources and 100+ operations
+- Resources: Conversation, Message, Contact, Inbox, Agent, Team, Label, Canned Response, Custom Attribute, Webhook, Pipeline, Deal, Follow-up, Activity, Lead Scoring, Campaign, SLA, WAHA
+- NooviChat Trigger node with 21 webhook events
+- Webhook signature validation support

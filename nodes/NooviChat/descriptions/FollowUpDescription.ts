@@ -84,7 +84,7 @@ export const FollowUpFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Título do follow-up',
+		description: 'Title of the follow-up',
 	},
 	{
 		displayName: 'Description',
@@ -97,7 +97,7 @@ export const FollowUpFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Descrição do follow-up',
+		description: 'Description of the follow-up',
 		typeOptions: {
 			rows: 3,
 		},
@@ -158,7 +158,7 @@ export const FollowUpFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Conteúdo do template',
+		description: 'Template message content',
 		typeOptions: {
 			rows: 4,
 		},
@@ -190,6 +190,6 @@ export const FollowUpFields: INodeProperties[] = [
 			},
 		},
 		default: 50,
-		description: 'Número máximo de resultados',
+		description: 'Maximum number of results to return',
 	},
 ];

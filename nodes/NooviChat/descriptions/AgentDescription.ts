@@ -47,7 +47,8 @@ export const AgentFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'ID do agente',
+		placeholder: 'e.g., 12345',
+		description: 'Unique identifier of the agent',
 	},
 
 	// Create agent fields
@@ -63,7 +64,8 @@ export const AgentFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Nome do agente',
+		placeholder: 'e.g., Jane Smith',
+		description: 'Full name of the agent',
 	},
 	{
 		displayName: 'Email',
@@ -77,7 +79,8 @@ export const AgentFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Email do agente',
+		placeholder: 'e.g., jane.smith@example.com',
+		description: 'Email address of the agent used for login',
 	},
 	{
 		displayName: 'Role',
@@ -90,11 +93,11 @@ export const AgentFields: INodeProperties[] = [
 			},
 		},
 		options: [
-			{ name: 'Agent', value: 'agent' },
-			{ name: 'Administrator', value: 'administrator' },
+			{ name: 'Agent', value: 'agent', description: 'Standard agent with limited permissions' },
+			{ name: 'Administrator', value: 'administrator', description: 'Administrator with full account access' },
 		],
 		default: 'agent',
-		description: 'Nível de permissão do agente',
+		description: 'Permission level of the agent',
 	},
 	{
 		displayName: 'Availability',
@@ -107,12 +110,12 @@ export const AgentFields: INodeProperties[] = [
 			},
 		},
 		options: [
-			{ name: 'Online', value: 'online' },
-			{ name: 'Busy', value: 'busy' },
-			{ name: 'Offline', value: 'offline' },
+			{ name: 'Online', value: 'online', description: 'Agent is available to receive conversations' },
+			{ name: 'Busy', value: 'busy', description: 'Agent is busy and may not respond immediately' },
+			{ name: 'Offline', value: 'offline', description: 'Agent is offline and unavailable' },
 		],
 		default: 'online',
-		description: 'Status de disponibilidade',
+		description: 'Availability status of the agent',
 	},
 
 	// Get Many options
@@ -127,7 +130,7 @@ export const AgentFields: INodeProperties[] = [
 			},
 		},
 		default: false,
-		description: 'Retornar todos os resultados ou limite',
+		description: 'Whether to return all results instead of applying a limit',
 	},
 	{
 		displayName: 'Limit',
@@ -141,6 +144,10 @@ export const AgentFields: INodeProperties[] = [
 			},
 		},
 		default: 50,
-		description: 'Número máximo de resultados',
+		description: 'Maximum number of results to return',
+		typeOptions: {
+			minValue: 1,
+			maxValue: 100,
+		},
 	},
 ];

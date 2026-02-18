@@ -80,7 +80,7 @@ export const LeadScoringFields: INodeProperties[] = [
 			},
 		},
 		default: 0,
-		description: 'Pontuação da regra',
+		description: 'Score value assigned when this rule matches',
 	},
 	{
 		displayName: 'Condition Type',
@@ -98,7 +98,7 @@ export const LeadScoringFields: INodeProperties[] = [
 			{ name: 'Deal Stage', value: 'deal_stage' },
 		],
 		default: 'contact_attribute',
-		description: 'Tipo de condição',
+		description: 'Type of condition to evaluate',
 	},
 	{
 		displayName: 'Condition Value',
@@ -111,7 +111,7 @@ export const LeadScoringFields: INodeProperties[] = [
 			},
 		},
 		default: '{}',
-		description: 'Valores da condição em JSON',
+		description: 'Condition values as a JSON object',
 	},
 
 	// Get Many options
@@ -140,6 +140,6 @@ export const LeadScoringFields: INodeProperties[] = [
 			},
 		},
 		default: 50,
-		description: 'Número máximo de resultados',
+		description: 'Maximum number of results to return',
 	},
 ];

@@ -71,7 +71,7 @@ export async function nooviChatApiRequestAllItems(
 		returnData.push(...items);
 		page++;
 
-		// NooviChat pagina com 15-25 items por página
+		// NooviChat paginates with ~15 items per page
 		if (items.length < 15) {
 			break;
 		}
@@ -80,9 +80,9 @@ export async function nooviChatApiRequestAllItems(
 	return returnData;
 }
 
-export function formatExecutionData(data: any): INodeExecutionData[] {
+export function formatExecutionData(data: any, inputIndex = 0): INodeExecutionData[] {
 	if (Array.isArray(data)) {
-		return data.map((item) => ({ json: item }));
+		return data.map((item) => ({ json: item, pairedItem: { item: inputIndex } }));
 	}
-	return [{ json: data }];
+	return [{ json: data, pairedItem: { item: inputIndex } }];
 }

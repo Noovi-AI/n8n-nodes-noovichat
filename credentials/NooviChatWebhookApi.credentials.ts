@@ -1,4 +1,5 @@
 import {
+	IAuthenticateGeneric,
 	ICredentialType,
 	INodeProperties,
 } from 'n8n-workflow';
@@ -16,8 +17,13 @@ export class NooviChatWebhookApi implements ICredentialType {
 				password: true,
 			},
 			default: '',
-			description: 'Secret usado para validar webhooks recebidos (opcional)',
+			description: 'Secret used to validate incoming webhook signatures. Leave empty to skip validation.',
 			required: false,
 		},
 	];
+
+	authenticate: IAuthenticateGeneric = {
+		type: 'generic',
+		properties: {},
+	};
 }

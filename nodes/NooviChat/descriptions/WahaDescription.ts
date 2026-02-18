@@ -67,7 +67,7 @@ export const WahaFields: INodeProperties[] = [
 			},
 		},
 		default: '{}',
-		description: 'Configuração WAHA em JSON',
+		description: 'WAHA configuration as a JSON object',
 	},
 
 	// Update Meta Tracking
