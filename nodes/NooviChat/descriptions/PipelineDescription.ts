@@ -179,9 +179,13 @@ export const PipelineFields: INodeProperties[] = [
 
 	// Reorder stages
 	{
-		displayName: 'Stage IDs (Order)',
+		displayName: 'Stage Order',
 		name: 'stageOrder',
-		type: 'string',
+		type: 'fixedCollection',
+		typeOptions: {
+			multipleValues: true,
+			minValue: 2,
+		},
 		required: true,
 		displayOptions: {
 			show: {
@@ -189,15 +193,31 @@ export const PipelineFields: INodeProperties[] = [
 				operation: ['reorderStages'],
 			},
 		},
-		default: '',
-		description: 'IDs dos estágios em ordem, separados por vírgula',
+		default: { values: [{ id: '' }, { id: '' }] },
+		description: 'Estágios na nova ordem, de cima para baixo',
+		options: [
+			{
+				name: 'values',
+				displayName: 'Stage',
+				values: [
+					{
+						displayName: 'Stage ID',
+						name: 'id',
+						type: 'string',
+						required: true,
+						default: '',
+						description: 'ID do estágio',
+					},
+				],
+			},
+		],
 	},
 
 	// Analytics fields
 	{
 		displayName: 'Start Date',
 		name: 'startDate',
-		type: 'string',
+		type: 'dateTime',
 		displayOptions: {
 			show: {
 				resource: ['pipeline'],
@@ -205,12 +225,12 @@ export const PipelineFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Data inicial (YYYY-MM-DD)',
+		description: 'Data inicial do período de análise',
 	},
 	{
 		displayName: 'End Date',
 		name: 'endDate',
-		type: 'string',
+		type: 'dateTime',
 		displayOptions: {
 			show: {
 				resource: ['pipeline'],
@@ -218,20 +238,39 @@ export const PipelineFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Data final (YYYY-MM-DD)',
+		description: 'Data final do período de análise',
 	},
 	{
 		displayName: 'Agent IDs',
 		name: 'agentIds',
-		type: 'string',
+		type: 'fixedCollection',
+		typeOptions: {
+			multipleValues: true,
+		},
 		displayOptions: {
 			show: {
 				resource: ['pipeline'],
 				operation: ['getTeamPerformance'],
 			},
 		},
-		default: '',
-		description: 'IDs dos agentes para filtrar, separados por vírgula',
+		default: {},
+		description: 'Agentes para filtrar. Deixe vazio para retornar todos.',
+		options: [
+			{
+				name: 'values',
+				displayName: 'Agent',
+				values: [
+					{
+						displayName: 'Agent ID',
+						name: 'id',
+						type: 'string',
+						required: true,
+						default: '',
+						description: 'ID do agente',
+					},
+				],
+			},
+		],
 	},
 
 	// Get Many options

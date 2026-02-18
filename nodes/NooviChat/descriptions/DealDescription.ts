@@ -36,7 +36,8 @@ export const DealOperations: INodeProperties[] = [
 			{ name: 'Reopen', value: 'reopen', action: 'Reopen deal' },
 			{ name: 'Get Timeline', value: 'getTimeline', action: 'Get deal timeline' },
 			{ name: 'Bulk Update', value: 'bulkUpdate', action: 'Bulk update deals' },
-			{ name: 'Bulk Move', value: 'bulkMove', action: 'Bulk move deals' },
+			{ name: 'Bulk Move', value: 'bulkMove', action: 'Bulk move deals to stage' },
+			{ name: 'Bulk Delete', value: 'bulkDelete', action: 'Bulk delete deals' },
 			{ name: 'Get Lead Score', value: 'getLeadScore', action: 'Get deal lead score' },
 			{ name: 'Recalculate Lead Score', value: 'recalculateLeadScore', action: 'Recalculate lead score' },
 		],
@@ -104,56 +105,90 @@ export const DealFields: INodeProperties[] = [
 		description: 'ID do estágio',
 	},
 	{
-		displayName: 'Contact ID',
-		name: 'contactId',
-		type: 'string',
+		displayName: 'Additional Fields',
+		name: 'additionalFields',
+		type: 'collection',
+		placeholder: 'Add Field',
 		displayOptions: {
 			show: {
 				resource: ['deal'],
 				operation: ['create'],
 			},
 		},
-		default: '',
-		description: 'ID do contato associado',
+		default: {},
+		options: [
+			{
+				displayName: 'Assignee ID',
+				name: 'assigneeId',
+				type: 'number',
+				default: 0,
+				description: 'ID do agente responsável',
+			},
+			{
+				displayName: 'Contact ID',
+				name: 'contactId',
+				type: 'string',
+				default: '',
+				description: 'ID do contato associado ao deal',
+			},
+			{
+				displayName: 'Expected Close Date',
+				name: 'expectedCloseDate',
+				type: 'dateTime',
+				default: '',
+				description: 'Data esperada de fechamento',
+			},
+			{
+				displayName: 'Value',
+				name: 'value',
+				type: 'number',
+				default: 0,
+				description: 'Valor monetário do deal',
+			},
+		],
 	},
 	{
-		displayName: 'Value',
-		name: 'value',
-		type: 'number',
+		displayName: 'Additional Fields',
+		name: 'additionalFields',
+		type: 'collection',
+		placeholder: 'Add Field',
 		displayOptions: {
 			show: {
 				resource: ['deal'],
-				operation: ['create', 'update'],
+				operation: ['update'],
 			},
 		},
-		default: 0,
-		description: 'Valor do deal',
-	},
-	{
-		displayName: 'Expected Close Date',
-		name: 'expectedCloseDate',
-		type: 'string',
-		displayOptions: {
-			show: {
-				resource: ['deal'],
-				operation: ['create', 'update'],
+		default: {},
+		options: [
+			{
+				displayName: 'Assignee ID',
+				name: 'assigneeId',
+				type: 'number',
+				default: 0,
+				description: 'ID do agente responsável',
 			},
-		},
-		default: '',
-		description: 'Data esperada de fechamento (YYYY-MM-DD)',
-	},
-	{
-		displayName: 'Assignee ID',
-		name: 'assigneeId',
-		type: 'number',
-		displayOptions: {
-			show: {
-				resource: ['deal'],
-				operation: ['create', 'update'],
+			{
+				displayName: 'Expected Close Date',
+				name: 'expectedCloseDate',
+				type: 'dateTime',
+				default: '',
+				description: 'Data esperada de fechamento',
 			},
-		},
-		default: 0,
-		description: 'ID do responsável',
+			{
+				displayName: 'Title',
+				name: 'title',
+				type: 'string',
+				default: '',
+				description: 'Novo título do deal',
+			},
+			{
+				displayName: 'Value',
+				name: 'value',
+				type: 'number',
+				default: 0,
+				description: 'Valor monetário do deal',
+			},
+		],
 	},
 
 	// Mark Lost fields
@@ -175,16 +210,36 @@ export const DealFields: INodeProperties[] = [
 	{
 		displayName: 'Deal IDs',
 		name: 'dealIds',
-		type: 'string',
+		type: 'fixedCollection',
+		typeOptions: {
+			multipleValues: true,
+			minValue: 1,
+		},
 		required: true,
 		displayOptions: {
 			show: {
 				resource: ['deal'],
-				operation: ['bulkUpdate', 'bulkMove'],
+				operation: ['bulkUpdate', 'bulkMove', 'bulkDelete'],
 			},
 		},
-		default: '',
-		description: 'IDs dos deals separados por vírgula',
+		default: { values: [{ id: '' }] },
+		description: 'Deals a processar',
+		options: [
+			{
+				name: 'values',
+				displayName: 'Deal',
+				values: [
+					{
+						displayName: 'Deal ID',
+						name: 'id',
+						type: 'string',
+						required: true,
+						default: '',
+						description: 'ID do deal',
+					},
+				],
+			},
+		],
 	},
 	{
 		displayName: 'Update Fields',

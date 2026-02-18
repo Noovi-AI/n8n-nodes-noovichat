@@ -99,22 +99,41 @@ export const SlaFields: INodeProperties[] = [
 	{
 		displayName: 'Inbox IDs',
 		name: 'inboxIds',
-		type: 'string',
+		type: 'fixedCollection',
+		typeOptions: {
+			multipleValues: true,
+		},
 		displayOptions: {
 			show: {
 				resource: ['sla'],
 				operation: ['createPolicy', 'updatePolicy'],
 			},
 		},
-		default: '',
-		description: 'IDs das inboxes separados por vírgula',
+		default: {},
+		description: 'Inboxes onde a política SLA será aplicada',
+		options: [
+			{
+				name: 'values',
+				displayName: 'Inbox',
+				values: [
+					{
+						displayName: 'Inbox ID',
+						name: 'id',
+						type: 'number',
+						required: true,
+						default: 0,
+						description: 'ID da inbox',
+					},
+				],
+			},
+		],
 	},
 
 	// Metrics/Export
 	{
 		displayName: 'Start Date',
 		name: 'startDate',
-		type: 'string',
+		type: 'dateTime',
 		displayOptions: {
 			show: {
 				resource: ['sla'],
@@ -122,12 +141,12 @@ export const SlaFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Data inicial (YYYY-MM-DD)',
+		description: 'Data inicial do período',
 	},
 	{
 		displayName: 'End Date',
 		name: 'endDate',
-		type: 'string',
+		type: 'dateTime',
 		displayOptions: {
 			show: {
 				resource: ['sla'],
@@ -135,7 +154,7 @@ export const SlaFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Data final (YYYY-MM-DD)',
+		description: 'Data final do período',
 	},
 
 	// Get Many options

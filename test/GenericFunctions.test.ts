@@ -14,6 +14,7 @@ function createContext(requestFn = mockRequest) {
 			request: requestFn,
 		},
 		getNode: () => ({ name: 'NooviChat', typeVersion: 1 }),
+		getNodeParameter: jest.fn().mockReturnValue(1),
 	} as any;
 }
 

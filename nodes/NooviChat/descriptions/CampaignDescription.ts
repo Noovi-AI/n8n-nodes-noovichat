@@ -30,6 +30,8 @@ export const CampaignOperations: INodeProperties[] = [
 			{ name: 'Get Many', value: 'getAll', action: 'Get many campaigns' },
 			{ name: 'Update', value: 'update', action: 'Update a campaign' },
 			{ name: 'Delete', value: 'delete', action: 'Delete a campaign' },
+			{ name: 'Pause', value: 'pause', action: 'Pause a campaign' },
+			{ name: 'Resume', value: 'resume', action: 'Resume a campaign' },
 		],
 		default: 'getAll',
 	},
@@ -44,7 +46,7 @@ export const CampaignFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['campaign'],
-				operation: ['get', 'update', 'delete'],
+				operation: ['get', 'update', 'delete', 'pause', 'resume'],
 			},
 		},
 		default: '',
@@ -65,19 +67,6 @@ export const CampaignFields: INodeProperties[] = [
 		},
 		default: '',
 		description: 'Título da campanha',
-	},
-	{
-		displayName: 'Description',
-		name: 'description',
-		type: 'string',
-		displayOptions: {
-			show: {
-				resource: ['campaign'],
-				operation: ['create', 'update'],
-			},
-		},
-		default: '',
-		description: 'Descrição da campanha',
 	},
 	{
 		displayName: 'Campaign Type',
@@ -119,7 +108,7 @@ export const CampaignFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['campaign'],
-				operation: ['create', 'update'],
+				operation: ['create'],
 			},
 		},
 		default: '',
@@ -129,30 +118,91 @@ export const CampaignFields: INodeProperties[] = [
 		},
 	},
 	{
-		displayName: 'Scheduled At',
-		name: 'scheduledAt',
-		type: 'string',
+		displayName: 'Additional Fields',
+		name: 'additionalFields',
+		type: 'collection',
+		placeholder: 'Add Field',
 		displayOptions: {
 			show: {
 				resource: ['campaign'],
-				operation: ['create', 'update'],
+				operation: ['create'],
 			},
 		},
-		default: '',
-		description: 'Data e hora agendada (ISO 8601)',
+		default: {},
+		options: [
+			{
+				displayName: 'Audience',
+				name: 'audience',
+				type: 'json',
+				default: '[]',
+				description: 'Lista de IDs de contatos (ex: [{"type":"contact","id":1}])',
+			},
+			{
+				displayName: 'Description',
+				name: 'description',
+				type: 'string',
+				default: '',
+				description: 'Descrição interna da campanha',
+			},
+			{
+				displayName: 'Scheduled At',
+				name: 'scheduledAt',
+				type: 'dateTime',
+				default: '',
+				description: 'Data e hora de envio agendado. Deixe vazio para enviar imediatamente.',
+			},
+		],
 	},
 	{
-		displayName: 'Audience',
-		name: 'audience',
-		type: 'json',
+		displayName: 'Additional Fields',
+		name: 'additionalFields',
+		type: 'collection',
+		placeholder: 'Add Field',
 		displayOptions: {
 			show: {
 				resource: ['campaign'],
-				operation: ['create', 'update'],
+				operation: ['update'],
 			},
 		},
-		default: '[]',
-		description: 'Lista de IDs de contatos ou filtros de audiência',
+		default: {},
+		options: [
+			{
+				displayName: 'Audience',
+				name: 'audience',
+				type: 'json',
+				default: '[]',
+				description: 'Lista de IDs de contatos (ex: [{"type":"contact","id":1}])',
+			},
+			{
+				displayName: 'Description',
+				name: 'description',
+				type: 'string',
+				default: '',
+				description: 'Descrição interna da campanha',
+			},
+			{
+				displayName: 'Message',
+				name: 'message',
+				type: 'string',
+				default: '',
+				description: 'Novo conteúdo da mensagem',
+				typeOptions: { rows: 4 },
+			},
+			{
+				displayName: 'Scheduled At',
+				name: 'scheduledAt',
+				type: 'dateTime',
+				default: '',
+				description: 'Nova data e hora de envio agendado',
+			},
+			{
+				displayName: 'Title',
+				name: 'title',
+				type: 'string',
+				default: '',
+				description: 'Novo título da campanha',
+			},
+		],
 	},
 
 	// Get Many options

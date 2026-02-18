@@ -26,6 +26,7 @@ export const FollowUpOperations: INodeProperties[] = [
 		},
 		options: [
 			{ name: 'Create', value: 'create', action: 'Create a follow-up' },
+			{ name: 'Get', value: 'get', action: 'Get a follow-up' },
 			{ name: 'Get Many', value: 'getAll', action: 'Get many follow-ups' },
 			{ name: 'Update', value: 'update', action: 'Update a follow-up' },
 			{ name: 'Delete', value: 'delete', action: 'Delete a follow-up' },
@@ -49,7 +50,7 @@ export const FollowUpFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['followUp'],
-				operation: ['update', 'delete', 'cancel'],
+				operation: ['get', 'update', 'delete', 'cancel'],
 			},
 		},
 		default: '',
@@ -104,7 +105,7 @@ export const FollowUpFields: INodeProperties[] = [
 	{
 		displayName: 'Due At',
 		name: 'dueAt',
-		type: 'string',
+		type: 'dateTime',
 		required: true,
 		displayOptions: {
 			show: {
@@ -113,7 +114,7 @@ export const FollowUpFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Data e hora de vencimento (ISO 8601)',
+		description: 'Data e hora de vencimento',
 	},
 
 	// Template fields

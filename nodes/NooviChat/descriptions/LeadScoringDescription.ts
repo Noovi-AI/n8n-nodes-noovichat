@@ -26,6 +26,7 @@ export const LeadScoringOperations: INodeProperties[] = [
 		},
 		options: [
 			{ name: 'Create Rule', value: 'createRule', action: 'Create a lead scoring rule' },
+			{ name: 'Get Rule', value: 'getRule', action: 'Get a lead scoring rule' },
 			{ name: 'Get Many Rules', value: 'getAllRules', action: 'Get many lead scoring rules' },
 			{ name: 'Update Rule', value: 'updateRule', action: 'Update a lead scoring rule' },
 			{ name: 'Delete Rule', value: 'deleteRule', action: 'Delete a lead scoring rule' },
@@ -45,7 +46,7 @@ export const LeadScoringFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['leadScoring'],
-				operation: ['updateRule', 'deleteRule'],
+				operation: ['getRule', 'updateRule', 'deleteRule'],
 			},
 		},
 		default: '',

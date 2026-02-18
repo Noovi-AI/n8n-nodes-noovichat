@@ -92,63 +92,99 @@ export const ActivityFields: INodeProperties[] = [
 		description: 'Tipo da atividade',
 	},
 	{
-		displayName: 'Description',
-		name: 'description',
-		type: 'string',
-		displayOptions: {
-			show: {
-				resource: ['activity'],
-				operation: ['create', 'update'],
-			},
-		},
-		default: '',
-		description: 'Descrição da atividade',
-	},
-	{
-		displayName: 'Due At',
-		name: 'dueAt',
-		type: 'string',
-		displayOptions: {
-			show: {
-				resource: ['activity'],
-				operation: ['create', 'update'],
-			},
-		},
-		default: '',
-		description: 'Data e hora de vencimento (ISO 8601)',
-	},
-	{
-		displayName: 'Assignee ID',
-		name: 'assigneeId',
-		type: 'number',
-		displayOptions: {
-			show: {
-				resource: ['activity'],
-				operation: ['create', 'update'],
-			},
-		},
-		default: 0,
-		description: 'ID do responsável',
-	},
-	{
-		displayName: 'Deal ID',
-		name: 'dealId',
-		type: 'string',
+		displayName: 'Additional Fields',
+		name: 'additionalFields',
+		type: 'collection',
+		placeholder: 'Add Field',
 		displayOptions: {
 			show: {
 				resource: ['activity'],
 				operation: ['create'],
 			},
 		},
-		default: '',
-		description: 'ID do deal associado',
+		default: {},
+		options: [
+			{
+				displayName: 'Assignee ID',
+				name: 'assigneeId',
+				type: 'number',
+				default: 0,
+				description: 'ID do agente responsável',
+			},
+			{
+				displayName: 'Deal ID',
+				name: 'dealId',
+				type: 'string',
+				default: '',
+				description: 'ID do deal ao qual a atividade pertence',
+			},
+			{
+				displayName: 'Description',
+				name: 'description',
+				type: 'string',
+				default: '',
+				description: 'Descrição detalhada da atividade',
+				typeOptions: { rows: 3 },
+			},
+			{
+				displayName: 'Due At',
+				name: 'dueAt',
+				type: 'dateTime',
+				default: '',
+				description: 'Data e hora de vencimento',
+			},
+		],
+	},
+	{
+		displayName: 'Additional Fields',
+		name: 'additionalFields',
+		type: 'collection',
+		placeholder: 'Add Field',
+		displayOptions: {
+			show: {
+				resource: ['activity'],
+				operation: ['update'],
+			},
+		},
+		default: {},
+		options: [
+			{
+				displayName: 'Assignee ID',
+				name: 'assigneeId',
+				type: 'number',
+				default: 0,
+				description: 'ID do agente responsável',
+			},
+			{
+				displayName: 'Description',
+				name: 'description',
+				type: 'string',
+				default: '',
+				description: 'Descrição detalhada da atividade',
+				typeOptions: { rows: 3 },
+			},
+			{
+				displayName: 'Due At',
+				name: 'dueAt',
+				type: 'dateTime',
+				default: '',
+				description: 'Data e hora de vencimento',
+			},
+			{
+				displayName: 'Title',
+				name: 'title',
+				type: 'string',
+				default: '',
+				description: 'Novo título da atividade',
+			},
+		],
 	},
 
 	// Analytics
 	{
 		displayName: 'Start Date',
 		name: 'startDate',
-		type: 'string',
+		type: 'dateTime',
 		displayOptions: {
 			show: {
 				resource: ['activity'],
@@ -156,12 +192,12 @@ export const ActivityFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Data inicial (YYYY-MM-DD)',
+		description: 'Data inicial do período de análise',
 	},
 	{
 		displayName: 'End Date',
 		name: 'endDate',
-		type: 'string',
+		type: 'dateTime',
 		displayOptions: {
 			show: {
 				resource: ['activity'],
@@ -169,7 +205,7 @@ export const ActivityFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Data final (YYYY-MM-DD)',
+		description: 'Data final do período de análise',
 	},
 
 	// Get Many options

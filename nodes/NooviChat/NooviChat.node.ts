@@ -718,9 +718,9 @@ async function handlePipelineOperation(this: IExecuteFunctions, operation: strin
 		case 'deleteStage':
 			return await nooviChatApiRequest.call(this, 'DELETE', `/pipelines/stages/${stageId}`);
 		case 'reorderStages': {
-			const stageOrder = this.getNodeParameter('stageOrder', index) as string;
+			const stageOrderValues = this.getNodeParameter('stageOrder.values', index, []) as Array<{ id: string }>;
 			return await nooviChatApiRequest.call(this, 'PATCH', `/pipelines/${pipelineId}/stages/reorder`, {
-				stage_ids: stageOrder.split(',').map(id => parseInt(id.trim())),
+				stage_ids: stageOrderValues.map(s => parseInt(s.id)),
 			});
 		}
 		case 'getAnalyticsDashboard': {
@@ -751,8 +751,8 @@ async function handlePipelineOperation(this: IExecuteFunctions, operation: strin
 			const qs: any = {};
 			if (startDate) qs.start_date = startDate;
 			if (endDate) qs.end_date = endDate;
-			const agentIds = this.getNodeParameter('agentIds', index, '') as string;
-			if (agentIds) qs.agent_ids = agentIds;
+			const agentIdValues = this.getNodeParameter('agentIds.values', index, []) as Array<{ id: string }>;
+			if (agentIdValues.length > 0) qs.agent_ids = agentIdValues.map(a => a.id).join(',');
 			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/analytics/team_pipeline', {}, qs);
 		}
 		case 'getLostReasons':
@@ -773,15 +773,12 @@ async function handleDealOperation(this: IExecuteFunctions, operation: string, i
 			const title = this.getNodeParameter('title', index) as string;
 			const pipelineId = this.getNodeParameter('pipelineId', index) as string;
 			const stageId = this.getNodeParameter('stageId', index) as string;
-			const contactId = this.getNodeParameter('contactId', index, '') as string;
-			const value = this.getNodeParameter('value', index, 0) as number;
-			const expectedCloseDate = this.getNodeParameter('expectedCloseDate', index, '') as string;
-			const assigneeId = this.getNodeParameter('assigneeId', index, 0) as number;
+			const af = this.getNodeParameter('additionalFields', index, {}) as any;
 			const body: any = { title, pipeline_id: pipelineId, stage_id: stageId };
-			if (contactId) body.contact_id = contactId;
-			if (value) body.value = value;
-			if (expectedCloseDate) body.expected_close_date = expectedCloseDate;
-			if (assigneeId) body.assignee_id = assigneeId;
+			if (af.contactId) body.contact_id = af.contactId;
+			if (af.value) body.value = af.value;
+			if (af.expectedCloseDate) body.expected_close_date = af.expectedCloseDate;
+			if (af.assigneeId) body.assignee_id = af.assigneeId;
 			return await nooviChatApiRequest.call(this, 'POST', '/pipeline_cards', body);
 		}
 		case 'get':
@@ -800,15 +797,12 @@ async function handleDealOperation(this: IExecuteFunctions, operation: string, i
 			return await nooviChatApiRequest.call(this, 'GET', '/pipeline_cards', {}, qs);
 		}
 		case 'update': {
-			const title = this.getNodeParameter('title', index, '') as string;
-			const value = this.getNodeParameter('value', index, 0) as number;
-			const expectedCloseDate = this.getNodeParameter('expectedCloseDate', index, '') as string;
-			const assigneeId = this.getNodeParameter('assigneeId', index, 0) as number;
+			const af = this.getNodeParameter('additionalFields', index, {}) as any;
 			const body: any = {};
-			if (title) body.title = title;
-			if (value) body.value = value;
-			if (expectedCloseDate) body.expected_close_date = expectedCloseDate;
-			if (assigneeId) body.assignee_id = assigneeId;
+			if (af.title) body.title = af.title;
+			if (af.value) body.value = af.value;
+			if (af.expectedCloseDate) body.expected_close_date = af.expectedCloseDate;
+			if (af.assigneeId) body.assignee_id = af.assigneeId;
 			return await nooviChatApiRequest.call(this, 'PATCH', `/pipeline_cards/${dealId}`, body);
 		}
 		case 'delete':
@@ -828,20 +822,26 @@ async function handleDealOperation(this: IExecuteFunctions, operation: string, i
 		case 'getTimeline':
 			return await nooviChatApiRequest.call(this, 'GET', `/pipeline/cards/${dealId}/timeline`);
 		case 'bulkUpdate': {
-			const dealIds = this.getNodeParameter('dealIds', index) as string;
+			const dealIdValues = this.getNodeParameter('dealIds.values', index, []) as Array<{ id: string }>;
 			const updateFields = this.getNodeParameter('updateFields', index) as any;
 			const parsed = typeof updateFields === 'string' ? JSON.parse(updateFields) : updateFields;
 			return await nooviChatApiRequest.call(this, 'PATCH', '/pipeline_cards/bulk_update', {
-				card_ids: dealIds.split(',').map(id => parseInt(id.trim())),
+				card_ids: dealIdValues.map(d => parseInt(d.id)),
 				...parsed,
 			});
 		}
 		case 'bulkMove': {
-			const dealIds = this.getNodeParameter('dealIds', index) as string;
+			const dealIdValues = this.getNodeParameter('dealIds.values', index, []) as Array<{ id: string }>;
 			const stageId = this.getNodeParameter('stageId', index) as string;
 			return await nooviChatApiRequest.call(this, 'POST', '/pipeline_cards/bulk_move', {
-				card_ids: dealIds.split(',').map(id => parseInt(id.trim())),
+				card_ids: dealIdValues.map(d => parseInt(d.id)),
 				stage_id: stageId,
+			});
+		}
+		case 'bulkDelete': {
+			const dealIdValues = this.getNodeParameter('dealIds.values', index, []) as Array<{ id: string }>;
+			return await nooviChatApiRequest.call(this, 'DELETE', '/pipeline_cards/bulk_delete', {
+				card_ids: dealIdValues.map(d => parseInt(d.id)),
 			});
 		}
 		case 'getLeadScore':
@@ -896,6 +896,8 @@ async function handleFollowUpOperation(this: IExecuteFunctions, operation: strin
 		}
 		case 'delete':
 			return await nooviChatApiRequest.call(this, 'DELETE', `/follow-ups/${followUpId}`);
+		case 'get':
+			return await nooviChatApiRequest.call(this, 'GET', `/follow-ups/${followUpId}`);
 		case 'cancel':
 			return await nooviChatApiRequest.call(this, 'POST', `/follow-ups/${followUpId}/cancel`);
 		case 'createTemplate': {
@@ -936,15 +938,12 @@ async function handleActivityOperation(this: IExecuteFunctions, operation: strin
 		case 'create': {
 			const title = this.getNodeParameter('title', index) as string;
 			const activityType = this.getNodeParameter('activityType', index) as string;
-			const description = this.getNodeParameter('description', index, '') as string;
-			const dueAt = this.getNodeParameter('dueAt', index, '') as string;
-			const assigneeId = this.getNodeParameter('assigneeId', index, 0) as number;
-			const dealId = this.getNodeParameter('dealId', index, '') as string;
+			const af = this.getNodeParameter('additionalFields', index, {}) as any;
 			const body: any = { title, type: activityType };
-			if (description) body.description = description;
-			if (dueAt) body.due_at = dueAt;
-			if (assigneeId) body.assignee_id = assigneeId;
-			if (dealId) body.deal_id = dealId;
+			if (af.description) body.description = af.description;
+			if (af.dueAt) body.due_at = af.dueAt;
+			if (af.assigneeId) body.assignee_id = af.assigneeId;
+			if (af.dealId) body.deal_id = af.dealId;
 			return await nooviChatApiRequest.call(this, 'POST', '/pipeline/activities', body);
 		}
 		case 'get':
@@ -956,15 +955,12 @@ async function handleActivityOperation(this: IExecuteFunctions, operation: strin
 			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/activities', {}, { per_page: limit });
 		}
 		case 'update': {
-			const title = this.getNodeParameter('title', index, '') as string;
-			const description = this.getNodeParameter('description', index, '') as string;
-			const dueAt = this.getNodeParameter('dueAt', index, '') as string;
-			const assigneeId = this.getNodeParameter('assigneeId', index, 0) as number;
+			const af = this.getNodeParameter('additionalFields', index, {}) as any;
 			const body: any = {};
-			if (title) body.title = title;
-			if (description) body.description = description;
-			if (dueAt) body.due_at = dueAt;
-			if (assigneeId) body.assignee_id = assigneeId;
+			if (af.title) body.title = af.title;
+			if (af.description) body.description = af.description;
+			if (af.dueAt) body.due_at = af.dueAt;
+			if (af.assigneeId) body.assignee_id = af.assigneeId;
 			return await nooviChatApiRequest.call(this, 'PATCH', `/pipeline/activities/${activityId}`, body);
 		}
 		case 'delete':
@@ -1030,6 +1026,8 @@ async function handleLeadScoringOperation(this: IExecuteFunctions, operation: st
 		}
 		case 'deleteRule':
 			return await nooviChatApiRequest.call(this, 'DELETE', `/lead_score_rules/${ruleId}`);
+		case 'getRule':
+			return await nooviChatApiRequest.call(this, 'GET', `/lead_score_rules/${ruleId}`);
 		case 'createDefaultRules':
 			return await nooviChatApiRequest.call(this, 'POST', '/lead_score_rules/create_defaults');
 		case 'getDashboard':
@@ -1048,22 +1046,15 @@ async function handleCampaignOperation(this: IExecuteFunctions, operation: strin
 	switch (operation) {
 		case 'create': {
 			const title = this.getNodeParameter('title', index) as string;
-			const description = this.getNodeParameter('description', index, '') as string;
 			const campaignType = this.getNodeParameter('campaignType', index) as string;
 			const inboxId = this.getNodeParameter('inboxId', index) as number;
 			const message = this.getNodeParameter('message', index) as string;
-			const scheduledAt = this.getNodeParameter('scheduledAt', index, '') as string;
-			const audience = this.getNodeParameter('audience', index) as any;
-			const body: any = {
-				title,
-				description,
-				type: campaignType,
-				inbox_id: inboxId,
-				message,
-			};
-			if (scheduledAt) body.scheduled_at = scheduledAt;
-			if (audience) {
-				body.audience = typeof audience === 'string' ? JSON.parse(audience) : audience;
+			const af = this.getNodeParameter('additionalFields', index, {}) as any;
+			const body: any = { title, type: campaignType, inbox_id: inboxId, message };
+			if (af.description) body.description = af.description;
+			if (af.scheduledAt) body.scheduled_at = af.scheduledAt;
+			if (af.audience) {
+				body.audience = typeof af.audience === 'string' ? JSON.parse(af.audience) : af.audience;
 			}
 			return await nooviChatApiRequest.call(this, 'POST', '/campaigns', body);
 		}
@@ -1076,23 +1067,23 @@ async function handleCampaignOperation(this: IExecuteFunctions, operation: strin
 			return await nooviChatApiRequest.call(this, 'GET', '/campaigns', {}, { per_page: limit });
 		}
 		case 'update': {
-			const title = this.getNodeParameter('title', index, '') as string;
-			const description = this.getNodeParameter('description', index, '') as string;
-			const message = this.getNodeParameter('message', index, '') as string;
-			const scheduledAt = this.getNodeParameter('scheduledAt', index, '') as string;
-			const audience = this.getNodeParameter('audience', index, '') as any;
+			const af = this.getNodeParameter('additionalFields', index, {}) as any;
 			const body: any = {};
-			if (title) body.title = title;
-			if (description) body.description = description;
-			if (message) body.message = message;
-			if (scheduledAt) body.scheduled_at = scheduledAt;
-			if (audience) {
-				body.audience = typeof audience === 'string' ? JSON.parse(audience) : audience;
+			if (af.title) body.title = af.title;
+			if (af.description) body.description = af.description;
+			if (af.message) body.message = af.message;
+			if (af.scheduledAt) body.scheduled_at = af.scheduledAt;
+			if (af.audience) {
+				body.audience = typeof af.audience === 'string' ? JSON.parse(af.audience) : af.audience;
 			}
 			return await nooviChatApiRequest.call(this, 'PATCH', `/campaigns/${campaignId}`, body);
 		}
 		case 'delete':
 			return await nooviChatApiRequest.call(this, 'DELETE', `/campaigns/${campaignId}`);
+		case 'pause':
+			return await nooviChatApiRequest.call(this, 'POST', `/campaigns/${campaignId}/pause`);
+		case 'resume':
+			return await nooviChatApiRequest.call(this, 'POST', `/campaigns/${campaignId}/resume`);
 		default:
 			throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`);
 	}
@@ -1111,13 +1102,13 @@ async function handleSlaOperation(this: IExecuteFunctions, operation: string, in
 			const policyName = this.getNodeParameter('policyName', index) as string;
 			const firstResponseTime = this.getNodeParameter('firstResponseTime', index) as number;
 			const resolutionTime = this.getNodeParameter('resolutionTime', index, 0) as number;
-			const inboxIds = this.getNodeParameter('inboxIds', index, '') as string;
+			const inboxIdValues = this.getNodeParameter('inboxIds.values', index, []) as Array<{ id: number }>;
 			const body: any = {
 				name: policyName,
 				first_response_time: firstResponseTime,
 			};
 			if (resolutionTime) body.resolution_time = resolutionTime;
-			if (inboxIds) body.inbox_ids = inboxIds.split(',').map(id => parseInt(id.trim()));
+			if (inboxIdValues.length > 0) body.inbox_ids = inboxIdValues.map(v => v.id);
 			return await nooviChatApiRequest.call(this, 'POST', '/sla_policies', body);
 		}
 		case 'getPolicy':
@@ -1132,12 +1123,12 @@ async function handleSlaOperation(this: IExecuteFunctions, operation: string, in
 			const policyName = this.getNodeParameter('policyName', index, '') as string;
 			const firstResponseTime = this.getNodeParameter('firstResponseTime', index, 0) as number;
 			const resolutionTime = this.getNodeParameter('resolutionTime', index, 0) as number;
-			const inboxIds = this.getNodeParameter('inboxIds', index, '') as string;
+			const inboxIdValues = this.getNodeParameter('inboxIds.values', index, []) as Array<{ id: number }>;
 			const body: any = {};
 			if (policyName) body.name = policyName;
 			if (firstResponseTime) body.first_response_time = firstResponseTime;
 			if (resolutionTime) body.resolution_time = resolutionTime;
-			if (inboxIds) body.inbox_ids = inboxIds.split(',').map(id => parseInt(id.trim()));
+			if (inboxIdValues.length > 0) body.inbox_ids = inboxIdValues.map(v => v.id);
 			return await nooviChatApiRequest.call(this, 'PATCH', `/sla_policies/${policyId}`, body);
 		}
 		case 'deletePolicy':
