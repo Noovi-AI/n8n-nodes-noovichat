@@ -278,7 +278,7 @@ describe('NooviChat Node — execute', () => {
 		);
 	});
 
-	it('should send stage_id as integer on deal.bulkMove', async () => {
+	it('should call move_to_stage individually for each card on bulkMove', async () => {
 		const ctx = buildContext('card', 'bulkMove', {
 			'cardIds.values': [{ id: '1' }, { id: '2' }],
 			stageId: '99',
@@ -286,7 +286,16 @@ describe('NooviChat Node — execute', () => {
 		await node.execute.call(ctx);
 		expect(ctx._mockRequest).toHaveBeenCalledWith(
 			expect.objectContaining({
-				body: expect.objectContaining({ stage_id: 99, card_ids: [1, 2] }),
+				method: 'POST',
+				uri: expect.stringContaining('/pipeline_cards/1/move_to_stage'),
+				body: expect.objectContaining({ pipeline_stage: '99' }),
+			}),
+		);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'POST',
+				uri: expect.stringContaining('/pipeline_cards/2/move_to_stage'),
+				body: expect.objectContaining({ pipeline_stage: '99' }),
 			}),
 		);
 	});

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.7] - 2026-02-18
+
+### Fixed
+- **Follow-up member operations** (`get`, `update`, `delete`, `cancel`) now use conversation-scoped URLs (`/conversations/:id/follow-ups/:id`) — account-level member endpoints do not exist in the API
+- Added required `Conversation ID` field to follow-up `get`, `update`, `delete`, `cancel` operations in the UI
+- **Bulk card operations** (`bulkUpdate`, `bulkMove`, `bulkDelete`) rewritten as loops over individual API calls — bulk endpoints do not exist in the NooviChat API
+- **Message `content_type`** options corrected to the actual Chatwoot enum values: `text`, `input_text`, `input_textarea`, `input_email`, `input_select`, `cards`, `form`, `article` (were incorrectly set to attachment file types)
+- `ActivityDescription`: field name `dealId` → `cardId` to match handler (card_id was never sent to the API)
+- `AgentDescription`: removed `availability` from the `create` operation (API does not accept it at agent creation)
+
 ## [0.3.6] - 2026-02-18
 
 ### Changed

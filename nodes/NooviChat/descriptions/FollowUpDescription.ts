@@ -43,6 +43,20 @@ export const FollowUpOperations: INodeProperties[] = [
 
 export const FollowUpFields: INodeProperties[] = [
 	{
+		displayName: 'Conversation ID',
+		name: 'conversationId',
+		type: 'string',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['followUp'],
+				operation: ['get', 'update', 'delete', 'cancel'],
+			},
+		},
+		default: '',
+		description: 'ID of the conversation this follow-up belongs to',
+	},
+	{
 		displayName: 'Follow-up ID',
 		name: 'followUpId',
 		type: 'string',

@@ -829,24 +829,31 @@ async function handleCardOperation(this: IExecuteFunctions, operation: string, i
 			const cardIdValues = this.getNodeParameter('cardIds.values', index, []) as Array<{ id: string }>;
 			const updateFields = this.getNodeParameter('updateFields', index) as any;
 			const parsed = parseJsonValue(updateFields);
-			return await nooviChatApiRequest.call(this, 'PATCH', '/pipeline_cards/bulk_update', {
-				card_ids: cardIdValues.map(d => parseInt(d.id, 10)),
-				...parsed,
-			});
+			const results = [];
+			for (const card of cardIdValues) {
+				const result = await nooviChatApiRequest.call(this, 'PATCH', `/pipeline_cards/${card.id}`, parsed);
+				results.push(result);
+			}
+			return results;
 		}
 		case 'bulkMove': {
 			const cardIdValues = this.getNodeParameter('cardIds.values', index, []) as Array<{ id: string }>;
 			const stageId = this.getNodeParameter('stageId', index) as string;
-			return await nooviChatApiRequest.call(this, 'POST', '/pipeline_cards/bulk_move', {
-				card_ids: cardIdValues.map(d => parseInt(d.id, 10)),
-				stage_id: parseInt(stageId, 10),
-			});
+			const results = [];
+			for (const card of cardIdValues) {
+				const result = await nooviChatApiRequest.call(this, 'POST', `/pipeline_cards/${card.id}/move_to_stage`, { pipeline_stage: stageId });
+				results.push(result);
+			}
+			return results;
 		}
 		case 'bulkDelete': {
 			const cardIdValues = this.getNodeParameter('cardIds.values', index, []) as Array<{ id: string }>;
-			return await nooviChatApiRequest.call(this, 'DELETE', '/pipeline_cards/bulk_delete', {
-				card_ids: cardIdValues.map(d => parseInt(d.id, 10)),
-			});
+			const results = [];
+			for (const card of cardIdValues) {
+				const result = await nooviChatApiRequest.call(this, 'DELETE', `/pipeline_cards/${card.id}`);
+				results.push(result);
+			}
+			return results;
 		}
 		case 'getLeadScore':
 			return await nooviChatApiRequest.call(this, 'GET', `/pipeline_cards/${cardId}`);
@@ -896,14 +903,14 @@ async function handleFollowUpOperation(this: IExecuteFunctions, operation: strin
 			if (title) body.title = title;
 			if (description) body.description = description;
 			if (dueAt) body.due_at = dueAt;
-			return await nooviChatApiRequest.call(this, 'PATCH', `/follow-ups/${followUpId}`, body);
+			return await nooviChatApiRequest.call(this, 'PATCH', `/conversations/${conversationId}/follow-ups/${followUpId}`, body);
 		}
 		case 'delete':
-			return await nooviChatApiRequest.call(this, 'DELETE', `/follow-ups/${followUpId}`);
+			return await nooviChatApiRequest.call(this, 'DELETE', `/conversations/${conversationId}/follow-ups/${followUpId}`);
 		case 'get':
-			return await nooviChatApiRequest.call(this, 'GET', `/follow-ups/${followUpId}`);
+			return await nooviChatApiRequest.call(this, 'GET', `/conversations/${conversationId}/follow-ups/${followUpId}`);
 		case 'cancel':
-			return await nooviChatApiRequest.call(this, 'POST', `/follow-ups/${followUpId}/cancel`);
+			return await nooviChatApiRequest.call(this, 'POST', `/conversations/${conversationId}/follow-ups/${followUpId}/cancel`);
 		case 'createTemplate': {
 			const templateName = this.getNodeParameter('templateName', index) as string;
 			const templateContent = this.getNodeParameter('templateContent', index) as string;
