@@ -1,19 +1,19 @@
 import { INodeProperties } from 'n8n-workflow';
 
-export const DealResource: INodeProperties[] = [
+export const CardResource: INodeProperties[] = [
 	{
 		displayName: 'Resource',
 		name: 'resource',
 		type: 'options',
 		noDataExpression: true,
 		options: [
-			{ name: 'Deal', value: 'deal' },
+			{ name: 'Card', value: 'card' },
 		],
-		default: 'deal',
+		default: 'card',
 	},
 ];
 
-export const DealOperations: INodeProperties[] = [
+export const CardOperations: INodeProperties[] = [
 	{
 		displayName: 'Operation',
 		name: 'operation',
@@ -21,48 +21,48 @@ export const DealOperations: INodeProperties[] = [
 		noDataExpression: true,
 		displayOptions: {
 			show: {
-				resource: ['deal'],
+				resource: ['card'],
 			},
 		},
 		options: [
-			{ name: 'Create', value: 'create', action: 'Create a deal' },
-			{ name: 'Get', value: 'get', action: 'Get a deal' },
-			{ name: 'Get Many', value: 'getAll', action: 'Get many deals' },
-			{ name: 'Update', value: 'update', action: 'Update a deal' },
-			{ name: 'Delete', value: 'delete', action: 'Delete a deal' },
-			{ name: 'Move to Stage', value: 'moveToStage', action: 'Move deal to stage' },
-			{ name: 'Mark Won', value: 'markWon', action: 'Mark deal as won' },
-			{ name: 'Mark Lost', value: 'markLost', action: 'Mark deal as lost' },
-			{ name: 'Reopen', value: 'reopen', action: 'Reopen deal' },
-			{ name: 'Get Timeline', value: 'getTimeline', action: 'Get deal timeline' },
-			{ name: 'Bulk Update', value: 'bulkUpdate', action: 'Bulk update deals' },
-			{ name: 'Bulk Move', value: 'bulkMove', action: 'Bulk move deals to stage' },
-			{ name: 'Bulk Delete', value: 'bulkDelete', action: 'Bulk delete deals' },
-			{ name: 'Get Lead Score', value: 'getLeadScore', action: 'Get deal lead score' },
+			{ name: 'Create', value: 'create', action: 'Create a card' },
+			{ name: 'Get', value: 'get', action: 'Get a card' },
+			{ name: 'Get Many', value: 'getAll', action: 'Get many cards' },
+			{ name: 'Update', value: 'update', action: 'Update a card' },
+			{ name: 'Delete', value: 'delete', action: 'Delete a card' },
+			{ name: 'Move to Stage', value: 'moveToStage', action: 'Move card to stage' },
+			{ name: 'Mark Won', value: 'markWon', action: 'Mark card as won' },
+			{ name: 'Mark Lost', value: 'markLost', action: 'Mark card as lost' },
+			{ name: 'Reopen', value: 'reopen', action: 'Reopen card' },
+			{ name: 'Get Timeline', value: 'getTimeline', action: 'Get card timeline' },
+			{ name: 'Bulk Update', value: 'bulkUpdate', action: 'Bulk update cards' },
+			{ name: 'Bulk Move', value: 'bulkMove', action: 'Bulk move cards to stage' },
+			{ name: 'Bulk Delete', value: 'bulkDelete', action: 'Bulk delete cards' },
+			{ name: 'Get Lead Score', value: 'getLeadScore', action: 'Get card lead score' },
 			{ name: 'Recalculate Lead Score', value: 'recalculateLeadScore', action: 'Recalculate lead score' },
 		],
 		default: 'getAll',
 	},
 ];
 
-export const DealFields: INodeProperties[] = [
+export const CardFields: INodeProperties[] = [
 	{
-		displayName: 'Deal ID',
-		name: 'dealId',
+		displayName: 'Card ID',
+		name: 'cardId',
 		type: 'string',
 		required: true,
 		displayOptions: {
 			show: {
-				resource: ['deal'],
+				resource: ['card'],
 				operation: ['get', 'update', 'delete', 'moveToStage', 'markWon', 'markLost', 'reopen', 'getTimeline', 'getLeadScore', 'recalculateLeadScore'],
 			},
 		},
 		default: '',
 		placeholder: 'e.g., abc-123',
-		description: 'Deal ID',
+		description: 'ID of the card',
 	},
 
-	// Create deal fields
+	// Create card fields
 	{
 		displayName: 'Title',
 		name: 'title',
@@ -70,13 +70,13 @@ export const DealFields: INodeProperties[] = [
 		required: true,
 		displayOptions: {
 			show: {
-				resource: ['deal'],
+				resource: ['card'],
 				operation: ['create'],
 			},
 		},
 		default: '',
 		placeholder: 'e.g., Q1 Sales Campaign',
-		description: 'Title of the deal',
+		description: 'Title of the card',
 	},
 	{
 		displayName: 'Pipeline ID',
@@ -85,13 +85,13 @@ export const DealFields: INodeProperties[] = [
 		required: true,
 		displayOptions: {
 			show: {
-				resource: ['deal'],
+				resource: ['card'],
 				operation: ['create'],
 			},
 		},
 		default: '',
 		placeholder: 'e.g., 1',
-		description: 'Pipeline ID',
+		description: 'ID of the pipeline',
 	},
 	{
 		displayName: 'Stage ID',
@@ -100,13 +100,13 @@ export const DealFields: INodeProperties[] = [
 		required: true,
 		displayOptions: {
 			show: {
-				resource: ['deal'],
+				resource: ['card'],
 				operation: ['create', 'moveToStage'],
 			},
 		},
 		default: '',
 		placeholder: 'e.g., 5',
-		description: 'Stage ID',
+		description: 'ID of the stage',
 	},
 	{
 		displayName: 'Additional Fields',
@@ -115,7 +115,7 @@ export const DealFields: INodeProperties[] = [
 		placeholder: 'Add Field',
 		displayOptions: {
 			show: {
-				resource: ['deal'],
+				resource: ['card'],
 				operation: ['create'],
 			},
 		},
@@ -134,7 +134,7 @@ export const DealFields: INodeProperties[] = [
 				type: 'string',
 				default: '',
 				placeholder: 'e.g., abc-123',
-				description: 'ID of the contact associated with this deal',
+				description: 'ID of the contact associated with this card',
 			},
 			{
 				displayName: 'Expected Close Date',
@@ -149,7 +149,7 @@ export const DealFields: INodeProperties[] = [
 				type: 'number',
 				default: 0,
 				typeOptions: { minValue: 0, numberPrecision: 2 },
-				description: 'Monetary value of the deal',
+				description: 'Monetary value of the card',
 			},
 		],
 	},
@@ -160,7 +160,7 @@ export const DealFields: INodeProperties[] = [
 		placeholder: 'Add Field',
 		displayOptions: {
 			show: {
-				resource: ['deal'],
+				resource: ['card'],
 				operation: ['update'],
 			},
 		},
@@ -186,7 +186,7 @@ export const DealFields: INodeProperties[] = [
 				type: 'string',
 				default: '',
 				placeholder: 'e.g., Q1 Sales Campaign',
-				description: 'New title for the deal',
+				description: 'New title for the card',
 			},
 			{
 				displayName: 'Value (Currency)',
@@ -194,7 +194,7 @@ export const DealFields: INodeProperties[] = [
 				type: 'number',
 				default: 0,
 				typeOptions: { minValue: 0, numberPrecision: 2 },
-				description: 'Monetary value of the deal',
+				description: 'Monetary value of the card',
 			},
 		],
 	},
@@ -206,18 +206,18 @@ export const DealFields: INodeProperties[] = [
 		type: 'string',
 		displayOptions: {
 			show: {
-				resource: ['deal'],
+				resource: ['card'],
 				operation: ['markLost'],
 			},
 		},
 		default: '',
-		description: 'Reason for losing the deal',
+		description: 'Reason for losing the card',
 	},
 
 	// Bulk operations
 	{
-		displayName: 'Deal IDs',
-		name: 'dealIds',
+		displayName: 'Card IDs',
+		name: 'cardIds',
 		type: 'fixedCollection',
 		typeOptions: {
 			multipleValues: true,
@@ -226,25 +226,25 @@ export const DealFields: INodeProperties[] = [
 		required: true,
 		displayOptions: {
 			show: {
-				resource: ['deal'],
+				resource: ['card'],
 				operation: ['bulkUpdate', 'bulkMove', 'bulkDelete'],
 			},
 		},
 		default: { values: [{ id: '' }] },
-		description: 'Deals to process',
+		description: 'Cards to process',
 		options: [
 			{
 				name: 'values',
-				displayName: 'Deal',
+				displayName: 'Card',
 				values: [
 					{
-						displayName: 'Deal ID',
+						displayName: 'Card ID',
 						name: 'id',
 						type: 'string',
 						required: true,
 						default: '',
 						placeholder: 'e.g., abc-123',
-						description: 'Deal ID',
+						description: 'ID of the card',
 					},
 				],
 			},
@@ -257,7 +257,7 @@ export const DealFields: INodeProperties[] = [
 		required: true,
 		displayOptions: {
 			show: {
-				resource: ['deal'],
+				resource: ['card'],
 				operation: ['bulkUpdate'],
 			},
 		},
@@ -273,7 +273,7 @@ export const DealFields: INodeProperties[] = [
 		type: 'boolean',
 		displayOptions: {
 			show: {
-				resource: ['deal'],
+				resource: ['card'],
 				operation: ['getAll'],
 			},
 		},
@@ -287,7 +287,7 @@ export const DealFields: INodeProperties[] = [
 		typeOptions: { minValue: 1, maxValue: 100 },
 		displayOptions: {
 			show: {
-				resource: ['deal'],
+				resource: ['card'],
 				operation: ['getAll'],
 				returnAll: [false],
 			},
@@ -302,7 +302,7 @@ export const DealFields: INodeProperties[] = [
 		placeholder: 'Add Filter',
 		displayOptions: {
 			show: {
-				resource: ['deal'],
+				resource: ['card'],
 				operation: ['getAll'],
 			},
 		},
@@ -333,9 +333,9 @@ export const DealFields: INodeProperties[] = [
 				name: 'status',
 				type: 'options',
 				options: [
-					{ name: 'Open', value: 'open', description: 'Active deals in progress' },
-					{ name: 'Won', value: 'won', description: 'Deals successfully closed' },
-					{ name: 'Lost', value: 'lost', description: 'Deals that were not won' },
+					{ name: 'Open', value: 'open', description: 'Active cards in progress' },
+					{ name: 'Won', value: 'won', description: 'Cards successfully closed' },
+					{ name: 'Lost', value: 'lost', description: 'Cards that were not won' },
 				],
 				default: 'open',
 			},

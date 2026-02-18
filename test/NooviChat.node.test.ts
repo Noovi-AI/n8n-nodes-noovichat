@@ -39,7 +39,7 @@ describe('NooviChat Node — description', () => {
 		const expectedResources = [
 			'conversation', 'message', 'contact', 'inbox', 'agent',
 			'team', 'label', 'cannedResponse', 'customAttribute', 'webhook',
-			'pipeline', 'deal', 'followUp', 'activity', 'leadScoring',
+			'pipeline', 'card', 'followUp', 'activity', 'leadScoring',
 			'campaign', 'sla', 'waha',
 		];
 
@@ -130,7 +130,7 @@ describe('NooviChat Node — execute', () => {
 	});
 
 	it('should call GET /pipeline_cards on deal.getAll', async () => {
-		const ctx = buildContext('deal', 'getAll', { filters: {} });
+		const ctx = buildContext('card', 'getAll', { filters: {} });
 		await node.execute.call(ctx);
 
 		expect(ctx._mockRequest).toHaveBeenCalledWith(
@@ -250,7 +250,7 @@ describe('NooviChat Node — execute', () => {
 
 	// --- Deal ---
 	it('should call POST /pipeline_cards on deal.create', async () => {
-		const ctx = buildContext('deal', 'create', {
+		const ctx = buildContext('card', 'create', {
 			title: 'New deal',
 			pipelineId: 'p1',
 			stageId: 's1',
@@ -263,7 +263,7 @@ describe('NooviChat Node — execute', () => {
 	});
 
 	it('should call PATCH /pipeline_cards/:id on deal.update', async () => {
-		const ctx = buildContext('deal', 'update', { dealId: 'abc', additionalFields: { title: 'Updated' } });
+		const ctx = buildContext('card', 'update', { cardId: 'abc', additionalFields: { title: 'Updated' } });
 		await node.execute.call(ctx);
 		expect(ctx._mockRequest).toHaveBeenCalledWith(
 			expect.objectContaining({ method: 'PATCH', uri: expect.stringContaining('/pipeline_cards/abc') }),
@@ -271,7 +271,7 @@ describe('NooviChat Node — execute', () => {
 	});
 
 	it('should call DELETE /pipeline_cards/:id on deal.delete', async () => {
-		const ctx = buildContext('deal', 'delete', { dealId: 'abc' });
+		const ctx = buildContext('card', 'delete', { cardId: 'abc' });
 		await node.execute.call(ctx);
 		expect(ctx._mockRequest).toHaveBeenCalledWith(
 			expect.objectContaining({ method: 'DELETE', uri: expect.stringContaining('/pipeline_cards/abc') }),
@@ -279,8 +279,8 @@ describe('NooviChat Node — execute', () => {
 	});
 
 	it('should send stage_id as integer on deal.bulkMove', async () => {
-		const ctx = buildContext('deal', 'bulkMove', {
-			'dealIds.values': [{ id: '1' }, { id: '2' }],
+		const ctx = buildContext('card', 'bulkMove', {
+			'cardIds.values': [{ id: '1' }, { id: '2' }],
 			stageId: '99',
 		});
 		await node.execute.call(ctx);

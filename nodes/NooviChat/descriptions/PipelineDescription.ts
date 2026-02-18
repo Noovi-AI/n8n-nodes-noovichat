@@ -59,7 +59,7 @@ export const PipelineFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'ID do pipeline',
+		description: 'ID of the pipeline',
 	},
 
 	// Create pipeline fields
@@ -75,7 +75,7 @@ export const PipelineFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Nome do pipeline',
+		description: 'Name of the pipeline',
 	},
 	{
 		displayName: 'Description',
@@ -254,7 +254,7 @@ export const PipelineFields: INodeProperties[] = [
 			},
 		},
 		default: {},
-		description: 'Agentes para filtrar. Deixe vazio para retornar todos.',
+		description: 'Agents to filter by. Leave empty to receive events from all agents.',
 		options: [
 			{
 				name: 'values',
@@ -266,7 +266,7 @@ export const PipelineFields: INodeProperties[] = [
 						type: 'string',
 						required: true,
 						default: '',
-						description: 'ID do agente',
+						description: 'ID of the agent',
 					},
 				],
 			},
@@ -285,7 +285,7 @@ export const PipelineFields: INodeProperties[] = [
 			},
 		},
 		default: false,
-		description: 'Retornar todos os resultados ou limite',
+		description: 'Whether to return all results instead of applying a limit',
 	},
 	{
 		displayName: 'Limit',

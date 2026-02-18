@@ -122,7 +122,7 @@ export const SlaFields: INodeProperties[] = [
 						type: 'number',
 						required: true,
 						default: 0,
-						description: 'ID da inbox',
+						description: 'ID of the inbox',
 					},
 				],
 			},
@@ -169,7 +169,7 @@ export const SlaFields: INodeProperties[] = [
 			},
 		},
 		default: false,
-		description: 'Retornar todos os resultados ou limite',
+		description: 'Whether to return all results instead of applying a limit',
 	},
 	{
 		displayName: 'Limit',

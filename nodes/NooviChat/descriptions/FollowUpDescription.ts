@@ -54,7 +54,7 @@ export const FollowUpFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'ID do follow-up',
+		description: 'ID of the follow-up',
 	},
 
 	// Create follow-up
@@ -70,7 +70,7 @@ export const FollowUpFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'ID da conversa',
+		description: 'ID of the conversation',
 	},
 	{
 		displayName: 'Title',
@@ -114,7 +114,7 @@ export const FollowUpFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Data e hora de vencimento',
+		description: 'Due date and time for the follow-up',
 	},
 
 	// Template fields
@@ -130,7 +130,7 @@ export const FollowUpFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'ID do template',
+		description: 'ID of the template',
 	},
 	{
 		displayName: 'Template Name',
@@ -144,7 +144,7 @@ export const FollowUpFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Nome do template',
+		description: 'Name of the template',
 	},
 	{
 		displayName: 'Template Content',
@@ -176,7 +176,7 @@ export const FollowUpFields: INodeProperties[] = [
 			},
 		},
 		default: false,
-		description: 'Retornar todos os resultados ou limite',
+		description: 'Whether to return all results instead of applying a limit',
 	},
 	{
 		displayName: 'Limit',

@@ -16,7 +16,7 @@ n8n community node for **[NooviChat](https://nooviai.com)** — the most complet
 | Conversations, Contacts, Messages | ✅ | ✅ |
 | Inboxes, Agents, Teams, Labels | ✅ | ✅ |
 | Canned Responses, Custom Attributes, Webhooks | ✅ | ✅ |
-| **Sales Pipeline & Deals** | ❌ | ✅ |
+| **Sales Pipeline & Cards** | ❌ | ✅ |
 | **Follow-ups & Templates** | ❌ | ✅ |
 | **Lead Scoring** | ❌ | ✅ |
 | **Activities** | ❌ | ✅ |
@@ -24,7 +24,7 @@ n8n community node for **[NooviChat](https://nooviai.com)** — the most complet
 | **SLA Policies & Metrics** | ❌ | ✅ |
 | **WhatsApp/WAHA Session Management** | ❌ | ✅ |
 | **20 webhook trigger events** | ❌ (4–6 events) | ✅ |
-| **Pipeline & Deal webhook events** | ❌ | ✅ |
+| **Pipeline & Card webhook events** | ❌ | ✅ |
 | **Bulk operations (update, move, delete)** | ❌ | ✅ |
 | **Pipeline analytics (win rate, velocity, conversion)** | ❌ | ✅ |
 
@@ -51,16 +51,16 @@ n8n community node for **[NooviChat](https://nooviai.com)** — the most complet
 
 > These resources are **not available in Chatwoot** and are unique to NooviChat. They power a full CRM and sales automation layer on top of the customer engagement platform.
 
-#### 🏆 Sales Pipeline & Deals
-Full CRM pipeline management directly from n8n. Create pipelines, manage stages, move deals through the funnel and track every interaction.
+#### 🏆 Sales Pipeline & Cards
+Full CRM pipeline management directly from n8n. Create pipelines, manage stages, move cards through the funnel and track every interaction.
 
 | Resource | Operations |
 |----------|------------|
 | **Pipeline** | Create, Get, Get Many, Update, Delete · Stage CRUD · Stage Reorder · Analytics: dashboard, win rate, conversion rate, velocity, team performance, lost reasons |
-| **Deal** | Create, Get, Get Many, Update, Delete · Move to Stage · Mark Won / Lost / Reopen · Get Timeline · **Bulk Update · Bulk Move · Bulk Delete** |
+| **Card** | Create, Get, Get Many, Update, Delete · Move to Stage · Mark Won / Lost / Reopen · Get Timeline · **Bulk Update · Bulk Move · Bulk Delete** |
 
 #### 📅 Follow-ups & Activities
-Never miss a follow-up again. Schedule tasks, track activities and automate reminders tied to deals and conversations.
+Never miss a follow-up again. Schedule tasks, track activities and automate reminders tied to cards and conversations.
 
 | Resource | Operations |
 |----------|------------|
@@ -154,11 +154,11 @@ Used only with the **NooviChat Trigger** node to validate incoming webhook signa
 
 ```
 Trigger: NooviChat Trigger — Contact Created
-  → NooviChat — Deal: Create (in "Leads" pipeline)
+  → NooviChat — Card: Create (in "Leads" pipeline)
   → NooviChat — Follow-up: Create (due in 3 days)
-  → NooviChat — Deal: Get Lead Score
+  → NooviChat — Card: Get Lead Score
   → IF score >= 70
-    → NooviChat — Deal: Move to Stage ("Qualified")
+    → NooviChat — Card: Move to Stage ("Qualified")
     → NooviChat — Conversation: Assign (to Sales team)
   → ELSE
     → NooviChat — Conversation: Add Label ("nurturing")
@@ -176,11 +176,11 @@ Trigger: NooviChat Trigger — Follow-up Due
     → NooviChat — Follow-up: Cancel
 ```
 
-### 3. Pipeline + WhatsApp (Deal Won)
+### 3. Pipeline + WhatsApp (Card Won)
 
 ```
-Trigger: NooviChat Trigger — Deal Won
-  → NooviChat — Contact: Get (contact linked to deal)
+Trigger: NooviChat Trigger — Card Won
+  → NooviChat — Contact: Get (contact linked to card)
   → NooviChat — Message: Send ("Congratulations! Your order was confirmed.")
   → NooviChat — Conversation: Add Label ("active-client")
   → NooviChat — Conversation: Toggle Status (resolved)

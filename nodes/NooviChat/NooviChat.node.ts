@@ -20,7 +20,7 @@ import { CannedResponseOperations, CannedResponseFields } from './descriptions/C
 import { CustomAttributeOperations, CustomAttributeFields } from './descriptions/CustomAttributeDescription';
 import { WebhookOperations, WebhookFields } from './descriptions/WebhookDescription';
 import { PipelineOperations, PipelineFields } from './descriptions/PipelineDescription';
-import { DealOperations, DealFields } from './descriptions/DealDescription';
+import { CardOperations, CardFields } from './descriptions/CardDescription';
 import { FollowUpOperations, FollowUpFields } from './descriptions/FollowUpDescription';
 import { ActivityOperations, ActivityFields } from './descriptions/ActivityDescription';
 import { LeadScoringOperations, LeadScoringFields } from './descriptions/LeadScoringDescription';
@@ -77,7 +77,7 @@ export class NooviChat implements INodeType {
 					{ name: 'Custom Attribute', value: 'customAttribute' },
 					{ name: 'Webhook', value: 'webhook' },
 					{ name: 'Pipeline', value: 'pipeline' },
-					{ name: 'Deal', value: 'deal' },
+					{ name: 'Card', value: 'card' },
 					{ name: 'Follow-up', value: 'followUp' },
 					{ name: 'Activity', value: 'activity' },
 					{ name: 'Lead Scoring', value: 'leadScoring' },
@@ -110,8 +110,8 @@ export class NooviChat implements INodeType {
 			...WebhookFields,
 			...PipelineOperations,
 			...PipelineFields,
-			...DealOperations,
-			...DealFields,
+			...CardOperations,
+			...CardFields,
 			...FollowUpOperations,
 			...FollowUpFields,
 			...ActivityOperations,
@@ -171,8 +171,8 @@ export class NooviChat implements INodeType {
 					case 'pipeline':
 						responseData = await handlePipelineOperation.call(this, operation, i);
 						break;
-					case 'deal':
-						responseData = await handleDealOperation.call(this, operation, i);
+					case 'card':
+						responseData = await handleCardOperation.call(this, operation, i);
 						break;
 					case 'followUp':
 						responseData = await handleFollowUpOperation.call(this, operation, i);
@@ -763,9 +763,9 @@ async function handlePipelineOperation(this: IExecuteFunctions, operation: strin
 	}
 }
 
-// Deal handlers
-async function handleDealOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
-	const dealId = this.getNodeParameter('dealId', index, '') as string;
+// Card handlers
+async function handleCardOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	const cardId = this.getNodeParameter('cardId', index, '') as string;
 	const returnAll = this.getNodeParameter('returnAll', index, false) as boolean;
 	const limit = this.getNodeParameter('limit', index, 50) as number;
 
@@ -783,7 +783,7 @@ async function handleDealOperation(this: IExecuteFunctions, operation: string, i
 			return await nooviChatApiRequest.call(this, 'POST', '/pipeline_cards', body);
 		}
 		case 'get':
-			return await nooviChatApiRequest.call(this, 'GET', `/pipeline_cards/${dealId}`);
+			return await nooviChatApiRequest.call(this, 'GET', `/pipeline_cards/${cardId}`);
 		case 'getAll': {
 			const filters = this.getNodeParameter('filters', index, {}) as any;
 			const qs: any = {};
@@ -804,51 +804,51 @@ async function handleDealOperation(this: IExecuteFunctions, operation: string, i
 			if (additionalFields.value) body.value = additionalFields.value;
 			if (additionalFields.expectedCloseDate) body.expected_close_date = additionalFields.expectedCloseDate;
 			if (additionalFields.assigneeId) body.assignee_id = additionalFields.assigneeId;
-			return await nooviChatApiRequest.call(this, 'PATCH', `/pipeline_cards/${dealId}`, body);
+			return await nooviChatApiRequest.call(this, 'PATCH', `/pipeline_cards/${cardId}`, body);
 		}
 		case 'delete':
-			return await nooviChatApiRequest.call(this, 'DELETE', `/pipeline_cards/${dealId}`);
+			return await nooviChatApiRequest.call(this, 'DELETE', `/pipeline_cards/${cardId}`);
 		case 'moveToStage': {
 			const stageId = this.getNodeParameter('stageId', index) as string;
-			return await nooviChatApiRequest.call(this, 'POST', `/pipeline_cards/${dealId}/move_to_stage`, { pipeline_stage: stageId });
+			return await nooviChatApiRequest.call(this, 'POST', `/pipeline_cards/${cardId}/move_to_stage`, { pipeline_stage: stageId });
 		}
 		case 'markWon':
-			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/cards/${dealId}/deal_status/mark_won`);
+			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/cards/${cardId}/deal_status/mark_won`);
 		case 'markLost': {
 			const lostReason = this.getNodeParameter('lostReason', index, '') as string;
-			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/cards/${dealId}/deal_status/mark_lost`, { reason: lostReason });
+			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/cards/${cardId}/deal_status/mark_lost`, { reason: lostReason });
 		}
 		case 'reopen':
-			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/cards/${dealId}/deal_status/reopen`);
+			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/cards/${cardId}/deal_status/reopen`);
 		case 'getTimeline':
-			return await nooviChatApiRequest.call(this, 'GET', `/pipeline/cards/${dealId}/timeline`);
+			return await nooviChatApiRequest.call(this, 'GET', `/pipeline/cards/${cardId}/timeline`);
 		case 'bulkUpdate': {
-			const dealIdValues = this.getNodeParameter('dealIds.values', index, []) as Array<{ id: string }>;
+			const cardIdValues = this.getNodeParameter('cardIds.values', index, []) as Array<{ id: string }>;
 			const updateFields = this.getNodeParameter('updateFields', index) as any;
 			const parsed = parseJsonValue(updateFields);
 			return await nooviChatApiRequest.call(this, 'PATCH', '/pipeline_cards/bulk_update', {
-				card_ids: dealIdValues.map(d => parseInt(d.id, 10)),
+				card_ids: cardIdValues.map(d => parseInt(d.id, 10)),
 				...parsed,
 			});
 		}
 		case 'bulkMove': {
-			const dealIdValues = this.getNodeParameter('dealIds.values', index, []) as Array<{ id: string }>;
+			const cardIdValues = this.getNodeParameter('cardIds.values', index, []) as Array<{ id: string }>;
 			const stageId = this.getNodeParameter('stageId', index) as string;
 			return await nooviChatApiRequest.call(this, 'POST', '/pipeline_cards/bulk_move', {
-				card_ids: dealIdValues.map(d => parseInt(d.id, 10)),
+				card_ids: cardIdValues.map(d => parseInt(d.id, 10)),
 				stage_id: parseInt(stageId, 10),
 			});
 		}
 		case 'bulkDelete': {
-			const dealIdValues = this.getNodeParameter('dealIds.values', index, []) as Array<{ id: string }>;
+			const cardIdValues = this.getNodeParameter('cardIds.values', index, []) as Array<{ id: string }>;
 			return await nooviChatApiRequest.call(this, 'DELETE', '/pipeline_cards/bulk_delete', {
-				card_ids: dealIdValues.map(d => parseInt(d.id, 10)),
+				card_ids: cardIdValues.map(d => parseInt(d.id, 10)),
 			});
 		}
 		case 'getLeadScore':
-			return await nooviChatApiRequest.call(this, 'GET', `/pipeline_cards/${dealId}`);
+			return await nooviChatApiRequest.call(this, 'GET', `/pipeline_cards/${cardId}`);
 		case 'recalculateLeadScore':
-			return await nooviChatApiRequest.call(this, 'POST', `/pipeline_cards/${dealId}/recalculate_score`);
+			return await nooviChatApiRequest.call(this, 'POST', `/pipeline_cards/${cardId}/recalculate_score`);
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
@@ -944,7 +944,7 @@ async function handleActivityOperation(this: IExecuteFunctions, operation: strin
 			if (additionalFields.description) body.description = additionalFields.description;
 			if (additionalFields.dueAt) body.due_at = additionalFields.dueAt;
 			if (additionalFields.assigneeId) body.assignee_id = additionalFields.assigneeId;
-			if (additionalFields.dealId) body.deal_id = additionalFields.dealId;
+			if (additionalFields.cardId) body.card_id = additionalFields.cardId;
 			return await nooviChatApiRequest.call(this, 'POST', '/pipeline/activities', body);
 		}
 		case 'get':

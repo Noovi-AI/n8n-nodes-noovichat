@@ -76,12 +76,12 @@ export class NooviChatTrigger implements INodeType {
 					{ name: 'Contact Updated', value: 'contact_updated', description: 'Contact information was updated' },
 					// Widget events
 					{ name: 'Webwidget Triggered', value: 'webwidget_triggered', description: 'Website widget was triggered by a visitor' },
-					// NooviChat exclusive — Pipeline/Deal events
-					{ name: 'Deal Created', value: 'pipeline_card_created', description: 'A new deal was created in the pipeline' },
-					{ name: 'Deal Lost', value: 'pipeline_card_lost', description: 'Deal was marked as lost' },
-					{ name: 'Deal Stage Changed', value: 'pipeline_card_stage_changed', description: 'Deal was moved to a different stage' },
-					{ name: 'Deal Updated', value: 'pipeline_card_updated', description: 'Deal information was updated' },
-					{ name: 'Deal Won', value: 'pipeline_card_won', description: 'Deal was marked as won' },
+					// NooviChat exclusive — Pipeline/Card events
+					{ name: 'Card Created', value: 'pipeline_card_created', description: 'A new card was created in the pipeline' },
+					{ name: 'Card Lost', value: 'pipeline_card_lost', description: 'Card was marked as lost' },
+					{ name: 'Card Stage Changed', value: 'pipeline_card_stage_changed', description: 'Card was moved to a different stage' },
+					{ name: 'Card Updated', value: 'pipeline_card_updated', description: 'Card information was updated' },
+					{ name: 'Card Won', value: 'pipeline_card_won', description: 'Card was marked as won' },
 					// NooviChat exclusive — Follow-up events
 					{ name: 'Follow-up Due', value: 'follow_up_due', description: 'A follow-up task is due now' },
 					{ name: 'Follow-up Overdue', value: 'follow_up_overdue', description: 'A follow-up task is overdue' },
@@ -120,7 +120,7 @@ export class NooviChatTrigger implements INodeType {
 						name: 'pipelineId',
 						type: 'string',
 						default: '',
-						description: 'Filter deal events by pipeline ID. Leave empty to receive events from all pipelines.',
+						description: 'Filter card events by pipeline ID. Leave empty to receive events from all pipelines.',
 					},
 				],
 			},

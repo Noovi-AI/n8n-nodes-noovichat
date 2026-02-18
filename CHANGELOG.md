@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.6] - 2026-02-18
+
+### Changed
+- **Breaking**: Renamed resource `deal` → `card` throughout (field `dealId` → `cardId`, `dealIds` → `cardIds`, file `DealDescription.ts` → `CardDescription.ts`)
+- Trigger events renamed: "Deal Created/Won/Lost/Updated/Stage Changed" → "Card Created/Won/Lost/Updated/Stage Changed"
+- README updated to reflect Card terminology
+
+### Fixed
+- All remaining Portuguese text in description files (Pipeline, FollowUp, Waha, SLA, CannedResponse)
+
 ## [0.2.0] - 2026-02-18
 
 ### Added

@@ -51,7 +51,7 @@ export const WahaFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'ID da inbox WhatsApp',
+		description: 'ID of the WhatsApp inbox',
 	},
 
 	// Update Config
@@ -82,7 +82,7 @@ export const WahaFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'ID do Meta Pixel',
+		description: 'Meta Pixel ID',
 	},
 	{
 		displayName: 'Access Token',
@@ -98,6 +98,6 @@ export const WahaFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Token de acesso do Meta',
+		description: 'Meta access token',
 	},
 ];
