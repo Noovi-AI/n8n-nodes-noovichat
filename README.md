@@ -3,15 +3,36 @@
 [![npm version](https://badge.fury.io/js/@nooviai%2Fn8n-nodes-noovichat.svg)](https://badge.fury.io/js/@nooviai%2Fn8n-nodes-noovichat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-n8n community node for **NooviChat** — customer engagement, pipeline CRM, lead scoring and WhatsApp integration.
+n8n community node for **[NooviChat](https://nooviai.com)** — the most complete n8n integration for Chatwoot-based platforms, with exclusive CRM, sales pipeline, lead scoring and WhatsApp automation features.
 
-Covers all standard Chatwoot-compatible endpoints **plus** exclusive NooviChat features: Pipeline/CRM, Follow-ups, Lead Scoring, Activities, WAHA, Campaigns and SLA — none of which are available in existing Chatwoot nodes.
+> **Works with Chatwoot too.** This node is fully compatible with standard [Chatwoot](https://www.chatwoot.com) installations. All base resources (Conversations, Contacts, Messages, Inboxes, Agents, Teams, Labels, etc.) work out of the box with any Chatwoot instance. NooviChat is an enhanced fork of Chatwoot — if you use Chatwoot, you get all the base features. If you use NooviChat, you also unlock the exclusive features below.
+
+---
+
+## Why NooviChat instead of other Chatwoot nodes?
+
+| Feature | Other Chatwoot nodes | This node |
+|---------|---------------------|-----------|
+| Conversations, Contacts, Messages | ✅ | ✅ |
+| Inboxes, Agents, Teams, Labels | ✅ | ✅ |
+| Canned Responses, Custom Attributes, Webhooks | ✅ | ✅ |
+| **Sales Pipeline & Deals** | ❌ | ✅ |
+| **Follow-ups & Templates** | ❌ | ✅ |
+| **Lead Scoring** | ❌ | ✅ |
+| **Activities** | ❌ | ✅ |
+| **Campaigns (one-off & ongoing)** | ❌ | ✅ |
+| **SLA Policies & Metrics** | ❌ | ✅ |
+| **WhatsApp/WAHA Session Management** | ❌ | ✅ |
+| **20 webhook trigger events** | ❌ (4–6 events) | ✅ |
+| **Pipeline & Deal webhook events** | ❌ | ✅ |
+| **Bulk operations (update, move, delete)** | ❌ | ✅ |
+| **Pipeline analytics (win rate, velocity, conversion)** | ❌ | ✅ |
 
 ---
 
 ## Features
 
-### Base Resources (Chatwoot compatible)
+### Base Resources (Chatwoot & NooviChat compatible)
 
 | Resource | Operations |
 |----------|------------|
@@ -26,26 +47,65 @@ Covers all standard Chatwoot-compatible endpoints **plus** exclusive NooviChat f
 | **Custom Attribute** | Create, Get Many, Update, Delete |
 | **Webhook** | Create, Get Many, Update, Delete |
 
-### Exclusive NooviChat Features
+### ⭐ Exclusive NooviChat Features
+
+> These resources are **not available in Chatwoot** and are unique to NooviChat. They power a full CRM and sales automation layer on top of the customer engagement platform.
+
+#### 🏆 Sales Pipeline & Deals
+Full CRM pipeline management directly from n8n. Create pipelines, manage stages, move deals through the funnel and track every interaction.
 
 | Resource | Operations |
 |----------|------------|
-| **Pipeline** | Create, Get, Get Many, Update, Delete + Stage CRUD + Stage Reorder + Analytics (dashboard, win rate, conversion, velocity, team performance, lost reasons) |
-| **Deal** | Create, Get, Get Many, Update, Delete, Move to Stage, Mark Won, Mark Lost, Reopen, Get Timeline, Bulk Update, Bulk Move |
-| **Follow-up** | Create, Get Many, Update, Delete, Cancel + Template CRUD + Template Preview |
-| **Activity** | Create, Get, Get Many, Update, Delete, Start, Complete, Cancel, Get Analytics |
-| **Lead Scoring** | Create Rule, Get Many Rules, Update Rule, Delete Rule, Create Defaults, Get Dashboard |
-| **Campaign** | Create, Get, Get Many, Update, Delete (one_off and ongoing types) |
-| **SLA** | Create Policy, Get Policy, Get Many Policies, Update Policy, Delete Policy, Get Applied, Get Metrics, Export CSV |
-| **WAHA** | Get Status, Refresh QR, Start, Stop, Reconnect, Disconnect, Update Config, Get Settings, Update Meta Tracking |
+| **Pipeline** | Create, Get, Get Many, Update, Delete · Stage CRUD · Stage Reorder · Analytics: dashboard, win rate, conversion rate, velocity, team performance, lost reasons |
+| **Deal** | Create, Get, Get Many, Update, Delete · Move to Stage · Mark Won / Lost / Reopen · Get Timeline · **Bulk Update · Bulk Move · Bulk Delete** |
+
+#### 📅 Follow-ups & Activities
+Never miss a follow-up again. Schedule tasks, track activities and automate reminders tied to deals and conversations.
+
+| Resource | Operations |
+|----------|------------|
+| **Follow-up** | Create, Get, Get Many, Update, Delete, Cancel · Template CRUD · Template Preview |
+| **Activity** | Create, Get, Get Many, Update, Delete · Start · Complete · Cancel · Get Analytics |
+
+#### 🎯 Lead Scoring
+Score contacts automatically based on rules and conditions. Build rule-based scoring engines and monitor results via dashboard.
+
+| Resource | Operations |
+|----------|------------|
+| **Lead Scoring** | Create Rule · Get Many Rules · Update Rule · Delete Rule · Create Defaults · Get Dashboard |
+
+#### 📣 Campaigns
+Send targeted messages at scale. Supports both one-off blasts and ongoing automated campaigns.
+
+| Resource | Operations |
+|----------|------------|
+| **Campaign** | Create, Get, Get Many, Update, Delete, Pause, Resume _(one_off and ongoing types)_ |
+
+#### ⏱ SLA Policies
+Define, monitor and export SLA compliance metrics. Set resolution and first-response time targets per inbox.
+
+| Resource | Operations |
+|----------|------------|
+| **SLA** | Create Policy · Get Policy · Get Many Policies · Update Policy · Delete Policy · Get Applied · Get Metrics · Export CSV |
+
+#### 💬 WhatsApp / WAHA Session Management
+Manage WhatsApp sessions directly from your n8n workflows. Monitor connection status, reconnect automatically and configure Meta tracking.
+
+| Resource | Operations |
+|----------|------------|
+| **WAHA** | Get Status · Refresh QR · Start · Stop · Reconnect · Disconnect · Update Config · Get Settings · Update Meta Tracking |
+
+---
 
 ### Trigger Node
 
-Automatically registers and removes webhooks via the NooviChat API when you activate/deactivate a workflow. Supports all 21 events:
+Automatically registers and removes webhooks via the NooviChat API when you activate/deactivate a workflow. Supports **20 events** — far more than any existing Chatwoot node.
 
-**Standard events:** `conversation_created`, `conversation_status_changed`, `conversation_updated`, `conversation_typing_on`, `conversation_typing_off`, `message_created`, `message_updated`, `contact_created`, `contact_updated`, `webwidget_triggered`
+**Standard events (Chatwoot compatible):**
+`conversation_created`, `conversation_status_changed`, `conversation_updated`, `conversation_typing_on`, `conversation_typing_off`, `message_created`, `message_updated`, `contact_created`, `contact_updated`, `webwidget_triggered`
 
-**Exclusive NooviChat events:** `pipeline_card_created`, `pipeline_card_updated`, `pipeline_card_stage_changed`, `pipeline_card_won`, `pipeline_card_lost`, `follow_up_due`, `follow_up_overdue`, `activity_due`, `sla_breach`, `waha_status_changed`, `campaign_completed`
+**⭐ Exclusive NooviChat events:**
+`pipeline_card_created`, `pipeline_card_updated`, `pipeline_card_stage_changed`, `pipeline_card_won`, `pipeline_card_lost`, `follow_up_due`, `follow_up_overdue`, `activity_due`, `sla_breach`, `waha_status_changed`
 
 Optional filters by Inbox ID, Team ID, and Pipeline ID. Optional webhook signature validation via shared secret.
 
@@ -155,7 +215,7 @@ Schedule Trigger: Every Monday at 9am
 
 ```bash
 # Clone
-git clone https://github.com/nooviai/n8n-nodes-noovichat.git
+git clone https://github.com/Noovi-AI/n8n-nodes-noovichat.git
 cd n8n-nodes-noovichat
 
 # Install dependencies

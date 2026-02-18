@@ -91,8 +91,6 @@ export class NooviChatTrigger implements INodeType {
 					{ name: 'SLA Breach', value: 'sla_breach', description: 'An SLA policy was breached' },
 					// NooviChat exclusive — WAHA events
 					{ name: 'WAHA Status Changed', value: 'waha_status_changed', description: 'WAHA session status changed' },
-					// NooviChat exclusive — Campaign events
-					{ name: 'Campaign Completed', value: 'campaign_completed', description: 'A campaign was completed' },
 				],
 				description: 'Event type to listen for',
 			},

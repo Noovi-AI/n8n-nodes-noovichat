@@ -106,8 +106,6 @@ export const WebhookFields: INodeProperties[] = [
 			{ name: 'SLA Breach', value: 'sla_breach' },
 			// NooviChat exclusive — WAHA events
 			{ name: 'WAHA Status Changed', value: 'waha_status_changed' },
-			// NooviChat exclusive — Campaign events
-			{ name: 'Campaign Completed', value: 'campaign_completed' },
 		],
 		default: [],
 		description: 'Eventos para disparar o webhook',
