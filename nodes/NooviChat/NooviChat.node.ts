@@ -867,9 +867,9 @@ async function handleCardOperation(this: IExecuteFunctions, operation: string, i
 			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
 			const body: any = {};
 			if (additionalFields.title) body.title = additionalFields.title;
-			if (additionalFields.value) body.value = additionalFields.value;
-			if (additionalFields.expectedCloseDate) body.expected_close_date = additionalFields.expectedCloseDate;
-			if (additionalFields.assigneeId) body.assignee_id = additionalFields.assigneeId;
+			if (additionalFields.value) body.expected_revenue = additionalFields.value;
+			if (additionalFields.expectedCloseDate) body.deadline = additionalFields.expectedCloseDate;
+			if (additionalFields.assigneeId) body.owner_id = additionalFields.assigneeId;
 			return await nooviChatApiRequest.call(this, 'PATCH', `/pipeline_cards/${cardId}`, body);
 		}
 		case 'delete':
