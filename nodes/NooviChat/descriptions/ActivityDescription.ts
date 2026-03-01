@@ -41,6 +41,21 @@ export const ActivityOperations: INodeProperties[] = [
 
 export const ActivityFields: INodeProperties[] = [
 	{
+		displayName: 'Pipeline Card ID',
+		name: 'pipelineCardId',
+		type: 'string',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['activity'],
+				operation: ['create', 'get', 'update', 'delete', 'start', 'complete', 'cancel'],
+			},
+		},
+		default: '',
+		placeholder: 'e.g., 835',
+		description: 'ID of the pipeline card this activity belongs to. Required for all activity operations except getAll and getAnalytics.',
+	},
+	{
 		displayName: 'Activity ID',
 		name: 'activityId',
 		type: 'string',
@@ -52,7 +67,7 @@ export const ActivityFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		placeholder: 'e.g., abc-123',
+		placeholder: 'e.g., 77',
 		description: 'ID of the activity',
 	},
 
@@ -69,7 +84,7 @@ export const ActivityFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		placeholder: 'e.g., Q1 Sales Campaign',
+		placeholder: 'e.g., Follow-up Call',
 		description: 'Title of the activity',
 	},
 	{
@@ -114,12 +129,12 @@ export const ActivityFields: INodeProperties[] = [
 				description: 'ID of the agent responsible',
 			},
 			{
-				displayName: 'Card ID',
-				name: 'cardId',
+				displayName: 'Contact ID',
+				name: 'contactId',
 				type: 'string',
 				default: '',
-				placeholder: 'e.g., abc-123',
-				description: 'ID of the card this activity belongs to',
+				placeholder: 'e.g., 123',
+				description: 'ID of the contact to associate with this activity',
 			},
 			{
 				displayName: 'Description',
@@ -130,11 +145,18 @@ export const ActivityFields: INodeProperties[] = [
 				typeOptions: { rows: 3 },
 			},
 			{
-				displayName: 'Due At',
-				name: 'dueAt',
+				displayName: 'Scheduled At',
+				name: 'scheduledAt',
 				type: 'dateTime',
 				default: '',
-				description: 'Due date and time',
+				description: 'Scheduled date and time for the activity',
+			},
+			{
+				displayName: 'Duration (minutes)',
+				name: 'duration',
+				type: 'number',
+				default: 30,
+				description: 'Duration in minutes',
 			},
 		],
 	},

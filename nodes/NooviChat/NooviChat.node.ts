@@ -1010,41 +1010,56 @@ async function handleActivityOperation(this: IExecuteFunctions, operation: strin
 
 	switch (operation) {
 		case 'create': {
+			const pipelineCardId = this.getNodeParameter('pipelineCardId', index) as string;
 			const title = this.getNodeParameter('title', index) as string;
 			const activityType = this.getNodeParameter('activityType', index) as string;
 			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
-			const body: any = { title, type: activityType };
-			if (additionalFields.description) body.description = additionalFields.description;
-			if (additionalFields.dueAt) body.due_at = additionalFields.dueAt;
-			if (additionalFields.assigneeId) body.assignee_id = additionalFields.assigneeId;
-			if (additionalFields.cardId) body.card_id = additionalFields.cardId;
-			return await nooviChatApiRequest.call(this, 'POST', '/pipeline/activities', body);
+			const activityBody: any = { activity_type: activityType, title };
+			if (additionalFields.description) activityBody.description = additionalFields.description;
+			if (additionalFields.scheduledAt) activityBody.scheduled_at = additionalFields.scheduledAt;
+			if (additionalFields.duration) activityBody.duration = additionalFields.duration;
+			if (additionalFields.assigneeId) activityBody.assigned_to_id = additionalFields.assigneeId;
+			if (additionalFields.contactId) activityBody.contact_id = additionalFields.contactId;
+			// pipeline_card_id must be passed as a query param, activity fields wrapped in "activity" key
+			return await nooviChatApiRequest.call(this, 'POST', '/pipeline/activities', { activity: activityBody }, { pipeline_card_id: pipelineCardId });
 		}
-		case 'get':
-			return await nooviChatApiRequest.call(this, 'GET', `/pipeline/activities/${activityId}`);
+		case 'get': {
+			const pipelineCardId = this.getNodeParameter('pipelineCardId', index) as string;
+			return await nooviChatApiRequest.call(this, 'GET', `/pipeline/activities/${activityId}`, {}, { pipeline_card_id: pipelineCardId });
+		}
 		case 'getAll': {
+			const filters = this.getNodeParameter('filters', index, {}) as any;
 			if (returnAll) {
-				return await nooviChatApiRequestAllItems.call(this, 'GET', '/pipeline/activities');
+				return await nooviChatApiRequestAllItems.call(this, 'GET', '/pipeline/activities', {}, filters);
 			}
-			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/activities', {}, { per_page: limit });
+			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/activities', {}, { ...filters, per_page: limit });
 		}
 		case 'update': {
+			const pipelineCardId = this.getNodeParameter('pipelineCardId', index) as string;
 			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
-			const body: any = {};
-			if (additionalFields.title) body.title = additionalFields.title;
-			if (additionalFields.description) body.description = additionalFields.description;
-			if (additionalFields.dueAt) body.due_at = additionalFields.dueAt;
-			if (additionalFields.assigneeId) body.assignee_id = additionalFields.assigneeId;
-			return await nooviChatApiRequest.call(this, 'PATCH', `/pipeline/activities/${activityId}`, body);
+			const activityBody: any = {};
+			if (additionalFields.title) activityBody.title = additionalFields.title;
+			if (additionalFields.description) activityBody.description = additionalFields.description;
+			if (additionalFields.dueAt) activityBody.due_at = additionalFields.dueAt;
+			if (additionalFields.assigneeId) activityBody.assigned_to_id = additionalFields.assigneeId;
+			return await nooviChatApiRequest.call(this, 'PATCH', `/pipeline/activities/${activityId}`, { activity: activityBody }, { pipeline_card_id: pipelineCardId });
 		}
-		case 'delete':
-			return await nooviChatApiRequest.call(this, 'DELETE', `/pipeline/activities/${activityId}`);
-		case 'start':
-			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/activities/${activityId}/start`);
-		case 'complete':
-			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/activities/${activityId}/complete`);
-		case 'cancel':
-			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/activities/${activityId}/cancel`);
+		case 'delete': {
+			const pipelineCardId = this.getNodeParameter('pipelineCardId', index) as string;
+			return await nooviChatApiRequest.call(this, 'DELETE', `/pipeline/activities/${activityId}`, {}, { pipeline_card_id: pipelineCardId });
+		}
+		case 'start': {
+			const pipelineCardId = this.getNodeParameter('pipelineCardId', index) as string;
+			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/activities/${activityId}/start`, {}, { pipeline_card_id: pipelineCardId });
+		}
+		case 'complete': {
+			const pipelineCardId = this.getNodeParameter('pipelineCardId', index) as string;
+			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/activities/${activityId}/complete`, {}, { pipeline_card_id: pipelineCardId });
+		}
+		case 'cancel': {
+			const pipelineCardId = this.getNodeParameter('pipelineCardId', index) as string;
+			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/activities/${activityId}/cancel`, {}, { pipeline_card_id: pipelineCardId });
+		}
 		case 'getAnalytics': {
 			const startDate = this.getNodeParameter('startDate', index, '') as string;
 			const endDate = this.getNodeParameter('endDate', index, '') as string;
