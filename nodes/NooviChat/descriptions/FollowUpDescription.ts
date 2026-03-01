@@ -87,48 +87,105 @@ export const FollowUpFields: INodeProperties[] = [
 		description: 'ID of the conversation',
 	},
 	{
-		displayName: 'Title',
-		name: 'title',
+		displayName: 'Inbox ID',
+		name: 'inboxId',
 		type: 'string',
 		required: true,
 		displayOptions: {
 			show: {
 				resource: ['followUp'],
-				operation: ['create', 'update'],
+				operation: ['create'],
 			},
 		},
 		default: '',
-		description: 'Title of the follow-up',
+		description: 'ID of the inbox that will send the follow-up message',
 	},
 	{
-		displayName: 'Description',
-		name: 'description',
+		displayName: 'Content',
+		name: 'content',
 		type: 'string',
+		required: true,
 		displayOptions: {
 			show: {
 				resource: ['followUp'],
-				operation: ['create', 'update'],
+				operation: ['create'],
 			},
 		},
 		default: '',
-		description: 'Description of the follow-up',
+		description: 'Message content of the follow-up',
 		typeOptions: {
 			rows: 3,
 		},
 	},
 	{
-		displayName: 'Due At',
-		name: 'dueAt',
+		displayName: 'Scheduled At',
+		name: 'scheduledAt',
 		type: 'dateTime',
 		required: true,
 		displayOptions: {
 			show: {
 				resource: ['followUp'],
-				operation: ['create', 'update'],
+				operation: ['create'],
 			},
 		},
 		default: '',
-		description: 'Due date and time for the follow-up',
+		description: 'Date and time when the follow-up should be sent',
+	},
+	{
+		displayName: 'Title',
+		name: 'title',
+		type: 'string',
+		displayOptions: {
+			show: {
+				resource: ['followUp'],
+				operation: ['create'],
+			},
+		},
+		default: '',
+		description: 'Optional title for the follow-up',
+	},
+	// Update follow-up fields
+	{
+		displayName: 'Title',
+		name: 'title',
+		type: 'string',
+		displayOptions: {
+			show: {
+				resource: ['followUp'],
+				operation: ['update'],
+			},
+		},
+		default: '',
+		description: 'New title for the follow-up',
+	},
+	{
+		displayName: 'Content',
+		name: 'content',
+		type: 'string',
+		displayOptions: {
+			show: {
+				resource: ['followUp'],
+				operation: ['update'],
+			},
+		},
+		default: '',
+		description: 'New message content for the follow-up',
+		typeOptions: {
+			rows: 3,
+		},
+	},
+	{
+		displayName: 'Scheduled At',
+		name: 'scheduledAt',
+		type: 'dateTime',
+		displayOptions: {
+			show: {
+				resource: ['followUp'],
+				operation: ['update'],
+			},
+		},
+		default: '',
+		description: 'New scheduled date and time for the follow-up',
 	},
 
 	// Template fields

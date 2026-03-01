@@ -937,13 +937,14 @@ async function handleFollowUpOperation(this: IExecuteFunctions, operation: strin
 
 	switch (operation) {
 		case 'create': {
-			const title = this.getNodeParameter('title', index) as string;
-			const description = this.getNodeParameter('description', index, '') as string;
-			const dueAt = this.getNodeParameter('dueAt', index) as string;
+			const title = this.getNodeParameter('title', index, '') as string;
+			const content = this.getNodeParameter('content', index) as string;
+			const scheduledAt = this.getNodeParameter('scheduledAt', index) as string;
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const followUpBody: any = { content, scheduled_at: scheduledAt, inbox_id: inboxId };
+			if (title) followUpBody.title = title;
 			return await nooviChatApiRequest.call(this, 'POST', `/conversations/${conversationId}/follow-ups`, {
-				title,
-				description,
-				due_at: dueAt,
+				follow_up: followUpBody,
 			});
 		}
 		case 'getAll': {
@@ -960,13 +961,13 @@ async function handleFollowUpOperation(this: IExecuteFunctions, operation: strin
 		}
 		case 'update': {
 			const title = this.getNodeParameter('title', index, '') as string;
-			const description = this.getNodeParameter('description', index, '') as string;
-			const dueAt = this.getNodeParameter('dueAt', index, '') as string;
+			const content = this.getNodeParameter('content', index, '') as string;
+			const scheduledAt = this.getNodeParameter('scheduledAt', index, '') as string;
 			const body: any = {};
 			if (title) body.title = title;
-			if (description) body.description = description;
-			if (dueAt) body.due_at = dueAt;
-			return await nooviChatApiRequest.call(this, 'PATCH', `/conversations/${conversationId}/follow-ups/${followUpId}`, body);
+			if (content) body.content = content;
+			if (scheduledAt) body.scheduled_at = scheduledAt;
+			return await nooviChatApiRequest.call(this, 'PATCH', `/conversations/${conversationId}/follow-ups/${followUpId}`, { follow_up: body });
 		}
 		case 'delete':
 			return await nooviChatApiRequest.call(this, 'DELETE', `/conversations/${conversationId}/follow-ups/${followUpId}`);
