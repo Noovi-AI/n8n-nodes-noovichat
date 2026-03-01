@@ -680,7 +680,30 @@ async function handlePipelineOperation(this: IExecuteFunctions, operation: strin
 		case 'create': {
 			const name = this.getNodeParameter('name', index) as string;
 			const description = this.getNodeParameter('description', index, '') as string;
-			return await nooviChatApiRequest.call(this, 'POST', '/pipelines', { name, description });
+			const initialStagesCollection = this.getNodeParameter('initialStages.values', index, []) as Array<{
+				stageName: string;
+				stageColor: string;
+				stagePosition: number;
+			}>;
+			if (initialStagesCollection.length === 0) {
+				throw new NodeOperationError(this.getNode(), 'At least one initial stage is required to create a pipeline.', { itemIndex: index });
+			}
+			// Build stages as a hash (object) keyed by slug — required by the NooviChat API.
+			// The API expects stages as { "stage_key": { name, color, position } }, NOT an array.
+			const stages: Record<string, { name: string; color: string; position: number }> = {};
+			initialStagesCollection.forEach((stage, idx) => {
+				const slug = stage.stageName
+					.toLowerCase()
+					.replace(/[^a-z0-9\s]/g, '')
+					.replace(/\s+/g, '_')
+					.replace(/^_+|_+$/g, '') || `stage_${idx + 1}`;
+				stages[slug] = {
+					name: stage.stageName,
+					color: stage.stageColor || '#3B82F6',
+					position: stage.stagePosition ?? idx + 1,
+				};
+			});
+			return await nooviChatApiRequest.call(this, 'POST', '/pipelines', { name, description, stages });
 		}
 		case 'get':
 			return await nooviChatApiRequest.call(this, 'GET', `/pipelines/${pipelineId}`);
@@ -707,15 +730,24 @@ async function handlePipelineOperation(this: IExecuteFunctions, operation: strin
 			if (stagesCollection.length === 0) {
 				throw new NodeOperationError(this.getNode(), 'At least one stage must be added.', { itemIndex: index });
 			}
-			const created = [];
-			for (const stage of stagesCollection) {
-				const result = await nooviChatApiRequest.call(this, 'POST', `/pipelines/${pipelineId}/stages`, {
+			// Stages are stored as a JSONB hash on the Pipeline model — there is no dedicated
+			// POST /stages endpoint. We must GET the pipeline, merge new stages, then PATCH.
+			const pipeline: any = await nooviChatApiRequest.call(this, 'GET', `/pipelines/${pipelineId}`);
+			const currentStages: Record<string, any> = pipeline.stages || {};
+			const maxPosition = Object.values(currentStages).reduce((max: number, s: any) => Math.max(max, s.position ?? 0), 0);
+			stagesCollection.forEach((stage, idx) => {
+				const slug = stage.stageName
+					.toLowerCase()
+					.replace(/[^a-z0-9\s]/g, '')
+					.replace(/\s+/g, '_')
+					.replace(/^_+|_+$/g, '') || `stage_${Date.now()}_${idx}`;
+				currentStages[slug] = {
 					name: stage.stageName,
 					color: stage.stageColor || '#0066FF',
-				});
-				created.push(result);
-			}
-			return created;
+					position: maxPosition + idx + 1,
+				};
+			});
+			return await nooviChatApiRequest.call(this, 'PATCH', `/pipelines/${pipelineId}`, { stages: currentStages });
 		}
 		case 'updateStage': {
 			const stageName = this.getNodeParameter('stageName', index, '') as string;

@@ -90,6 +90,55 @@ export const PipelineFields: INodeProperties[] = [
 		default: '',
 		description: 'Description of the pipeline',
 	},
+	// Initial stages for pipeline creation (required by the API)
+	{
+		displayName: 'Initial Stages',
+		name: 'initialStages',
+		type: 'fixedCollection',
+		typeOptions: {
+			multipleValues: true,
+			minValue: 1,
+		},
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['pipeline'],
+				operation: ['create'],
+			},
+		},
+		default: { values: [{ stageName: 'Lead', stageColor: '#3B82F6', stagePosition: 1 }] },
+		description: 'At least one stage is required to create a pipeline. Stages define the steps in your sales process.',
+		options: [
+			{
+				name: 'values',
+				displayName: 'Stage',
+				values: [
+					{
+						displayName: 'Name',
+						name: 'stageName',
+						type: 'string',
+						required: true,
+						default: '',
+						description: 'Stage name (e.g. Lead, Qualified, Proposal, Closed Won)',
+					},
+					{
+						displayName: 'Color',
+						name: 'stageColor',
+						type: 'color',
+						default: '#3B82F6',
+						description: 'Stage color',
+					},
+					{
+						displayName: 'Position',
+						name: 'stagePosition',
+						type: 'number',
+						default: 1,
+						description: 'Display order (1 = first)',
+					},
+				],
+			},
+		],
+	},
 
 	// Stage fields
 	{
