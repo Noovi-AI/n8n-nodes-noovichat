@@ -840,10 +840,10 @@ async function handleCardOperation(this: IExecuteFunctions, operation: string, i
 			const body: any = {
 				pipeline_id: pipelineId,
 				pipeline_stage: pipelineStage,
-				item_details: { title },
+				title,
 			};
 			if (additionalFields.contactId) body.contact_id = additionalFields.contactId;
-			if (additionalFields.value) body.item_details.value = additionalFields.value;
+			if (additionalFields.value) body.expected_revenue = additionalFields.value;
 			if (additionalFields.expectedCloseDate) body.deadline = additionalFields.expectedCloseDate;
 			if (additionalFields.assigneeId) body.owner_id = additionalFields.assigneeId;
 			return await nooviChatApiRequest.call(this, 'POST', '/pipeline_cards', body);
@@ -854,7 +854,7 @@ async function handleCardOperation(this: IExecuteFunctions, operation: string, i
 			const filters = this.getNodeParameter('filters', index, {}) as any;
 			const qs: any = {};
 			if (filters.pipelineId) qs.pipeline_id = filters.pipelineId;
-			if (filters.stageId) qs.stage_id = filters.stageId;
+			if (filters.stageId) qs.pipeline_stage = filters.stageId;
 			if (filters.assigneeId) qs.assignee_id = filters.assigneeId;
 			if (filters.status) qs.status = filters.status;
 			if (!returnAll) qs.per_page = limit;
