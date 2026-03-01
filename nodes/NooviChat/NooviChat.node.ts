@@ -771,10 +771,18 @@ async function handlePipelineOperation(this: IExecuteFunctions, operation: strin
 			return await nooviChatApiRequest.call(this, 'PATCH', `/pipelines/${pipelineId}`, { stages });
 		}
 		case 'reorderStages': {
+			// There is no dedicated reorder endpoint. Stages are a JSONB hash ordered by the
+			// 'position' key inside each stage object. To reorder: GET pipeline, then PATCH
+			// with updated position values matching the provided order.
 			const stageOrderValues = this.getNodeParameter('stageOrder.values', index, []) as Array<{ id: string }>;
-			return await nooviChatApiRequest.call(this, 'PATCH', `/pipelines/${pipelineId}/stages/reorder`, {
-				stage_ids: stageOrderValues.map(s => parseInt(s.id)),
+			const pipeline: any = await nooviChatApiRequest.call(this, 'GET', `/pipelines/${pipelineId}`);
+			const stages: Record<string, any> = pipeline.stages || {};
+			stageOrderValues.forEach((item, idx) => {
+				if (stages[item.id]) {
+					stages[item.id].position = idx + 1;
+				}
 			});
+			return await nooviChatApiRequest.call(this, 'PATCH', `/pipelines/${pipelineId}`, { stages });
 		}
 		case 'getAnalyticsDashboard': {
 			const qs: any = {};
@@ -825,13 +833,19 @@ async function handleCardOperation(this: IExecuteFunctions, operation: string, i
 		case 'create': {
 			const title = this.getNodeParameter('title', index) as string;
 			const pipelineId = this.getNodeParameter('pipelineId', index) as string;
-			const stageId = this.getNodeParameter('stageId', index) as string;
+			// pipeline_stage is a string in format {pipeline_id}_{stage_slug} (e.g. "1_lead")
+			// NOT an integer stage_id — the API requires this string format
+			const pipelineStage = this.getNodeParameter('stageId', index) as string;
 			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
-			const body: any = { title, pipeline_id: pipelineId, stage_id: stageId };
+			const body: any = {
+				pipeline_id: pipelineId,
+				pipeline_stage: pipelineStage,
+				item_details: { title },
+			};
 			if (additionalFields.contactId) body.contact_id = additionalFields.contactId;
-			if (additionalFields.value) body.value = additionalFields.value;
-			if (additionalFields.expectedCloseDate) body.expected_close_date = additionalFields.expectedCloseDate;
-			if (additionalFields.assigneeId) body.assignee_id = additionalFields.assigneeId;
+			if (additionalFields.value) body.item_details.value = additionalFields.value;
+			if (additionalFields.expectedCloseDate) body.deadline = additionalFields.expectedCloseDate;
+			if (additionalFields.assigneeId) body.owner_id = additionalFields.assigneeId;
 			return await nooviChatApiRequest.call(this, 'POST', '/pipeline_cards', body);
 		}
 		case 'get':

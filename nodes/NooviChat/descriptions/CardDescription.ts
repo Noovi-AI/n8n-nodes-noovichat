@@ -94,7 +94,7 @@ export const CardFields: INodeProperties[] = [
 		description: 'ID of the pipeline',
 	},
 	{
-		displayName: 'Stage ID',
+		displayName: 'Pipeline Stage',
 		name: 'stageId',
 		type: 'string',
 		required: true,
@@ -105,8 +105,8 @@ export const CardFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		placeholder: 'e.g., 5',
-		description: 'ID of the stage',
+		placeholder: 'e.g., 1_lead',
+		description: 'Stage identifier in the format {pipeline_id}_{stage_slug} (e.g. "1_lead", "2_qualificado"). Use the "Get Stages" operation on the Pipeline resource to list available stage IDs.',
 	},
 	{
 		displayName: 'Additional Fields',
