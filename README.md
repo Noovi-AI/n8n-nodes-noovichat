@@ -126,6 +126,44 @@ Optional filters by Inbox ID, Team ID, and Pipeline ID. Optional webhook signatu
 npm install @nooviai/n8n-nodes-noovichat
 ```
 
+**Restart n8n** after installing for the node to appear.
+
+#### Docker self-hosted
+
+Install inside the running container:
+
+```bash
+docker exec -it <n8n_container> npm install @nooviai/n8n-nodes-noovichat
+docker restart <n8n_container>
+```
+
+Or add to your `docker-compose.yml` with a custom extensions volume:
+
+```yaml
+environment:
+  - N8N_CUSTOM_EXTENSIONS=/home/node/.n8n/custom
+volumes:
+  - n8n_custom:/home/node/.n8n/custom
+```
+
+#### Verifying the installation
+
+After restarting n8n, search for **"NooviChat"** in the node selector. If it doesn't appear, check the n8n logs:
+
+```bash
+docker logs <n8n_container> | grep -i noovichat
+```
+
+---
+
+## Troubleshooting
+
+See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for a full guide covering:
+
+- Field mapping reference (camelCase UI → snake_case API)
+- API compatibility matrix (NooviChat version vs node version)
+- Common errors and solutions (401, 404, 422, webhook issues)
+
 ---
 
 ## Configuration

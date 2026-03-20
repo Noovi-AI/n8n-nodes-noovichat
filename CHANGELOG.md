@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.5] - 2026-03-20
+
+### Fixed
+- **`pipeline.create`**: operação `create` agora envia `stages` corretamente no body; `createStage` corrigido para usar endpoint `/pipelines/:id/stages` em vez de `/pipelines/stages`
+- **`pipeline.reorderStages`**: reescrito como operação composta (GET pipeline → atualiza `position` no hash de stages → PATCH pipeline), pois endpoint `/reorder` não existe na API
+- **`card.create`**: campo `title` agora mapeado corretamente; `expected_revenue` usado para o campo `value`; filtro por stage usa `pipeline_stage` (string `{pipeline_id}_{stage_slug}`)
+- **`card.update`**: campo `value` agora mapeado para `expected_revenue` (antes era enviado como `value` e ignorado pela API); `assigneeId` mapeado para `owner_id`
+- **`activity.create`**: `pipeline_card_id` passado como query param (não no body); campos do activity agora enviados dentro da chave `activity` conforme API exige
+- **`activity.update`**: mesma correção — body encapsulado em `activity`, `pipeline_card_id` como query param
+- **`followUp.create`**: campos `content`, `scheduled_at` e `inbox_id` agora enviados dentro da chave `follow_up` conforme API exige
+- **`followUp.update`**: body encapsulado em `follow_up` na requisição PATCH
+
 ## [0.4.1] - 2026-02-18
 
 ### Removed
