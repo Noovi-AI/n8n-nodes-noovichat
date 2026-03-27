@@ -26,6 +26,7 @@ export const MessageOperations: INodeProperties[] = [
 		},
 		options: [
 			{ name: 'Send', value: 'send', action: 'Send a message' },
+			{ name: 'Edit', value: 'edit', action: 'Edit a sent message' },
 			{ name: 'Get Many', value: 'getAll', action: 'Get many messages' },
 			{ name: 'Delete', value: 'delete', action: 'Delete a message' },
 		],
@@ -47,6 +48,38 @@ export const MessageFields: INodeProperties[] = [
 		default: '',
 		placeholder: 'e.g., 12345',
 		description: 'Unique identifier of the conversation',
+	},
+
+	// Edit message fields
+	{
+		displayName: 'Message ID',
+		name: 'messageId',
+		type: 'string',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['message'],
+				operation: ['edit'],
+			},
+		},
+		default: '',
+		placeholder: 'e.g., 98765',
+		description: 'ID of the message to edit',
+	},
+	{
+		displayName: 'Content',
+		name: 'content',
+		type: 'string',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['message'],
+				operation: ['edit'],
+			},
+		},
+		default: '',
+		placeholder: 'e.g., Updated message text',
+		description: 'New text content for the message',
 	},
 
 	// Send message fields

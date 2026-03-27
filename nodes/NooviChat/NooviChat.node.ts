@@ -325,6 +325,11 @@ async function handleMessageOperation(this: IExecuteFunctions, operation: string
 			}
 			return await nooviChatApiRequest.call(this, 'GET', `/conversations/${conversationId}/messages`, {}, qs);
 		}
+		case 'edit': {
+			const messageId = this.getNodeParameter('messageId', index) as string;
+			const content = this.getNodeParameter('content', index) as string;
+			return await nooviChatApiRequest.call(this, 'POST', `/conversations/${conversationId}/messages/${messageId}/edit`, { content });
+		}
 		case 'delete': {
 			const messageId = this.getNodeParameter('messageId', index) as string;
 			return await nooviChatApiRequest.call(this, 'DELETE', `/conversations/${conversationId}/messages/${messageId}`);
