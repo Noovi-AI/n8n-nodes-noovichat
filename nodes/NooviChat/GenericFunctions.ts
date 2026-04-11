@@ -14,6 +14,10 @@ type NooviChatContext = IExecuteFunctions | IHookFunctions | IWebhookFunctions;
 // response contains fewer items than this value.
 const PAGE_SIZE = 25;
 
+// Safety cap to prevent infinite loops against misbehaving APIs.
+// 400 pages × 25 = 10,000 records maximum before bailing out.
+const MAX_PAGES = 400;
+
 /** Parse a value that may arrive as a JSON string or already as an object. */
 export function parseJsonValue(value: unknown): any {
 	if (typeof value === 'string' && value.trim() !== '') {
@@ -34,7 +38,34 @@ export async function nooviChatApiRequest(
 	qs: IDataObject = {},
 ): Promise<any> {
 	const credentials = await this.getCredentials('nooviChatApi');
-	const baseUrl = (credentials.baseUrl as string).replace(/\/$/, '');
+	const rawBaseUrl = (credentials.baseUrl as string).replace(/\/$/, '');
+
+	// SSRF protection: baseUrl must use HTTPS and point to a valid hostname
+	if (!rawBaseUrl.startsWith('https://')) {
+		throw new Error('NooviChat baseUrl must use HTTPS.');
+	}
+	try {
+		const parsed = new URL(rawBaseUrl);
+		const host = parsed.hostname;
+		// Block private IP ranges and localhost to prevent SSRF
+		if (
+			host === 'localhost' ||
+			/^127\./.test(host) ||
+			/^10\./.test(host) ||
+			/^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+			/^192\.168\./.test(host) ||
+			host === '0.0.0.0' ||
+			host === '::1' ||
+			host === '169.254.169.254' // AWS metadata
+		) {
+			throw new Error('NooviChat baseUrl cannot point to a private or local address.');
+		}
+	} catch (e: any) {
+		if (e.message.startsWith('NooviChat')) throw e;
+		throw new Error(`NooviChat baseUrl is not a valid URL: ${rawBaseUrl}`);
+	}
+
+	const baseUrl = rawBaseUrl;
 	const accountId = (this as any).getNodeParameter('accountId', 0) as number;
 
 	const options: IRequestOptions = {
@@ -90,6 +121,10 @@ export async function nooviChatApiRequestAllItems(
 		returnData.push(...items);
 
 		if (items.length < PAGE_SIZE) {
+			break;
+		}
+
+		if (page >= MAX_PAGES) {
 			break;
 		}
 

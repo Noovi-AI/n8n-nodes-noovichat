@@ -214,7 +214,14 @@ export class NooviChatTrigger implements INodeType {
 					.update(JSON.stringify(body))
 					.digest('hex');
 
-				if (`sha256=${expectedSignature}` !== headerSignature) {
+				const expectedFull = `sha256=${expectedSignature}`;
+				const expectedBuf = Buffer.from(expectedFull);
+				const actualBuf = Buffer.from(headerSignature);
+				// Use constant-time comparison to prevent timing attacks
+				if (
+					expectedBuf.length !== actualBuf.length ||
+					!crypto.timingSafeEqual(expectedBuf, actualBuf)
+				) {
 					return { workflowData: [[]] };
 				}
 			}
