@@ -6,6 +6,7 @@ import {
 	IRequestOptions,
 	INodeExecutionData,
 	IDataObject,
+	NodeOperationError,
 } from 'n8n-workflow';
 
 type NooviChatContext = IExecuteFunctions | IHookFunctions | IWebhookFunctions;
@@ -67,6 +68,12 @@ export async function nooviChatApiRequest(
 
 	const baseUrl = rawBaseUrl;
 	const accountId = (this as any).getNodeParameter('accountId', 0) as number;
+	if (!Number.isInteger(accountId) || accountId <= 0) {
+		throw new NodeOperationError(
+			(this as any).getNode(),
+			`Invalid Account ID: "${accountId}". Must be a positive integer.`,
+		);
+	}
 
 	const options: IRequestOptions = {
 		method,
