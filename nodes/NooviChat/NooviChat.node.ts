@@ -266,8 +266,12 @@ async function handleConversationOperation(this: IExecuteFunctions, operation: s
 		}
 		case 'addLabel': {
 			const labels = this.getNodeParameter('labels', index) as string;
+			const labelArray = labels
+				.split(',')
+				.map((l: string) => l.trim())
+				.filter((l: string) => l.length > 0);
 			return await nooviChatApiRequest.call(this, 'POST', `/conversations/${conversationId}/labels`, {
-				labels: labels.split(',').map(l => l.trim()),
+				labels: labelArray,
 			});
 		}
 		case 'filter': {
@@ -446,9 +450,16 @@ async function handleInboxOperation(this: IExecuteFunctions, operation: string, 
 			return await nooviChatApiRequest.call(this, 'GET', `/inbox_members/${inboxId}`);
 		case 'updateAgents': {
 			const agentIds = this.getNodeParameter('agentIds', index) as string;
+			const agentIdArray = agentIds
+				.split(',')
+				.map((id: string) => parseInt(id.trim(), 10))
+				.filter((id: number) => !isNaN(id) && id > 0);
+			if (agentIdArray.length === 0) {
+				throw new NodeOperationError(this.getNode(), 'No valid IDs provided', { itemIndex: index });
+			}
 			return await nooviChatApiRequest.call(this, 'POST', '/inbox_members', {
 				inbox_id: inboxId,
-				user_ids: agentIds.split(',').map(id => parseInt(id.trim(), 10)),
+				user_ids: agentIdArray,
 			});
 		}
 		default:
@@ -524,8 +535,15 @@ async function handleTeamOperation(this: IExecuteFunctions, operation: string, i
 			return await nooviChatApiRequest.call(this, 'GET', `/teams/${teamId}/team_members`);
 		case 'addMembers': {
 			const memberIds = this.getNodeParameter('memberIds', index) as string;
+			const memberIdArray = memberIds
+				.split(',')
+				.map((id: string) => parseInt(id.trim(), 10))
+				.filter((id: number) => !isNaN(id) && id > 0);
+			if (memberIdArray.length === 0) {
+				throw new NodeOperationError(this.getNode(), 'No valid IDs provided', { itemIndex: index });
+			}
 			return await nooviChatApiRequest.call(this, 'POST', `/teams/${teamId}/team_members`, {
-				user_ids: memberIds.split(',').map(id => parseInt(id.trim(), 10)),
+				user_ids: memberIdArray,
 			});
 		}
 		default:
