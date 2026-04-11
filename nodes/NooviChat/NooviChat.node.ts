@@ -448,7 +448,7 @@ async function handleInboxOperation(this: IExecuteFunctions, operation: string, 
 			const agentIds = this.getNodeParameter('agentIds', index) as string;
 			return await nooviChatApiRequest.call(this, 'POST', '/inbox_members', {
 				inbox_id: inboxId,
-				user_ids: agentIds.split(',').map(id => parseInt(id.trim())),
+				user_ids: agentIds.split(',').map(id => parseInt(id.trim(), 10)),
 			});
 		}
 		default:
@@ -525,7 +525,7 @@ async function handleTeamOperation(this: IExecuteFunctions, operation: string, i
 		case 'addMembers': {
 			const memberIds = this.getNodeParameter('memberIds', index) as string;
 			return await nooviChatApiRequest.call(this, 'POST', `/teams/${teamId}/team_members`, {
-				user_ids: memberIds.split(',').map(id => parseInt(id.trim())),
+				user_ids: memberIds.split(',').map(id => parseInt(id.trim(), 10)),
 			});
 		}
 		default:
