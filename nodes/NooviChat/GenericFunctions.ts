@@ -19,6 +19,11 @@ const PAGE_SIZE = 25;
 // 400 pages × 25 = 10,000 records maximum before bailing out.
 const MAX_PAGES = 400;
 
+// Maximum number of automatic retries on HTTP 429 responses.
+const MAX_RETRIES = 3;
+// Exponential backoff delays (ms) for retries when no Retry-After header is present.
+const RETRY_BACKOFF_MS = [1_000, 2_000, 4_000];
+
 /** Parse a value that may arrive as a JSON string or already as an object. */
 export function parseJsonValue(value: unknown): any {
 	if (typeof value === 'string' && value.trim() !== '') {
@@ -106,6 +111,32 @@ export async function nooviChatApiRequest(
 	}
 }
 
+/**
+ * Wraps a single API call with automatic retry logic for HTTP 429 responses.
+ * Respects the Retry-After header when present; otherwise uses exponential backoff.
+ */
+async function withRateLimitRetry<T>(fn: () => Promise<T>): Promise<T> {
+	for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+		try {
+			return await fn();
+		} catch (error: any) {
+			const statusCode: number | undefined = error?.statusCode ?? error?.response?.statusCode;
+			if (statusCode === 429 && attempt < MAX_RETRIES) {
+				const retryAfterHeader: string | undefined =
+					error?.response?.headers?.['retry-after'] ?? error?.error?.['retry-after'];
+				const waitMs = retryAfterHeader
+					? Math.min(parseInt(retryAfterHeader, 10) * 1_000, 60_000)
+					: RETRY_BACKOFF_MS[attempt];
+				await new Promise<void>((resolve) => setTimeout(resolve, waitMs));
+				continue;
+			}
+			throw error;
+		}
+	}
+	// Unreachable — TypeScript needs an explicit throw/return after the loop
+	throw new Error('Exhausted retries');
+}
+
 export async function nooviChatApiRequestAllItems(
 	this: NooviChatContext,
 	method: IHttpRequestMethods,
@@ -118,7 +149,10 @@ export async function nooviChatApiRequestAllItems(
 
 	for (;;) {
 		const currentQs = { ...qs, page, per_page: PAGE_SIZE };
-		const response = await nooviChatApiRequest.call(this, method, endpoint, body, currentQs);
+		// Use retry wrapper so 429s on any page don't abort the full pagination
+		const response = await withRateLimitRetry(() =>
+			nooviChatApiRequest.call(this, method, endpoint, body, currentQs),
+		);
 		const items = response.data?.payload || response.data || response.payload || response;
 
 		if (!Array.isArray(items) || items.length === 0) {
