@@ -62,6 +62,7 @@ grep -r "endpoint_path" "/home/debian/projects/Noovichat/NooviWoot-N8N/nodes/"
 /activities                  → ActivityDescription.ts
 /waha/*                      → WahaDescription.ts
 /webhooks                    → WebhookDescription.ts (trigger)
+/whatsapp_templates          → WhatsappTemplateDescription.ts (NooviChat custom — Meta Cloud CRUD)
 ```
 
 ## Publicar atualização após sync

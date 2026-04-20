@@ -27,6 +27,7 @@ import { LeadScoringOperations, LeadScoringFields } from './descriptions/LeadSco
 import { CampaignOperations, CampaignFields } from './descriptions/CampaignDescription';
 import { SlaOperations, SlaFields } from './descriptions/SlaDescription';
 import { WahaOperations, WahaFields } from './descriptions/WahaDescription';
+import { WhatsappTemplateOperations, WhatsappTemplateFields } from './descriptions/WhatsappTemplateDescription';
 
 export class NooviChat implements INodeType {
 	description: INodeTypeDescription = {
@@ -84,6 +85,7 @@ export class NooviChat implements INodeType {
 					{ name: 'Campaign', value: 'campaign' },
 					{ name: 'SLA', value: 'sla' },
 					{ name: 'WAHA', value: 'waha' },
+					{ name: 'WhatsApp Template', value: 'whatsappTemplate' },
 				],
 				default: 'conversation',
 			},
@@ -124,16 +126,18 @@ export class NooviChat implements INodeType {
 			...SlaFields,
 			...WahaOperations,
 			...WahaFields,
+			...WhatsappTemplateOperations,
+			...WhatsappTemplateFields,
 		],
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
-		const resource = this.getNodeParameter('resource', 0) as string;
-		const operation = this.getNodeParameter('operation', 0) as string;
 
 		for (let i = 0; i < items.length; i++) {
+			const resource = this.getNodeParameter('resource', i) as string;
+			const operation = this.getNodeParameter('operation', i) as string;
 			try {
 				let responseData: any;
 
@@ -192,6 +196,9 @@ export class NooviChat implements INodeType {
 					case 'waha':
 						responseData = await handleWahaOperation.call(this, operation, i);
 						break;
+					case 'whatsappTemplate':
+						responseData = await handleWhatsappTemplateOperation.call(this, operation, i);
+						break;
 					default:
 						throw new NodeOperationError(this.getNode(), `Unknown resource: "${resource}"`, { itemIndex: i });
 				}
@@ -199,12 +206,13 @@ export class NooviChat implements INodeType {
 				returnData.push(...formatExecutionData(responseData, i));
 			} catch (error: any) {
 				if (this.continueOnFail()) {
+					const statusCode = (error as any)?.response?.statusCode;
 					returnData.push({
 						json: {
-							error: error.message,
-							resource,
-							operation,
-							statusCode: (error as any)?.response?.statusCode,
+							error: statusCode
+								? `NooviChat API error (HTTP ${statusCode})`
+								: error.message,
+							statusCode,
 						},
 						pairedItem: { item: i },
 					});
@@ -1293,6 +1301,86 @@ async function handleWahaOperation(this: IExecuteFunctions, operation: string, i
 				access_token: metaAccessToken,
 			});
 		}
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+// NooviChat custom — WhatsApp Cloud templates CRUD (Fase 1.6 M4).
+// Backend: Api::V1::Accounts::WhatsappTemplatesController
+async function handleWhatsappTemplateOperation(
+	this: IExecuteFunctions,
+	operation: string,
+	index: number,
+): Promise<any> {
+	const inboxId = this.getNodeParameter('inboxId', index) as number;
+
+	switch (operation) {
+		case 'list': {
+			const filters = (this.getNodeParameter('filters', index, {}) as any) || {};
+			const qs: any = { inbox_id: inboxId };
+			if (filters.status) qs.status = filters.status;
+			if (filters.category) qs.category = filters.category;
+			if (filters.search) qs.search = filters.search;
+			if (filters.limit) qs.limit = filters.limit;
+			return await nooviChatApiRequest.call(this, 'GET', '/whatsapp_templates', {}, qs);
+		}
+
+		case 'get': {
+			const templateId = this.getNodeParameter('templateId', index) as string;
+			return await nooviChatApiRequest.call(
+				this,
+				'GET',
+				`/whatsapp_templates/${encodeURIComponent(templateId)}`,
+				{},
+				{ inbox_id: inboxId },
+			);
+		}
+
+		case 'create': {
+			const name = this.getNodeParameter('templateDataName', index) as string;
+			const language = this.getNodeParameter('templateDataLanguage', index) as string;
+			const category = this.getNodeParameter('templateDataCategory', index) as string;
+			const componentsRaw = this.getNodeParameter('templateDataComponents', index) as any;
+			const components = parseJsonValue(componentsRaw);
+			return await nooviChatApiRequest.call(this, 'POST', '/whatsapp_templates', {
+				inbox_id: inboxId,
+				template: { name, language, category, components },
+			});
+		}
+
+		case 'update': {
+			const templateId = this.getNodeParameter('templateId', index) as string;
+			const updateFields = (this.getNodeParameter('templateUpdateFields', index, {}) as any) || {};
+			const template: any = {};
+			if (updateFields.category) template.category = updateFields.category;
+			if (updateFields.components) template.components = parseJsonValue(updateFields.components);
+			return await nooviChatApiRequest.call(
+				this,
+				'PUT',
+				`/whatsapp_templates/${encodeURIComponent(templateId)}`,
+				{ inbox_id: inboxId, template },
+			);
+		}
+
+		case 'delete': {
+			const templateName = this.getNodeParameter('templateName', index) as string;
+			// Backend exige template_name como param pra chamada Meta; path :id é ignorado no destroy.
+			return await nooviChatApiRequest.call(
+				this,
+				'DELETE',
+				'/whatsapp_templates/0',
+				{},
+				{ inbox_id: inboxId, template_name: templateName },
+			);
+		}
+
+		case 'sync': {
+			return await nooviChatApiRequest.call(this, 'POST', '/whatsapp_templates/sync', {
+				inbox_id: inboxId,
+			});
+		}
+
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
