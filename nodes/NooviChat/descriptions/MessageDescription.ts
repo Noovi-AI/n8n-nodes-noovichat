@@ -157,7 +157,7 @@ export const MessageFields: INodeProperties[] = [
 				type: 'string',
 				default: '',
 				placeholder: 'e.g., John,Order #123',
-				description: 'Comma-separated list of variables to inject into the template',
+				description: 'Comma-separated list of variables to inject into the template. Note: separate variables with commas. Commas within variable values are not supported.',
 			},
 			{
 				displayName: 'Attachment',

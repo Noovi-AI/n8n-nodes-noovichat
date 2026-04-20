@@ -2,6 +2,68 @@
 
 Node n8n da **Noovi AI** que integra o NooviChat (nosso fork do Chatwoot) com workflows de automação no n8n.
 
+## ⛔ REGRAS DE OURO — npm Publish & Integridade
+
+Este projeto vive dentro do monorepo NooviChat
+(`/home/debian/projects/Noovichat/`). As **3 regras de ouro do monorepo**
+aplicam aqui:
+
+### 1. Proibido `npm publish` "adoidado"
+
+Nunca execute `npm publish` como reflexo. Uma versão publicada no npm
+**não pode ser removida** (só depreciada). Se você publica versão
+quebrada, clientes que atualizam o node quebram seus workflows — e o
+damage é público.
+
+### 2. Bateria de testes local é OBRIGATÓRIA antes de publish
+
+```bash
+git diff --exit-code && git diff --cached --exit-code
+npm run lint
+npm run build
+npm run test
+# Validar que dist/ tem todos os arquivos esperados
+ls dist/nodes/NooviChat/NooviChat.node.js
+ls dist/nodes/NooviChat/NooviChatTrigger.node.js
+ls dist/credentials/NooviChatApi.credentials.js
+# Só então:
+npm version patch  # cria commit + tag automaticamente
+git push --follow-tags
+npm publish --access public
+# Validar no registry
+npm view @nooviai/n8n-nodes-noovichat version
+```
+
+### 3. Janela de publish proibida: Seg-Sex 08:00-19:00 BRT e sexta noite
+
+Publicação de node quebrado durante horário comercial afeta clientes
+imediatamente quando eles dão "update" no painel n8n. Siga a janela
+do monorepo. Ver `../.claude/rules/deploy-safety.md`.
+
+## LEITURA OBRIGATÓRIA — `api-sync.md`
+
+Este node **espelha** a API REST do Chatwoot em
+`../Chatwoot/app/controllers/api/v1/accounts/`. Qualquer mudança lá
+pode exigir update aqui. **Sempre** leia `.claude/rules/api-sync.md`
+antes de começar a editar.
+
+O Chatwoot tem um checklist reverso em
+`../Chatwoot/.claude/rules/n8n-sync.md` que lembra devs do Chatwoot
+de avisar quando mudam a API.
+
+## Rules aplicáveis do monorepo root
+
+- `../.claude/rules/deploy-safety.md` — gates universais (npm publish está coberto)
+- `../.claude/rules/git-discipline.md` — conventional commits, tag git antes do publish
+- `../.claude/rules/subproject-router.md` — roteamento por cwd
+
+O root `.claude/settings.json` tem hook bloqueante que intercepta
+`npm publish` em working tree sujo ou horário comercial.
+
+---
+
+
+
 ## Pacote
 
 ```

@@ -228,7 +228,12 @@ export class NooviChatTrigger implements INodeType {
 		} catch (error: any) {
 			// Skip signature validation only when the credential is not configured.
 			// Re-throw any unexpected errors so they surface properly.
-			if (!error?.message?.includes('not found') && !error?.message?.includes('No credentials')) {
+			const isUnconfigured =
+				error?.name === 'NodeCredentialsError' ||
+				error?.errorType === 'CREDENTIALS_FETCH_ERROR' ||
+				error?.message?.includes('not found') ||
+				error?.message?.includes('No credentials');
+			if (!isUnconfigured) {
 				throw error;
 			}
 		}

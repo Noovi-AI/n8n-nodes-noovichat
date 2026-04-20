@@ -42,6 +42,7 @@ export async function nooviChatApiRequest(
 	endpoint: string,
 	body: IDataObject = {},
 	qs: IDataObject = {},
+	itemIndex = 0,
 ): Promise<any> {
 	const credentials = await this.getCredentials('nooviChatApi');
 	const rawBaseUrl = (credentials.baseUrl as string).replace(/\/$/, '');
@@ -53,17 +54,31 @@ export async function nooviChatApiRequest(
 	try {
 		const parsed = new URL(rawBaseUrl);
 		const host = parsed.hostname;
-		// Block private IP ranges and localhost to prevent SSRF
-		if (
-			host === 'localhost' ||
-			/^127\./.test(host) ||
-			/^10\./.test(host) ||
-			/^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
-			/^192\.168\./.test(host) ||
-			host === '0.0.0.0' ||
-			host === '::1' ||
-			host === '169.254.169.254' // AWS metadata
-		) {
+		// Block private IP ranges, localhost, and encoded variants to prevent SSRF.
+		// Covers IPv4, IPv6 private/loopback, IPv4-mapped IPv6, and alternative encodings.
+		const blockedHostPatterns = [
+			/^localhost$/i,
+			/^127\./,
+			/^10\./,
+			/^172\.(1[6-9]|2\d|3[01])\./,
+			/^192\.168\./,
+			/^169\.254\./, // link-local / AWS metadata
+			/^0\.0\.0\.0$/,
+			// IPv6 loopback and private ranges
+			/^::1$/,
+			/^fc[0-9a-f]{2}:/i, // fc00::/7 unique local
+			/^fd[0-9a-f]{2}:/i,
+			/^fe80:/i, // link-local
+			// IPv4-mapped IPv6 (::ffff:10.0.0.1 etc.)
+			/^::ffff:10\./i,
+			/^::ffff:172\.(1[6-9]|2\d|3[01])\./i,
+			/^::ffff:192\.168\./i,
+			/^::ffff:127\./i,
+			// Hex/octal/decimal encoded IPs (e.g. 0x7f000001, 2130706433)
+			/^0x[0-9a-f]+$/i,
+			/^[0-9]+$/, // pure integer — likely decimal IP
+		];
+		if (blockedHostPatterns.some((re) => re.test(host))) {
 			throw new Error('NooviChat baseUrl cannot point to a private or local address.');
 		}
 	} catch (e: any) {
@@ -72,7 +87,7 @@ export async function nooviChatApiRequest(
 	}
 
 	const baseUrl = rawBaseUrl;
-	const accountId = (this as any).getNodeParameter('accountId', 0) as number;
+	const accountId = (this as any).getNodeParameter('accountId', itemIndex) as number;
 	if (!Number.isInteger(accountId) || accountId <= 0) {
 		throw new NodeOperationError(
 			(this as any).getNode(),
