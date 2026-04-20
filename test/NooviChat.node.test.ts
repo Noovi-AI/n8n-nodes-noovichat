@@ -31,7 +31,7 @@ describe('NooviChat Node — description', () => {
 		expect(node.description.outputs).toContain('main');
 	});
 
-	it('should list all 18 resources', () => {
+	it('should list all 19 resources (18 legacy + whatsappTemplate)', () => {
 		const resourceProperty = node.description.properties.find((p) => p.name === 'resource');
 		expect(resourceProperty).toBeDefined();
 
@@ -41,6 +41,7 @@ describe('NooviChat Node — description', () => {
 			'team', 'label', 'cannedResponse', 'customAttribute', 'webhook',
 			'pipeline', 'card', 'followUp', 'activity', 'leadScoring',
 			'campaign', 'sla', 'waha',
+			'whatsappTemplate', // Fase 1.6 M4 — NooviChat custom Meta CRUD
 		];
 
 		for (const resource of expectedResources) {
@@ -69,7 +70,12 @@ describe('NooviChat Node — execute', () => {
 		return {
 			getInputData: () => [{ json: {} }],
 			getNodeParameter: (name: string, _index: number, fallback?: any) => {
+				// accountId é lido via getNodeParameter em GenericFunctions (commit
+				// 19fdb1b validate accountId as positive integer). Todos os testes
+				// precisam passar um valor válido ou o request é rejeitado com
+				// "Invalid Account ID".
 				const paramMap: Record<string, any> = {
+					accountId: 1,
 					resource,
 					operation,
 					returnAll: false,

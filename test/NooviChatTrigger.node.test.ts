@@ -87,7 +87,12 @@ describe('NooviChatTrigger — webhookMethods', () => {
 	const buildHookContext = (params: Record<string, any> = {}) => ({
 		getWorkflowStaticData: (_scope: string) => mockStaticData,
 		getNodeWebhookUrl: (_name: string) => 'https://n8n.example.com/webhook/test-uuid',
-		getNodeParameter: (name: string) => params[name] ?? 'message_created',
+		// accountId é validado por nooviChatApiRequest (GenericFunctions) e lido
+		// via getNodeParameter — precisa ser positive integer ou 'Invalid Account ID'.
+		getNodeParameter: (name: string) => {
+			if (name === 'accountId') return params.accountId ?? 1;
+			return params[name] ?? 'message_created';
+		},
 		getCredentials: jest.fn().mockResolvedValue({
 			baseUrl: 'https://chat.example.com',
 			apiAccessToken: 'token',

@@ -681,7 +681,13 @@ describe('Webhook auto-registration / removal (Trigger)', () => {
 	const buildHookCtx = (event = 'message_created') => ({
 		getWorkflowStaticData: (_scope: string) => mockStaticData,
 		getNodeWebhookUrl: (_name: string) => 'https://n8n.example.com/webhook/integration-test',
-		getNodeParameter: (name: string) => (name === 'event' ? event : undefined),
+		// accountId é validado por nooviChatApiRequest (GenericFunctions) e lido
+		// via getNodeParameter — precisa ser positive integer.
+		getNodeParameter: (name: string) => {
+			if (name === 'event') return event;
+			if (name === 'accountId') return 1;
+			return undefined;
+		},
 		getCredentials: jest.fn().mockResolvedValue(BASE_CREDENTIALS),
 		helpers: { request: mockApiRequest },
 		getNode: () => ({ name: 'NooviChat Trigger', typeVersion: 1 }),
