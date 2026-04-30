@@ -91,6 +91,23 @@ export class NooviChatTrigger implements INodeType {
 					{ name: 'SLA Breach', value: 'sla_breach', description: 'An SLA policy was breached' },
 					// NooviChat exclusive — WAHA events
 					{ name: 'WAHA Status Changed', value: 'waha_status_changed', description: 'WAHA session status changed' },
+					// NooviChat exclusive — Appointment events (Fase 7 Atendimentos)
+					{ name: 'Appointment Created', value: 'appointment.created', description: 'A new appointment was created' },
+					{ name: 'Appointment Updated', value: 'appointment.updated', description: 'An appointment was updated or rescheduled' },
+					{ name: 'Appointment Confirmed', value: 'appointment.confirmed', description: 'An appointment was confirmed by the professional or receptionist' },
+					{ name: 'Appointment Completed', value: 'appointment.completed', description: 'An appointment was marked as completed' },
+					{ name: 'Appointment Cancelled', value: 'appointment.cancelled', description: 'An appointment was cancelled' },
+					{ name: 'Appointment No Show', value: 'appointment.no_show', description: 'Contact did not attend the appointment (no-show)' },
+					{ name: 'Appointment Rescheduled', value: 'appointment.rescheduled', description: 'An appointment was rescheduled to a new date/time' },
+					// NooviChat exclusive — Reminder events
+					{ name: 'Reminder Sent', value: 'reminder.sent', description: 'An appointment reminder was successfully sent to the contact' },
+					{ name: 'Reminder Failed', value: 'reminder.failed', description: 'An appointment reminder failed to send' },
+					// NooviChat exclusive — Professional events
+					{ name: 'Professional Created', value: 'professional.created', description: 'A new professional was created' },
+					{ name: 'Professional Updated', value: 'professional.updated', description: 'A professional record was updated' },
+					// NooviChat exclusive — Service events
+					{ name: 'Service Created', value: 'service.created', description: 'A new service was created' },
+					{ name: 'Service Updated', value: 'service.updated', description: 'A service record was updated' },
 				],
 				description: 'Event type to listen for',
 			},

@@ -28,6 +28,10 @@ import { CampaignOperations, CampaignFields } from './descriptions/CampaignDescr
 import { SlaOperations, SlaFields } from './descriptions/SlaDescription';
 import { WahaOperations, WahaFields } from './descriptions/WahaDescription';
 import { WhatsappTemplateOperations, WhatsappTemplateFields } from './descriptions/WhatsappTemplateDescription';
+import { AppointmentOperations, AppointmentFields } from './descriptions/AppointmentDescription';
+import { ProfessionalOperations, ProfessionalFields } from './descriptions/ProfessionalDescription';
+import { ServiceOperations, ServiceFields } from './descriptions/ServiceDescription';
+import { PartnerOperations, PartnerFields } from './descriptions/PartnerDescription';
 
 export class NooviChat implements INodeType {
 	description: INodeTypeDescription = {
@@ -86,6 +90,10 @@ export class NooviChat implements INodeType {
 					{ name: 'SLA', value: 'sla' },
 					{ name: 'WAHA', value: 'waha' },
 					{ name: 'WhatsApp Template', value: 'whatsappTemplate' },
+					{ name: 'Appointment', value: 'appointment' },
+					{ name: 'Professional', value: 'professional' },
+					{ name: 'Service', value: 'service' },
+					{ name: 'Partner', value: 'partner' },
 				],
 				default: 'conversation',
 			},
@@ -128,6 +136,14 @@ export class NooviChat implements INodeType {
 			...WahaFields,
 			...WhatsappTemplateOperations,
 			...WhatsappTemplateFields,
+			...AppointmentOperations,
+			...AppointmentFields,
+			...ProfessionalOperations,
+			...ProfessionalFields,
+			...ServiceOperations,
+			...ServiceFields,
+			...PartnerOperations,
+			...PartnerFields,
 		],
 	};
 
@@ -198,6 +214,18 @@ export class NooviChat implements INodeType {
 						break;
 					case 'whatsappTemplate':
 						responseData = await handleWhatsappTemplateOperation.call(this, operation, i);
+						break;
+					case 'appointment':
+						responseData = await handleAppointmentOperation.call(this, operation, i);
+						break;
+					case 'professional':
+						responseData = await handleProfessionalOperation.call(this, operation, i);
+						break;
+					case 'service':
+						responseData = await handleServiceOperation.call(this, operation, i);
+						break;
+					case 'partner':
+						responseData = await handlePartnerOperation.call(this, operation, i);
 						break;
 					default:
 						throw new NodeOperationError(this.getNode(), `Unknown resource: "${resource}"`, { itemIndex: i });
@@ -1381,6 +1409,251 @@ async function handleWhatsappTemplateOperation(
 			});
 		}
 
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+// Appointment handlers
+async function handleAppointmentOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	const appointmentId = this.getNodeParameter('appointmentId', index, '') as string;
+
+	switch (operation) {
+		case 'create': {
+			const contactId = this.getNodeParameter('contactId', index) as number;
+			const professionalId = this.getNodeParameter('professionalId', index) as number;
+			const serviceId = this.getNodeParameter('serviceId', index) as number;
+			const scheduledAt = this.getNodeParameter('scheduledAt', index) as string;
+			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
+			const body: any = {
+				appointment: {
+					contact_id: contactId,
+					professional_id: professionalId,
+					service_id: serviceId,
+					scheduled_at: scheduledAt,
+				},
+			};
+			if (additionalFields.endsAt) body.appointment.ends_at = additionalFields.endsAt;
+			if (additionalFields.notes) body.appointment.notes = additionalFields.notes;
+			if (additionalFields.partnerId) body.appointment.partner_id = additionalFields.partnerId;
+			if (additionalFields.conversationDisplayId) body.appointment.conversation_display_id = additionalFields.conversationDisplayId;
+			return await nooviChatApiRequest.call(this, 'POST', '/appointments', body);
+		}
+		case 'get':
+			return await nooviChatApiRequest.call(this, 'GET', `/appointments/${appointmentId}`);
+		case 'list': {
+			const filters = this.getNodeParameter('filters', index, {}) as any;
+			const qs: any = {};
+			if (filters.from) qs.from = filters.from;
+			if (filters.to) qs.to = filters.to;
+			if (filters.professionalId) qs.professional_id = filters.professionalId;
+			if (filters.status) qs.status = filters.status;
+			if (filters.page) qs.page = filters.page;
+			return await nooviChatApiRequest.call(this, 'GET', '/appointments', {}, qs);
+		}
+		case 'update': {
+			const updateFields = this.getNodeParameter('updateFields', index, {}) as any;
+			const body: any = { appointment: {} };
+			if (updateFields.scheduledAt) body.appointment.scheduled_at = updateFields.scheduledAt;
+			if (updateFields.endsAt) body.appointment.ends_at = updateFields.endsAt;
+			if (updateFields.professionalId) body.appointment.professional_id = updateFields.professionalId;
+			if (updateFields.serviceId) body.appointment.service_id = updateFields.serviceId;
+			if (updateFields.notes) body.appointment.notes = updateFields.notes;
+			if (updateFields.partnerId) body.appointment.partner_id = updateFields.partnerId;
+			return await nooviChatApiRequest.call(this, 'PATCH', `/appointments/${appointmentId}`, body);
+		}
+		case 'cancel': {
+			const reason = this.getNodeParameter('cancellationReason', index, '') as string;
+			const body: any = {};
+			if (reason) body.reason = reason;
+			return await nooviChatApiRequest.call(this, 'DELETE', `/appointments/${appointmentId}`, body);
+		}
+		case 'confirm':
+			return await nooviChatApiRequest.call(this, 'POST', `/appointments/${appointmentId}/confirm`);
+		case 'complete':
+			return await nooviChatApiRequest.call(this, 'POST', `/appointments/${appointmentId}/complete`);
+		case 'noShow':
+			return await nooviChatApiRequest.call(this, 'POST', `/appointments/${appointmentId}/no_show`);
+		case 'availability': {
+			const professionalId = this.getNodeParameter('professionalId', index) as number;
+			const serviceId = this.getNodeParameter('serviceId', index) as number;
+			const date = this.getNodeParameter('date', index) as string;
+			return await nooviChatApiRequest.call(this, 'GET', '/appointments/availability', {}, {
+				professional_id: professionalId,
+				service_id: serviceId,
+				date,
+			});
+		}
+		case 'export': {
+			const exportFilters = this.getNodeParameter('exportFilters', index, {}) as any;
+			const qs: any = {};
+			if (exportFilters.from) qs.from = exportFilters.from;
+			if (exportFilters.to) qs.to = exportFilters.to;
+			if (exportFilters.professionalId) qs.professional_id = exportFilters.professionalId;
+			if (exportFilters.status) qs.status = exportFilters.status;
+			return await nooviChatApiRequest.call(this, 'GET', '/appointments/export.csv', {}, qs);
+		}
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+// Professional handlers
+async function handleProfessionalOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	const professionalId = this.getNodeParameter('professionalId', index, '') as string;
+
+	switch (operation) {
+		case 'create': {
+			const name = this.getNodeParameter('name', index) as string;
+			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
+			const body: any = { professional: { name } };
+			if (additionalFields.specialty) body.professional.specialty = additionalFields.specialty;
+			if (additionalFields.registry) body.professional.registry = additionalFields.registry;
+			if (additionalFields.email) body.professional.email = additionalFields.email;
+			if (additionalFields.phone) body.professional.phone = additionalFields.phone;
+			if (additionalFields.color) body.professional.color = additionalFields.color;
+			if (additionalFields.bufferMinutes) body.professional.buffer_minutes = additionalFields.bufferMinutes;
+			if (additionalFields.workingHours) body.professional.working_hours = parseJsonValue(additionalFields.workingHours);
+			return await nooviChatApiRequest.call(this, 'POST', '/professionals', body);
+		}
+		case 'get':
+			return await nooviChatApiRequest.call(this, 'GET', `/professionals/${professionalId}`);
+		case 'list':
+			return await nooviChatApiRequest.call(this, 'GET', '/professionals');
+		case 'update': {
+			const updateFields = this.getNodeParameter('updateFields', index, {}) as any;
+			const body: any = { professional: {} };
+			if (updateFields.name) body.professional.name = updateFields.name;
+			if (updateFields.specialty) body.professional.specialty = updateFields.specialty;
+			if (updateFields.registry) body.professional.registry = updateFields.registry;
+			if (updateFields.email) body.professional.email = updateFields.email;
+			if (updateFields.phone) body.professional.phone = updateFields.phone;
+			if (updateFields.color) body.professional.color = updateFields.color;
+			if (updateFields.bufferMinutes) body.professional.buffer_minutes = updateFields.bufferMinutes;
+			if (updateFields.workingHours) body.professional.working_hours = parseJsonValue(updateFields.workingHours);
+			return await nooviChatApiRequest.call(this, 'PATCH', `/professionals/${professionalId}`, body);
+		}
+		case 'delete':
+			return await nooviChatApiRequest.call(this, 'DELETE', `/professionals/${professionalId}`);
+		case 'availability': {
+			const avProfessionalId = this.getNodeParameter('professionalId', index) as string;
+			const date = this.getNodeParameter('date', index) as string;
+			const serviceId = this.getNodeParameter('serviceId', index, 0) as number;
+			const qs: any = { date };
+			if (serviceId) qs.service_id = serviceId;
+			return await nooviChatApiRequest.call(this, 'GET', `/professionals/${avProfessionalId}/availability`, {}, qs);
+		}
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+// Service handlers
+async function handleServiceOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	const serviceId = this.getNodeParameter('serviceId', index, '') as string;
+
+	switch (operation) {
+		case 'create': {
+			const name = this.getNodeParameter('name', index) as string;
+			const durationMinutes = this.getNodeParameter('durationMinutes', index) as number;
+			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
+			const body: any = { service: { name, duration_minutes: durationMinutes } };
+			if (additionalFields.description) body.service.description = additionalFields.description;
+			if (additionalFields.defaultPriceCents) body.service.default_price_cents = additionalFields.defaultPriceCents;
+			if (additionalFields.currency) body.service.currency = additionalFields.currency;
+			if (additionalFields.color) body.service.color = additionalFields.color;
+			if (additionalFields.onlineAvailable !== undefined) body.service.online_available = additionalFields.onlineAvailable;
+			return await nooviChatApiRequest.call(this, 'POST', '/services', body);
+		}
+		case 'get':
+			return await nooviChatApiRequest.call(this, 'GET', `/services/${serviceId}`);
+		case 'list':
+			return await nooviChatApiRequest.call(this, 'GET', '/services');
+		case 'update': {
+			const updateFields = this.getNodeParameter('updateFields', index, {}) as any;
+			const body: any = { service: {} };
+			if (updateFields.name) body.service.name = updateFields.name;
+			if (updateFields.description) body.service.description = updateFields.description;
+			if (updateFields.durationMinutes) body.service.duration_minutes = updateFields.durationMinutes;
+			if (updateFields.defaultPriceCents) body.service.default_price_cents = updateFields.defaultPriceCents;
+			if (updateFields.currency) body.service.currency = updateFields.currency;
+			if (updateFields.color) body.service.color = updateFields.color;
+			if (updateFields.onlineAvailable !== undefined) body.service.online_available = updateFields.onlineAvailable;
+			return await nooviChatApiRequest.call(this, 'PATCH', `/services/${serviceId}`, body);
+		}
+		case 'delete':
+			return await nooviChatApiRequest.call(this, 'DELETE', `/services/${serviceId}`);
+		case 'listReminders':
+			return await nooviChatApiRequest.call(this, 'GET', `/services/${serviceId}/reminder_templates`);
+		case 'createReminder': {
+			const label = this.getNodeParameter('reminderLabel', index, '') as string;
+			const daysBefore = this.getNodeParameter('daysBefore', index, 0) as number;
+			const hoursBefore = this.getNodeParameter('hoursBefore', index, 0) as number;
+			const minutesBefore = this.getNodeParameter('minutesBefore', index, 0) as number;
+			const bodyTemplate = this.getNodeParameter('bodyTemplate', index) as string;
+			const sendVia = this.getNodeParameter('sendVia', index, 'whatsapp') as string;
+			const body: any = {
+				service_reminder_template: {
+					days_before: daysBefore,
+					hours_before: hoursBefore,
+					minutes_before: minutesBefore,
+					body_template: bodyTemplate,
+					send_via: sendVia,
+				},
+			};
+			if (label) body.service_reminder_template.label = label;
+			return await nooviChatApiRequest.call(this, 'POST', `/services/${serviceId}/reminder_templates`, body);
+		}
+		case 'updateReminder': {
+			const reminderTemplateId = this.getNodeParameter('reminderTemplateId', index) as string;
+			const reminderUpdateFields = this.getNodeParameter('reminderUpdateFields', index, {}) as any;
+			const body: any = { service_reminder_template: {} };
+			if (reminderUpdateFields.label) body.service_reminder_template.label = reminderUpdateFields.label;
+			if (reminderUpdateFields.daysBefore !== undefined) body.service_reminder_template.days_before = reminderUpdateFields.daysBefore;
+			if (reminderUpdateFields.hoursBefore !== undefined) body.service_reminder_template.hours_before = reminderUpdateFields.hoursBefore;
+			if (reminderUpdateFields.minutesBefore !== undefined) body.service_reminder_template.minutes_before = reminderUpdateFields.minutesBefore;
+			if (reminderUpdateFields.bodyTemplate) body.service_reminder_template.body_template = reminderUpdateFields.bodyTemplate;
+			if (reminderUpdateFields.sendVia) body.service_reminder_template.send_via = reminderUpdateFields.sendVia;
+			if (reminderUpdateFields.active !== undefined) body.service_reminder_template.active = reminderUpdateFields.active;
+			return await nooviChatApiRequest.call(this, 'PATCH', `/services/${serviceId}/reminder_templates/${reminderTemplateId}`, body);
+		}
+		case 'deleteReminder': {
+			const reminderTemplateId = this.getNodeParameter('reminderTemplateId', index) as string;
+			return await nooviChatApiRequest.call(this, 'DELETE', `/services/${serviceId}/reminder_templates/${reminderTemplateId}`);
+		}
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+// Partner handlers
+async function handlePartnerOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	const partnerId = this.getNodeParameter('partnerId', index, '') as string;
+
+	switch (operation) {
+		case 'create': {
+			const name = this.getNodeParameter('name', index) as string;
+			const kind = this.getNodeParameter('kind', index, 'convenio') as string;
+			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
+			const body: any = { partner: { name, kind } };
+			if (additionalFields.settings) body.partner.settings = parseJsonValue(additionalFields.settings);
+			return await nooviChatApiRequest.call(this, 'POST', '/partners', body);
+		}
+		case 'get':
+			return await nooviChatApiRequest.call(this, 'GET', `/partners/${partnerId}`);
+		case 'list':
+			return await nooviChatApiRequest.call(this, 'GET', '/partners');
+		case 'update': {
+			const updateFields = this.getNodeParameter('updateFields', index, {}) as any;
+			const body: any = { partner: {} };
+			if (updateFields.name) body.partner.name = updateFields.name;
+			if (updateFields.kind) body.partner.kind = updateFields.kind;
+			if (updateFields.settings) body.partner.settings = parseJsonValue(updateFields.settings);
+			if (updateFields.active !== undefined) body.partner.active = updateFields.active;
+			return await nooviChatApiRequest.call(this, 'PATCH', `/partners/${partnerId}`, body);
+		}
+		case 'delete':
+			return await nooviChatApiRequest.call(this, 'DELETE', `/partners/${partnerId}`);
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
