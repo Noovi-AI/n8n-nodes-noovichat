@@ -22,6 +22,7 @@ export const AppointmentOperations: INodeProperties[] = [
 			{ name: 'No Show', value: 'noShow', action: 'Mark appointment as no-show' },
 			{ name: 'Get Availability', value: 'availability', action: 'Get available slots for a professional' },
 			{ name: 'Export', value: 'export', action: 'Export appointments as CSV' },
+			{ name: 'Get Contact History', value: 'getContactHistory', action: 'Get appointment history for a contact' },
 		],
 		default: 'list',
 	},
@@ -278,6 +279,13 @@ export const AppointmentFields: INodeProperties[] = [
 				default: 1,
 				description: 'Page number for pagination',
 			},
+			{
+				displayName: 'Pipeline Card ID',
+				name: 'pipeline_card_id',
+				type: 'number',
+				default: 0,
+				description: 'Filter appointments linked to a specific pipeline card',
+			},
 		],
 	},
 
@@ -375,5 +383,34 @@ export const AppointmentFields: INodeProperties[] = [
 				description: 'Filter by appointment status',
 			},
 		],
+	},
+
+	// --- Get Contact History ---
+	{
+		displayName: 'Contact ID',
+		name: 'contact_id',
+		type: 'number',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['appointment'],
+				operation: ['getContactHistory'],
+			},
+		},
+		default: 0,
+		description: 'NooviChat contact ID',
+	},
+	{
+		displayName: 'Page',
+		name: 'page',
+		type: 'number',
+		displayOptions: {
+			show: {
+				resource: ['appointment'],
+				operation: ['getContactHistory'],
+			},
+		},
+		default: 1,
+		description: 'Page number for pagination',
 	},
 ];

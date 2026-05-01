@@ -1449,6 +1449,7 @@ async function handleAppointmentOperation(this: IExecuteFunctions, operation: st
 			if (filters.professionalId) qs.professional_id = filters.professionalId;
 			if (filters.status) qs.status = filters.status;
 			if (filters.page) qs.page = filters.page;
+			if (filters.pipeline_card_id) qs.pipeline_card_id = filters.pipeline_card_id;
 			return await nooviChatApiRequest.call(this, 'GET', '/appointments', {}, qs);
 		}
 		case 'update': {
@@ -1492,6 +1493,17 @@ async function handleAppointmentOperation(this: IExecuteFunctions, operation: st
 			if (exportFilters.professionalId) qs.professional_id = exportFilters.professionalId;
 			if (exportFilters.status) qs.status = exportFilters.status;
 			return await nooviChatApiRequest.call(this, 'GET', '/appointments/export.csv', {}, qs);
+		}
+		case 'getContactHistory': {
+			const contactId = this.getNodeParameter('contact_id', index) as number;
+			const page = this.getNodeParameter('page', index, 1) as number;
+			return await nooviChatApiRequest.call(
+				this,
+				'GET',
+				`/contacts/${contactId}/appointment_history`,
+				undefined,
+				{ page },
+			);
 		}
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });

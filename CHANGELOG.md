@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.8.0 (2026-05-01)
+
+### Added
+
+- New operation: `Get Contact History` on Appointment resource — fetches
+  paginated chronological appointment history for a contact via
+  `GET /api/v1/accounts/:id/contacts/:contact_id/appointment_history`
+- New filter: `pipeline_card_id` on Appointment List operation — fetch
+  appointments linked to a specific pipeline card (Pipeline Pro
+  integration)
+
+### Notes
+
+- Server-side feature additions match Chatwoot release adding the
+  `appointment_history` endpoint and `pipeline_card_id` filter
+- Webhook events `reminder.sent` and `reminder.failed` (declared in
+  v0.7.0) are now functionally dispatched by the server-side cron job
+- Past `scheduled_at` and invalid status transitions return 422 errors;
+  workflows should handle these as user-correctable validation errors
+
+---
+
 ## 0.7.0 (2026-04-30)
 
 ### Added
