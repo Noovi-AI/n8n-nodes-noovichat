@@ -65,6 +65,48 @@ grep -r "endpoint_path" "/home/debian/projects/Noovichat/NooviWoot-N8N/nodes/"
 /whatsapp_templates          → WhatsappTemplateDescription.ts (NooviChat custom — Meta Cloud CRUD)
 ```
 
+## Mudanças na API (histórico de incidents)
+
+### 2026-05-07 — Pipeline stages format (incident `array-coalesce`)
+
+**Sintoma observado**: cliente edita descrição de stage via API → 191 cards
+movidos silenciosamente para "Entrada de Lead".
+
+**Causa**: `pipelines_controller.rb#pipeline_params` aceitava `stages` como
+ARRAY e usava o índice posicional como key do hash interno, descartando
+os IDs reais. A detecção de "stages removidas" então marcava todas como
+removidas e disparava `handle_orphan_cards`.
+
+**Fix backend (v4.13.0.34)**:
+1. Array com `id` em cada item → keys preservadas, OK
+2. Array sem `id` → 422 "payload appears malformed"
+3. Hash keyed by id → sempre OK (formato canônico)
+
+**Status do n8n node**: ✅ NÃO vulnerável. Todos os 4 caminhos
+(`addStage`, `updateStage`, `deleteStage`, `reorderStages`) já mandam
+stages como `Record<string, ...>` (hash). Veja `NooviChat.node.ts:752-844`.
+
+**Cuidado em PRs futuros**: ao tocar em qualquer operation que manipula
+`pipeline.stages`, garantir que o payload PATCH continue sendo
+`{ stages: Record<string, StageObject> }`, NUNCA array. Considerar test
+unit verificando esse contrato.
+
+### 2026-05-07 — Pipeline Sequences feature flag
+
+A feature `pipeline_sequences` agora pode ser desligada per-account via
+SuperAdmin. **Atualmente o n8n node NÃO expõe Sequences como resource**
+(oportunidade para próximo minor). Quando expor, todos os endpoints
+`/pipeline/cards/:id/sequences` e `/pipeline/activity_sequences`
+retornam 403 quando feature off — o node deve surface o erro do backend
+sem retry automático.
+
+### 2026-05-07 — Webhook URL SSRF protection
+
+`PipelineWebhook.url` agora é validado contra IPs privados (10.x,
+192.168.x, 127.x, ::1, 169.254.x AWS metadata). Cliente que tentar
+criar webhook apontando para endereço interno → HTTP 422 com erro claro
+em `errors.url`. Sem mudança no código do node — apenas surface o erro.
+
 ## Publicar atualização após sync
 
 ```bash
