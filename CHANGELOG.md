@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.8.2 (2026-05-24)
+
+### Fixed
+
+- **Webhook · Get Many returned empty**: backend `webhooks#index` returns
+  `{ payload: { webhooks: [...] } }` (nested object, not array), which the
+  pagination helper didn't recognize — `Get Many` returned `[]` even when
+  webhooks existed. As a downstream consequence, the Trigger node's
+  `checkExists` failed → tried to recreate the same URL → backend rejected
+  with `422 — Url has already been taken`. Fix: generic `extractItems()`
+  helper now walks the response and accepts:
+  - `{ data: { payload: [...] } }`
+  - `{ data: [...] }`
+  - `{ payload: [...] }`
+  - `{ payload: { <resource>: [...] } }` ← **new (covers webhooks)**
+  - `{ activities: [...], meta: {...} }`
+  - `{ <resource>: [...], meta: {...} }` ← **new (covers teams, etc)**
+  - `[...]` bare array
+
+### Notes
+
+- This unblocks workflows that subscribe webhooks via the Trigger node
+  on accounts that already had any webhook registered (the silent empty
+  response made the Trigger think no webhook existed and try to create a
+  duplicate, hitting the unique-URL constraint).
+- 2 regression tests added (1 for webhooks shape, 1 for teams-like shape).
+  Test suite total: 133 → 135.
+- No behaviour change for endpoints that already worked; the new
+  `extractItems()` checks the previous fallbacks in the same order before
+  falling through to the new tiers.
+
+---
+
 ## 0.8.1 (2026-05-24)
 
 ### Fixed

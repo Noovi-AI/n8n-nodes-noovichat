@@ -261,6 +261,31 @@ describe('nooviChatApiRequestAllItems', () => {
 		expect(result).toEqual(activities);
 	});
 
+	it('should extract { payload: { webhooks: [...] } } shape (webhooks endpoint)', async () => {
+		// Backend: webhooks/index.json.jbuilder wraps payload as nested object.
+		// Real bug reported 2026-05-24 — without fix, Get Many returned empty.
+		const webhooks = [
+			{ id: 1, url: 'https://hook.example.com/a', subscriptions: ['message_created'] },
+			{ id: 2, url: 'https://hook.example.com/b', subscriptions: ['conversation_created'] },
+		];
+		mockRequest.mockResolvedValue({ payload: { webhooks } });
+
+		const result = await nooviChatApiRequestAllItems.call(createContext(), 'GET', '/webhooks');
+
+		expect(result).toEqual(webhooks);
+		expect(result).toHaveLength(2);
+	});
+
+	it('should handle { teams: [...], meta: {} } and similar root-level array shapes', async () => {
+		// Tier 3 fallback: single array child at root level, excluding meta/links keys
+		const teams = [{ id: 1, name: 'Sales' }, { id: 2, name: 'Support' }];
+		mockRequest.mockResolvedValue({ teams, meta: { total: 2 } });
+
+		const result = await nooviChatApiRequestAllItems.call(createContext(), 'GET', '/teams');
+
+		expect(result).toEqual(teams);
+	});
+
 	it('should append _truncated sentinel when MAX_PAGES is reached', async () => {
 		// Simulate a misbehaving backend that always returns full page
 		const fullPage = Array.from({ length: 25 }, (_, i) => ({ id: i }));

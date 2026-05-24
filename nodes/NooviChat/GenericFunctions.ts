@@ -174,6 +174,47 @@ async function withRateLimitRetry<T>(fn: () => Promise<T>): Promise<T> {
 	throw new Error('Exhausted retries');
 }
 
+/**
+ * Extract the items array from a paginated response, walking through every
+ * shape Chatwoot/NooviChat controllers emit. Returns null when no array is found.
+ *
+ * Known shapes (from inspecting `app/views/api/v1/.../*.jbuilder`):
+ *   { data: { payload: [...] } }          — most paginated index actions
+ *   { data: [...] }                       — JSON-API style
+ *   { payload: [...] }                    — contacts/index, conversations/index
+ *   { payload: { <resource>: [...] } }    — webhooks/index, some nested resources
+ *   { <resource>: [...], meta: {...} }    — pipeline/activities, custom controllers
+ *   [...]                                 — bare array (campaigns, agents, labels)
+ */
+function extractItems(response: any): any[] | null {
+	if (response == null) return null;
+	if (Array.isArray(response)) return response;
+
+	// Tier 1: explicit array properties at known positions
+	if (Array.isArray(response.data?.payload)) return response.data.payload;
+	if (Array.isArray(response.data)) return response.data;
+	if (Array.isArray(response.payload)) return response.payload;
+	if (Array.isArray(response.activities)) return response.activities;
+
+	// Tier 2: { payload: { <resource>: [...] } } — webhooks-style nesting.
+	// We accept this only when payload has exactly one array child to avoid
+	// false matches on payloads that mix arrays and scalars.
+	if (response.payload && typeof response.payload === 'object') {
+		const arrayChildren = Object.values(response.payload).filter((v) => Array.isArray(v));
+		if (arrayChildren.length === 1) return arrayChildren[0] as any[];
+	}
+
+	// Tier 3: top-level single-array-child object (e.g. { webhooks: [...] } at root)
+	if (typeof response === 'object') {
+		const arrayChildren = Object.entries(response)
+			.filter(([k]) => k !== 'meta' && k !== 'links')
+			.filter(([, v]) => Array.isArray(v));
+		if (arrayChildren.length === 1) return arrayChildren[0][1] as any[];
+	}
+
+	return null;
+}
+
 export async function nooviChatApiRequestAllItems(
 	this: NooviChatContext,
 	method: IHttpRequestMethods,
@@ -191,18 +232,7 @@ export async function nooviChatApiRequestAllItems(
 		const response = await withRateLimitRetry(() =>
 			nooviChatApiRequest.call(this, method, endpoint, body, currentQs),
 		);
-		// Response shape fallbacks (most specific first):
-		//   { data: { payload: [...] } }     — paginated nested payload
-		//   { data: [...] }                  — JSON-API style
-		//   { payload: [...] }               — top-level payload
-		//   { activities: [...], meta: {} }  — pipeline/activities_controller.rb:24-27
-		//   [...]                            — bare array
-		const items =
-			response.data?.payload ||
-			response.data ||
-			response.payload ||
-			response.activities ||
-			response;
+		const items = extractItems(response);
 
 		if (!Array.isArray(items) || items.length === 0) {
 			break;
