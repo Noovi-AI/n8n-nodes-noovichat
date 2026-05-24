@@ -1314,20 +1314,40 @@ async function handleWahaOperation(this: IExecuteFunctions, operation: string, i
 			return await nooviChatApiRequest.call(this, 'POST', `/waha/${inboxId}/reconnect`);
 		case 'disconnect':
 			return await nooviChatApiRequest.call(this, 'POST', `/waha/${inboxId}/disconnect`);
-		case 'updateConfig': {
-			const config = this.getNodeParameter('config', index) as any;
-			const parsed = parseJsonValue(config);
-			return await nooviChatApiRequest.call(this, 'PATCH', `/waha/${inboxId}/config`, parsed);
-		}
 		case 'getSettings':
 			return await nooviChatApiRequest.call(this, 'GET', `/waha/${inboxId}/settings`);
-		case 'updateMetaTracking': {
-			const metaPixelId = this.getNodeParameter('metaPixelId', index, '') as string;
-			const metaAccessToken = this.getNodeParameter('metaAccessToken', index, '') as string;
-			return await nooviChatApiRequest.call(this, 'PATCH', `/waha/${inboxId}/settings/meta_tracking`, {
-				pixel_id: metaPixelId,
-				access_token: metaAccessToken,
-			});
+		case 'updateChatwootAppSettings': {
+			// Backend: PATCH /waha/:id/settings/chatwoot_app — Rails wrap_parameters auto-wraps as { chatwoot_app: {...} }
+			const settings = this.getNodeParameter('chatwootAppSettings', index) as any;
+			const parsed = parseJsonValue(settings);
+			return await nooviChatApiRequest.call(
+				this,
+				'PATCH',
+				`/waha/${inboxId}/settings/chatwoot_app`,
+				parsed,
+			);
+		}
+		case 'updateSessionSettings': {
+			// Backend: PATCH /waha/:id/settings/session — wraps as { session: {...} }
+			const settings = this.getNodeParameter('sessionSettings', index) as any;
+			const parsed = parseJsonValue(settings);
+			return await nooviChatApiRequest.call(
+				this,
+				'PATCH',
+				`/waha/${inboxId}/settings/session`,
+				parsed,
+			);
+		}
+		case 'updateWebhookSettings': {
+			// Backend: PATCH /waha/:id/settings/webhook — wraps as { webhook: {...} }
+			const settings = this.getNodeParameter('webhookSettings', index) as any;
+			const parsed = parseJsonValue(settings);
+			return await nooviChatApiRequest.call(
+				this,
+				'PATCH',
+				`/waha/${inboxId}/settings/webhook`,
+				parsed,
+			);
 		}
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
@@ -1393,11 +1413,12 @@ async function handleWhatsappTemplateOperation(
 
 		case 'delete': {
 			const templateName = this.getNodeParameter('templateName', index) as string;
-			// Backend exige template_name como param pra chamada Meta; path :id é ignorado no destroy.
+			// Backend routes :destroy on the collection (routes.rb:152), no :id in path.
+			// inbox_id + template_name identify the template for the Meta API call.
 			return await nooviChatApiRequest.call(
 				this,
 				'DELETE',
-				'/whatsapp_templates/0',
+				'/whatsapp_templates',
 				{},
 				{ inbox_id: inboxId, template_name: templateName },
 			);
@@ -1484,15 +1505,6 @@ async function handleAppointmentOperation(this: IExecuteFunctions, operation: st
 				service_id: serviceId,
 				date,
 			});
-		}
-		case 'export': {
-			const exportFilters = this.getNodeParameter('exportFilters', index, {}) as any;
-			const qs: any = {};
-			if (exportFilters.from) qs.from = exportFilters.from;
-			if (exportFilters.to) qs.to = exportFilters.to;
-			if (exportFilters.professionalId) qs.professional_id = exportFilters.professionalId;
-			if (exportFilters.status) qs.status = exportFilters.status;
-			return await nooviChatApiRequest.call(this, 'GET', '/appointments/export.csv', {}, qs);
 		}
 		case 'getContactHistory': {
 			const contactId = this.getNodeParameter('contact_id', index) as number;

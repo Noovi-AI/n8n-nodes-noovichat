@@ -358,4 +358,75 @@ describe('NooviChat Node — execute', () => {
 			expect.objectContaining({ method: 'POST', uri: expect.stringContaining('/waha/12/reconnect') }),
 		);
 	});
+
+	// --- v0.8.1: WAHA settings refactor (replaced broken updateConfig/updateMetaTracking) ---
+
+	it('should call PATCH /waha/:id/settings/chatwoot_app on updateChatwootAppSettings', async () => {
+		const ctx = buildContext('waha', 'updateChatwootAppSettings', {
+			inboxId: '12',
+			chatwootAppSettings: { conversation_mode: 'single', mark_messages_read: true },
+		});
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'PATCH',
+				uri: expect.stringContaining('/waha/12/settings/chatwoot_app'),
+				body: { conversation_mode: 'single', mark_messages_read: true },
+			}),
+		);
+	});
+
+	it('should call PATCH /waha/:id/settings/session on updateSessionSettings', async () => {
+		const ctx = buildContext('waha', 'updateSessionSettings', {
+			inboxId: '12',
+			sessionSettings: { presence_auto_online: true },
+		});
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'PATCH',
+				uri: expect.stringContaining('/waha/12/settings/session'),
+			}),
+		);
+	});
+
+	it('should call PATCH /waha/:id/settings/webhook on updateWebhookSettings', async () => {
+		const ctx = buildContext('waha', 'updateWebhookSettings', {
+			inboxId: '12',
+			webhookSettings: { events: ['message.any'] },
+		});
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'PATCH',
+				uri: expect.stringContaining('/waha/12/settings/webhook'),
+			}),
+		);
+	});
+
+	it('should parse string-encoded WAHA settings JSON', async () => {
+		const ctx = buildContext('waha', 'updateChatwootAppSettings', {
+			inboxId: '12',
+			chatwootAppSettings: '{"language":"pt-BR"}',
+		});
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ body: { language: 'pt-BR' } }),
+		);
+	});
+
+	// --- v0.8.1: WhatsApp Templates DELETE uses collection route (no /:id) ---
+
+	it('should call DELETE /whatsapp_templates (collection) on whatsappTemplate.delete', async () => {
+		const ctx = buildContext('whatsappTemplate', 'delete', {
+			inboxId: 5,
+			templateName: 'welcome_msg',
+		});
+		await node.execute.call(ctx);
+		const call = ctx._mockRequest.mock.calls[0][0];
+		expect(call.method).toBe('DELETE');
+		// Must end with /whatsapp_templates (no trailing /0, no template id in path)
+		expect(call.uri).toMatch(/\/whatsapp_templates$/);
+		expect(call.qs).toEqual({ inbox_id: 5, template_name: 'welcome_msg' });
+	});
 });

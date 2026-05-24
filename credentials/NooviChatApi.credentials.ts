@@ -51,5 +51,31 @@ export class NooviChatApi implements ICredentialType {
 			url: '/api/v1/profile',
 			method: 'GET' as IHttpRequestMethods,
 		},
+		rules: [
+			{
+				type: 'responseCode',
+				properties: {
+					value: 401,
+					message:
+						'Token rejected (401). Check Settings → Account → API Access Token in your NooviChat instance and copy the token exactly.',
+				},
+			},
+			{
+				type: 'responseCode',
+				properties: {
+					value: 403,
+					message:
+						'Token is valid but lacks permission to read profile (403). Use an admin or agent token, not a custom-scope token.',
+				},
+			},
+			{
+				type: 'responseCode',
+				properties: {
+					value: 404,
+					message:
+						'Endpoint /api/v1/profile not found (404). Confirm Base URL points to a NooviChat/Chatwoot root (e.g. https://chat.example.com), not to /app or /api directly.',
+				},
+			},
+		],
 	};
 }

@@ -214,6 +214,71 @@ describe('nooviChatApiRequestAllItems', () => {
 		expect(mockRequest.mock.calls[0][0].qs).toEqual({ page: 1, per_page: 25 });
 		expect(mockRequest.mock.calls[1][0].qs).toEqual({ page: 2, per_page: 25 });
 	});
+
+	// --- v0.8.1 regression coverage ---
+
+	it('should use per_page=15 for /contacts (backend hardcoded RESULTS_PER_PAGE)', async () => {
+		// Backend returns 15 → with old PAGE_SIZE=25 we falsely broke on first page
+		const page1 = Array.from({ length: 15 }, (_, i) => ({ id: i + 1 }));
+		const page2 = Array.from({ length: 15 }, (_, i) => ({ id: i + 16 }));
+		const page3 = [{ id: 31 }];
+
+		mockRequest
+			.mockResolvedValueOnce({ payload: page1 })
+			.mockResolvedValueOnce({ payload: page2 })
+			.mockResolvedValueOnce({ payload: page3 });
+
+		const result = await nooviChatApiRequestAllItems.call(createContext(), 'GET', '/contacts');
+
+		expect(result).toHaveLength(31);
+		expect(mockRequest.mock.calls[0][0].qs).toEqual({ page: 1, per_page: 15 });
+		expect(mockRequest.mock.calls[1][0].qs).toEqual({ page: 2, per_page: 15 });
+		expect(mockRequest.mock.calls[2][0].qs).toEqual({ page: 3, per_page: 15 });
+	});
+
+	it('should use per_page=15 for /notifications and /audit_logs', async () => {
+		mockRequest.mockResolvedValue({ payload: [{ id: 1 }] });
+
+		await nooviChatApiRequestAllItems.call(createContext(), 'GET', '/notifications');
+		expect(mockRequest.mock.calls[0][0].qs).toEqual({ page: 1, per_page: 15 });
+
+		mockRequest.mockClear();
+		await nooviChatApiRequestAllItems.call(createContext(), 'GET', '/audit_logs');
+		expect(mockRequest.mock.calls[0][0].qs).toEqual({ page: 1, per_page: 15 });
+	});
+
+	it('should fall back to response.activities for pipeline/activities endpoint', async () => {
+		// Backend: pipeline/activities_controller.rb returns { activities: [...], meta: {...} }
+		const activities = [{ id: 1, title: 'Call' }, { id: 2, title: 'Email' }];
+		mockRequest.mockResolvedValue({ activities, meta: { total: 2 } });
+
+		const result = await nooviChatApiRequestAllItems.call(
+			createContext(),
+			'GET',
+			'/pipeline/activities',
+		);
+
+		expect(result).toEqual(activities);
+	});
+
+	it('should append _truncated sentinel when MAX_PAGES is reached', async () => {
+		// Simulate a misbehaving backend that always returns full page
+		const fullPage = Array.from({ length: 25 }, (_, i) => ({ id: i }));
+		mockRequest.mockResolvedValue({ data: { payload: fullPage } });
+
+		const result = await nooviChatApiRequestAllItems.call(
+			createContext(),
+			'GET',
+			'/conversations',
+		);
+
+		// 400 pages × 25 = 10000 records + 1 sentinel
+		expect(result.length).toBe(10001);
+		const last = result[result.length - 1];
+		expect(last._truncated).toBe(true);
+		expect(last._truncated_reason).toContain('MAX_PAGES=400');
+		expect(last._truncated_endpoint).toBe('/conversations');
+	}, 30000);
 });
 
 describe('parseJsonValue', () => {

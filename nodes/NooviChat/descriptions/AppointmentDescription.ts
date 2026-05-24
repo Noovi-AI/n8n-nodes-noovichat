@@ -21,7 +21,6 @@ export const AppointmentOperations: INodeProperties[] = [
 			{ name: 'Complete', value: 'complete', action: 'Mark appointment as completed' },
 			{ name: 'No Show', value: 'noShow', action: 'Mark appointment as no-show' },
 			{ name: 'Get Availability', value: 'availability', action: 'Get available slots for a professional' },
-			{ name: 'Export', value: 'export', action: 'Export appointments as CSV' },
 			{ name: 'Get Contact History', value: 'getContactHistory', action: 'Get appointment history for a contact' },
 		],
 		default: 'list',
@@ -331,58 +330,6 @@ export const AppointmentFields: INodeProperties[] = [
 		},
 		default: '',
 		description: 'Date to check available slots (YYYY-MM-DD)',
-	},
-
-	// --- Export ---
-	{
-		displayName: 'Export Filters',
-		name: 'exportFilters',
-		type: 'collection',
-		placeholder: 'Add Filter',
-		displayOptions: {
-			show: {
-				resource: ['appointment'],
-				operation: ['export'],
-			},
-		},
-		default: {},
-		options: [
-			{
-				displayName: 'From',
-				name: 'from',
-				type: 'dateTime',
-				default: '',
-				description: 'Export appointments scheduled on or after this date',
-			},
-			{
-				displayName: 'To',
-				name: 'to',
-				type: 'dateTime',
-				default: '',
-				description: 'Export appointments scheduled on or before this date',
-			},
-			{
-				displayName: 'Professional ID',
-				name: 'professionalId',
-				type: 'number',
-				default: 0,
-				description: 'Filter by professional ID',
-			},
-			{
-				displayName: 'Status',
-				name: 'status',
-				type: 'options',
-				options: [
-					{ name: 'Scheduled', value: 'scheduled' },
-					{ name: 'Confirmed', value: 'confirmed' },
-					{ name: 'Completed', value: 'completed' },
-					{ name: 'Cancelled', value: 'cancelled' },
-					{ name: 'No Show', value: 'no_show' },
-				],
-				default: 'scheduled',
-				description: 'Filter by appointment status',
-			},
-		],
 	},
 
 	// --- Get Contact History ---

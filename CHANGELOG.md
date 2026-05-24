@@ -1,5 +1,58 @@
 # Changelog
 
+## 0.8.1 (2026-05-24)
+
+### Fixed
+
+- **WhatsApp Templates · Delete**: operation was hitting `/whatsapp_templates/0`
+  which doesn't exist (Rails router has `delete :destroy` on the collection,
+  not the member). Fixed to call `DELETE /whatsapp_templates?inbox_id=…&template_name=…`.
+- **WAHA · Update Config / Update Meta Tracking**: replaced two broken
+  operations (both returned 404 — endpoints never existed on the backend)
+  with three operations that match the real backend routes:
+  - `Update Chatwoot App Settings` → `PATCH /waha/:id/settings/chatwoot_app`
+  - `Update Session Settings` → `PATCH /waha/:id/settings/session`
+  - `Update Webhook Settings` → `PATCH /waha/:id/settings/webhook`
+  Each accepts a JSON body with hint listing the allowed keys.
+- **Activity · Get Many**: returnAll was returning only the first page because
+  the backend response shape `{ activities: [...], meta: {...} }` didn't match
+  any of the helper's fallbacks. Added `response.activities` to the fallback list.
+- **Contacts / Notifications / Audit Logs · Get Many with returnAll**: pagination
+  silently truncated to 15 records because the backend ignores `per_page` on
+  those endpoints (`RESULTS_PER_PAGE = 15` hardcoded in `contacts_controller.rb`).
+  Added per-endpoint page size override table so the `length < pageSize`
+  termination check works correctly.
+- **Appointment · Export**: removed. Backend returns 501 Not Implemented
+  (the CSV export is a TODO without an ETA). Will be re-added when the
+  backend implements it.
+
+### Improved
+
+- **Pagination MAX_PAGES sentinel**: when pagination hits the 10000-record
+  safety cap, the returned array now ends with a sentinel item
+  `{ _truncated: true, _truncated_reason, _truncated_endpoint }` so
+  downstream workflows can detect silent truncation. Previously the cap
+  was hit without warning.
+- **Credential test diagnostics**: the credential test now provides
+  specific guidance for 401 ("token rejected"), 403 ("token lacks
+  permission"), and 404 ("baseUrl is wrong") responses instead of n8n's
+  generic "Authentication failed" message.
+
+### Notes
+
+- All 7 fixes are backwards compatible at the workflow level. The only
+  user-visible removal (`Appointment.export`) was non-functional in v0.8.0
+  (501 from backend); no working workflow depended on it.
+- The two WAHA operations renamed in this release (`updateConfig`,
+  `updateMetaTracking`) were also non-functional in v0.8.0 (404 from
+  backend); workflows that used them were already broken.
+- 9 new tests added covering: WAHA settings paths, WhatsApp templates
+  delete collection route, contacts/notifications/audit_logs page size
+  override, activities response shape fallback, MAX_PAGES sentinel.
+  Test suite total: 124 → 133.
+
+---
+
 ## 0.8.0 (2026-05-01)
 
 ### Added

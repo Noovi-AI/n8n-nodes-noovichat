@@ -11,9 +11,31 @@ import {
 
 type NooviChatContext = IExecuteFunctions | IHookFunctions | IWebhookFunctions;
 
-// Number of items per page sent to the API. Stop pagination when the
-// response contains fewer items than this value.
+// Default number of items per page sent to the API. Stop pagination when the
+// response contains fewer items than the effective page size.
 const PAGE_SIZE = 25;
+
+// Some controllers ignore `per_page` and use their own hardcoded limit.
+// When that happens, the `length < PAGE_SIZE` heuristic ends pagination
+// prematurely. This table maps endpoint prefixes to the backend's real
+// page size so the heuristic stays correct.
+// Sources:
+//   - contacts_controller.rb:12  → RESULTS_PER_PAGE = 15
+//   - notifications_controller.rb → 15
+//   - audit_logs_controller.rb → 15
+// (messages uses cursor-based `before` pagination, handled separately by the handler.)
+const ENDPOINT_PAGE_SIZE_OVERRIDES: Array<[RegExp, number]> = [
+	[/^\/contacts(?:\/search|\/filter)?(?:\?|$)/, 15],
+	[/^\/notifications(?:\?|$)/, 15],
+	[/^\/audit_logs(?:\?|$)/, 15],
+];
+
+function effectivePageSize(endpoint: string): number {
+	for (const [re, size] of ENDPOINT_PAGE_SIZE_OVERRIDES) {
+		if (re.test(endpoint)) return size;
+	}
+	return PAGE_SIZE;
+}
 
 // Safety cap to prevent infinite loops against misbehaving APIs.
 // 400 pages × 25 = 10,000 records maximum before bailing out.
@@ -160,15 +182,27 @@ export async function nooviChatApiRequestAllItems(
 	qs: IDataObject = {},
 ): Promise<any[]> {
 	const returnData: any[] = [];
+	const pageSize = effectivePageSize(endpoint);
 	let page = 1;
 
 	for (;;) {
-		const currentQs = { ...qs, page, per_page: PAGE_SIZE };
+		const currentQs = { ...qs, page, per_page: pageSize };
 		// Use retry wrapper so 429s on any page don't abort the full pagination
 		const response = await withRateLimitRetry(() =>
 			nooviChatApiRequest.call(this, method, endpoint, body, currentQs),
 		);
-		const items = response.data?.payload || response.data || response.payload || response;
+		// Response shape fallbacks (most specific first):
+		//   { data: { payload: [...] } }     — paginated nested payload
+		//   { data: [...] }                  — JSON-API style
+		//   { payload: [...] }               — top-level payload
+		//   { activities: [...], meta: {} }  — pipeline/activities_controller.rb:24-27
+		//   [...]                            — bare array
+		const items =
+			response.data?.payload ||
+			response.data ||
+			response.payload ||
+			response.activities ||
+			response;
 
 		if (!Array.isArray(items) || items.length === 0) {
 			break;
@@ -176,11 +210,19 @@ export async function nooviChatApiRequestAllItems(
 
 		returnData.push(...items);
 
-		if (items.length < PAGE_SIZE) {
+		if (items.length < pageSize) {
 			break;
 		}
 
 		if (page >= MAX_PAGES) {
+			// Surface truncation explicitly so downstream workflow can detect it.
+			// We append a sentinel item rather than throwing — throwing would
+			// discard the (up to) 10000 records already collected.
+			returnData.push({
+				_truncated: true,
+				_truncated_reason: `Pagination capped at MAX_PAGES=${MAX_PAGES} (${returnData.length} records collected). Use server-side filters to narrow scope.`,
+				_truncated_endpoint: endpoint,
+			} as any);
 			break;
 		}
 
