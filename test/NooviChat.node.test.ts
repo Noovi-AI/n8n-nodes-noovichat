@@ -82,7 +82,19 @@ describe('NooviChat Node — execute', () => {
 					limit: 50,
 					...params,
 				};
-				return paramMap[name] !== undefined ? paramMap[name] : fallback;
+				// 1st: try exact literal key (legacy tests register flat keys like 'cardIds.values')
+				if (paramMap[name] !== undefined) return paramMap[name];
+				// 2nd: support dotted-path access (n8n's real getNodeParameter resolves nested
+				// keys like 'reminderTemplates.templates' from { reminderTemplates: { templates: [] } })
+				if (name.includes('.')) {
+					const segments = name.split('.');
+					let cursor: any = paramMap[segments[0]];
+					for (let i = 1; i < segments.length && cursor != null; i++) {
+						cursor = cursor[segments[i]];
+					}
+					if (cursor !== undefined) return cursor;
+				}
+				return fallback;
 			},
 			getCredentials: jest.fn().mockResolvedValue({
 				baseUrl: 'https://chat.example.com',
@@ -428,5 +440,152 @@ describe('NooviChat Node — execute', () => {
 		// Must end with /whatsapp_templates (no trailing /0, no template id in path)
 		expect(call.uri).toMatch(/\/whatsapp_templates$/);
 		expect(call.qs).toEqual({ inbox_id: 5, template_name: 'welcome_msg' });
+	});
+
+	// --- v0.8.3: SLA field names fixed (backend strong params) ---
+
+	it('should map SLA fields to canonical *_threshold names on createPolicy', async () => {
+		const ctx = buildContext('sla', 'createPolicy', {
+			policyName: 'Gold SLA',
+			firstResponseTimeThreshold: 1800,
+			nextResponseTimeThreshold: 3600,
+			resolutionTimeThreshold: 14400,
+			onlyDuringBusinessHours: true,
+			policyDescription: 'Premium customers',
+		});
+		await node.execute.call(ctx);
+		const call = ctx._mockRequest.mock.calls[0][0];
+		expect(call.method).toBe('POST');
+		expect(call.uri).toContain('/sla_policies');
+		expect(call.body).toEqual({
+			name: 'Gold SLA',
+			first_response_time_threshold: 1800,
+			next_response_time_threshold: 3600,
+			resolution_time_threshold: 14400,
+			only_during_business_hours: true,
+			description: 'Premium customers',
+		});
+	});
+
+	it('should omit optional SLA fields when not provided on updatePolicy', async () => {
+		const ctx = buildContext('sla', 'updatePolicy', {
+			policyId: '42',
+			policyName: 'Renamed',
+			firstResponseTimeThreshold: 7200,
+		});
+		await node.execute.call(ctx);
+		const call = ctx._mockRequest.mock.calls[0][0];
+		expect(call.method).toBe('PATCH');
+		expect(call.body).toEqual({ name: 'Renamed', first_response_time_threshold: 7200 });
+		expect(call.body).not.toHaveProperty('inbox_ids'); // removed in 0.8.3
+		expect(call.body).not.toHaveProperty('resolution_time'); // old name removed
+	});
+
+	// --- v0.8.3: SLA metrics/export use since/until in unix epoch seconds ---
+
+	it('should convert ISO start/end dates to unix-epoch since/until on sla.getMetrics', async () => {
+		const ctx = buildContext('sla', 'getMetrics', {
+			startDate: '2026-05-01T00:00:00Z',
+			endDate: '2026-05-31T23:59:59Z',
+		});
+		await node.execute.call(ctx);
+		const call = ctx._mockRequest.mock.calls[0][0];
+		expect(call.uri).toContain('/applied_slas/metrics');
+		expect(call.qs).toEqual({
+			since: 1777593600, // 2026-05-01T00:00:00Z
+			until: 1780271999, // 2026-05-31T23:59:59Z
+		});
+	});
+
+	it('should pass-through numeric epoch values for sla.exportCsv', async () => {
+		const ctx = buildContext('sla', 'exportCsv', {
+			startDate: '1700000000',
+			endDate: '1700604800',
+		});
+		await node.execute.call(ctx);
+		const call = ctx._mockRequest.mock.calls[0][0];
+		expect(call.uri).toContain('/applied_slas/download');
+		expect(call.qs).toEqual({ since: 1700000000, until: 1700604800 });
+	});
+
+	// --- v0.8.3: Activity analytics date params renamed ---
+
+	it('should use date_from/date_to on activity.getAnalytics (not start_date/end_date)', async () => {
+		const ctx = buildContext('activity', 'getAnalytics', {
+			startDate: '2026-05-01',
+			endDate: '2026-05-31',
+		});
+		await node.execute.call(ctx);
+		const call = ctx._mockRequest.mock.calls[0][0];
+		expect(call.uri).toContain('/pipeline/activities/analytics');
+		expect(call.qs).toEqual({ date_from: '2026-05-01', date_to: '2026-05-31' });
+	});
+
+	// --- v0.8.3: Card.getAll drops unsupported assigneeId/status filters; per_page → limit ---
+
+	it('should drop unsupported filters and use limit (not per_page) on card.getAll', async () => {
+		const ctx = buildContext('card', 'getAll', {
+			returnAll: false,
+			limit: 50,
+			filters: {
+				pipelineId: '3',
+				stageId: 'qualified',
+				contactId: 17,
+				conversationDisplayId: 42,
+			},
+		});
+		await node.execute.call(ctx);
+		const call = ctx._mockRequest.mock.calls[0][0];
+		expect(call.uri).toContain('/pipeline_cards');
+		expect(call.qs).toEqual({
+			pipeline_id: '3',
+			pipeline_stage: 'qualified',
+			contact_id: 17,
+			conversation_display_id: 42,
+			limit: 50,
+		});
+		expect(call.qs).not.toHaveProperty('per_page');
+		expect(call.qs).not.toHaveProperty('assignee_id');
+		expect(call.qs).not.toHaveProperty('status');
+	});
+
+	// --- v0.8.3: Service reminders nested in service body (no standalone routes) ---
+
+	it('should send reminder_templates nested in service.create body', async () => {
+		const ctx = buildContext('service', 'create', {
+			name: 'Consulta Inicial',
+			durationMinutes: 60,
+			additionalFields: { defaultPriceCents: 25000, currency: 'BRL' },
+			reminderTemplates: {
+				templates: [
+					{ daysBefore: 1, hoursBefore: 0, minutesBefore: 0, bodyTemplate: 'Lembrete D-1', sendVia: 'whatsapp', label: '1 dia antes' },
+					{ daysBefore: 0, hoursBefore: 2, minutesBefore: 0, bodyTemplate: 'Lembrete 2h', sendVia: 'whatsapp', label: '2 horas antes', active: true },
+				],
+			},
+		});
+		await node.execute.call(ctx);
+		const call = ctx._mockRequest.mock.calls[0][0];
+		expect(call.method).toBe('POST');
+		expect(call.uri).toContain('/services');
+		expect(call.body.service.name).toBe('Consulta Inicial');
+		expect(call.body.reminder_templates).toHaveLength(2);
+		expect(call.body.reminder_templates[0]).toMatchObject({
+			days_before: 1,
+			body_template: 'Lembrete D-1',
+			send_via: 'whatsapp',
+			label: '1 dia antes',
+		});
+	});
+
+	it('should omit reminder_templates when service.update has none', async () => {
+		const ctx = buildContext('service', 'update', {
+			serviceId: '5',
+			updateFields: { name: 'Renamed' },
+		});
+		await node.execute.call(ctx);
+		const call = ctx._mockRequest.mock.calls[0][0];
+		expect(call.method).toBe('PATCH');
+		expect(call.body).toEqual({ service: { name: 'Renamed' } });
+		expect(call.body).not.toHaveProperty('reminder_templates');
 	});
 });

@@ -70,8 +70,8 @@ export const SlaFields: INodeProperties[] = [
 		description: 'Name of the SLA policy',
 	},
 	{
-		displayName: 'First Response Time (minutes)',
-		name: 'firstResponseTime',
+		displayName: 'First Response Time Threshold (seconds)',
+		name: 'firstResponseTimeThreshold',
 		type: 'number',
 		required: true,
 		displayOptions: {
@@ -80,12 +80,12 @@ export const SlaFields: INodeProperties[] = [
 				operation: ['createPolicy', 'updatePolicy'],
 			},
 		},
-		default: 60,
-		description: 'Maximum time allowed for first response, in minutes',
+		default: 3600,
+		description: 'Maximum seconds allowed for first response (e.g. 3600 = 1 hour)',
 	},
 	{
-		displayName: 'Resolution Time (minutes)',
-		name: 'resolutionTime',
+		displayName: 'Next Response Time Threshold (seconds)',
+		name: 'nextResponseTimeThreshold',
 		type: 'number',
 		displayOptions: {
 			show: {
@@ -93,40 +93,48 @@ export const SlaFields: INodeProperties[] = [
 				operation: ['createPolicy', 'updatePolicy'],
 			},
 		},
-		default: 1440,
-		description: 'Maximum time allowed for resolution, in minutes',
+		default: 0,
+		description:
+			'Maximum seconds allowed for each subsequent response after the first (0 = disabled)',
 	},
 	{
-		displayName: 'Inbox IDs',
-		name: 'inboxIds',
-		type: 'fixedCollection',
-		typeOptions: {
-			multipleValues: true,
-		},
+		displayName: 'Resolution Time Threshold (seconds)',
+		name: 'resolutionTimeThreshold',
+		type: 'number',
 		displayOptions: {
 			show: {
 				resource: ['sla'],
 				operation: ['createPolicy', 'updatePolicy'],
 			},
 		},
-		default: {},
-		description: 'Inboxes where this SLA policy will be applied',
-		options: [
-			{
-				name: 'values',
-				displayName: 'Inbox',
-				values: [
-					{
-						displayName: 'Inbox ID',
-						name: 'id',
-						type: 'number',
-						required: true,
-						default: 0,
-						description: 'ID of the inbox',
-					},
-				],
+		default: 86400,
+		description: 'Maximum seconds allowed to resolve the conversation (e.g. 86400 = 24 hours)',
+	},
+	{
+		displayName: 'Only During Business Hours',
+		name: 'onlyDuringBusinessHours',
+		type: 'boolean',
+		displayOptions: {
+			show: {
+				resource: ['sla'],
+				operation: ['createPolicy', 'updatePolicy'],
 			},
-		],
+		},
+		default: false,
+		description: 'Whether the SLA timer pauses outside the inbox business hours',
+	},
+	{
+		displayName: 'Description',
+		name: 'policyDescription',
+		type: 'string',
+		displayOptions: {
+			show: {
+				resource: ['sla'],
+				operation: ['createPolicy', 'updatePolicy'],
+			},
+		},
+		default: '',
+		description: 'Optional description of the SLA policy',
 	},
 
 	// Metrics/Export

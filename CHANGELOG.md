@@ -1,5 +1,77 @@
 # Changelog
 
+## 0.8.3 (2026-05-24)
+
+### Fixed (6 silent data-loss bugs surfaced by full audit)
+
+- **SLA · Create/Update Policy**: node was sending `first_response_time`,
+  `resolution_time`, `inbox_ids` — but backend strong params accept
+  `first_response_time_threshold`, `next_response_time_threshold`,
+  `resolution_time_threshold`, `only_during_business_hours`, `description`.
+  All three fields the node sent were silently dropped by Rails, leaving
+  every SLA created via n8n with no thresholds at all (only `name` persisted).
+  Field names renamed to match backend; `inboxIds` removed (never existed in
+  schema); new fields exposed: `nextResponseTimeThreshold`,
+  `onlyDuringBusinessHours`, `policyDescription`.
+- **SLA · Get Metrics + Export CSV**: node sent `start_date`/`end_date`
+  query params but backend (`applied_slas_controller.rb` +
+  `DateRangeHelper`) reads `since`/`until` in unix epoch seconds. Date
+  filter silently ignored, both endpoints returned full historical data
+  regardless of UI selection. Now converts ISO strings to epoch seconds
+  and sends `since`/`until`. Numeric epoch values pass through unchanged.
+- **Activity · Get Analytics**: same shape of bug — node sent
+  `start_date`/`end_date`, backend reads `date_from`/`date_to`. Analytics
+  always defaulted to last 30 days instead of selected window. Renamed.
+- **Service · Reminder Templates**: 4 standalone operations
+  (`listReminders`, `createReminder`, `updateReminder`, `deleteReminder`)
+  were calling `/services/:id/reminder_templates[/:id]` routes that **do
+  not exist** in `config/routes.rb` — every call returned 404 (Rails
+  RoutingError). Removed the 4 broken operations. The actual backend
+  contract is: submit `reminder_templates: [...]` array nested in the
+  `service.create`/`service.update` payload, and backend's
+  `sync_reminder_templates` replaces the entire set. Exposed via a new
+  `Reminder Templates` fixedCollection on create/update.
+- **Card · Get Many**: filters `assigneeId` and `status` were sent as
+  query params but backend (`pipeline_cards_controller.rb`
+  `SUPPORTED_INDEX_FILTERS`) only accepts `pipeline_id, pipeline_stage,
+  contact_id, conversation_display_id, exclude_id, limit, offset, cursor`.
+  Backend silently logs an unsupported-filter warning and proceeds — the
+  workflow received ALL cards in the account, not the filtered set.
+  This is the same class of bug as incident
+  2026-04-14-pipeline-cards-contact-id-filter-ignored. The unsupported
+  filters were removed from the UI; added `contactId` and
+  `conversationDisplayId` filters which the backend actually supports.
+- **Card · Get Many** pagination: node was sending `per_page` but legacy
+  controller honors `limit`/`offset`/`cursor` (ignores `per_page`).
+  Renamed query param to `limit`.
+
+### Notes
+
+- **All 6 are silent data-loss bugs** — backend returned 200/204 OK so
+  the user never saw any error, but the operation didn't do what the
+  UI promised. This is the worst class of bug because workflows pass
+  CI/smoke tests yet produce wrong production data.
+- **Backwards-incompatible UI changes** (acceptable because the broken
+  fields didn't work anyway): SLA `firstResponseTime` →
+  `firstResponseTimeThreshold` (etc.); SLA `inboxIds` removed; Service
+  reminder ops 4× removed; Card filters `assigneeId`/`status` removed.
+  Workflows that referenced these never worked correctly in 0.8.x;
+  the rename surfaces a clear error in the n8n editor instead of
+  silently passing.
+- **No behaviour change for endpoints that already worked**. Other
+  resources untouched.
+- 8 regression tests added covering all 6 fixes. Test suite total:
+  135 → 143.
+
+### Audit methodology
+
+Two parallel Opus sub-agents auditing body fields (vs strong params)
+and IDs/query/headers, with every finding validated by direct `grep`
+against the controller source before being accepted. False positives
+filtered out — only confirmed bugs included in this patch.
+
+---
+
 ## 0.8.2 (2026-05-24)
 
 ### Fixed

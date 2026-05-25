@@ -910,13 +910,19 @@ async function handleCardOperation(this: IExecuteFunctions, operation: string, i
 		case 'get':
 			return await nooviChatApiRequest.call(this, 'GET', `/pipeline_cards/${cardId}`);
 		case 'getAll': {
+			// Legacy controller (pipeline_cards_controller.rb) SUPPORTED_INDEX_FILTERS:
+			//   pipeline_id, pipeline_stage, conversation_display_id, contact_id, exclude_id,
+			//   limit, offset, cursor
+			// `assignee_id` and `status` are silently dropped (server logs unsupported-filter
+			// warning but proceeds — see incident 2026-04-14-pipeline-cards-contact-id-filter).
+			// `per_page` is also ignored; controller honors only `limit`/`offset`/`cursor`.
 			const filters = this.getNodeParameter('filters', index, {}) as any;
 			const qs: any = {};
 			if (filters.pipelineId) qs.pipeline_id = filters.pipelineId;
 			if (filters.stageId) qs.pipeline_stage = filters.stageId;
-			if (filters.assigneeId) qs.assignee_id = filters.assigneeId;
-			if (filters.status) qs.status = filters.status;
-			if (!returnAll) qs.per_page = limit;
+			if (filters.contactId) qs.contact_id = filters.contactId;
+			if (filters.conversationDisplayId) qs.conversation_display_id = filters.conversationDisplayId;
+			if (!returnAll) qs.limit = limit;
 			if (returnAll) {
 				return await nooviChatApiRequestAllItems.call(this, 'GET', '/pipeline_cards', {}, qs);
 			}
@@ -1121,11 +1127,14 @@ async function handleActivityOperation(this: IExecuteFunctions, operation: strin
 			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/activities/${activityId}/cancel`, {}, { pipeline_card_id: pipelineCardId });
 		}
 		case 'getAnalytics': {
+			// Backend (pipeline/activities_controller.rb:196-198) reads params[:date_from]/[:date_to].
+			// Sending start_date/end_date (the old naming) was silently ignored — analytics
+			// always defaulted to the last 30 days regardless of UI selection.
 			const startDate = this.getNodeParameter('startDate', index, '') as string;
 			const endDate = this.getNodeParameter('endDate', index, '') as string;
 			const qs: any = {};
-			if (startDate) qs.start_date = startDate;
-			if (endDate) qs.end_date = endDate;
+			if (startDate) qs.date_from = startDate;
+			if (endDate) qs.date_to = endDate;
 			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/activities/analytics', {}, qs);
 		}
 		default:
@@ -1238,18 +1247,34 @@ async function handleSlaOperation(this: IExecuteFunctions, operation: string, in
 	const startDate = this.getNodeParameter('startDate', index, '') as string;
 	const endDate = this.getNodeParameter('endDate', index, '') as string;
 
+	// Backend (applied_slas_controller.rb + DateRangeHelper) expects unix epoch seconds
+	// in `since`/`until` query params. Convert ISO strings to seconds; pass-through if
+	// already numeric (workflow may compute epoch directly).
+	const toEpochSeconds = (value: string): number | undefined => {
+		if (!value) return undefined;
+		const asNumber = Number(value);
+		if (Number.isFinite(asNumber) && asNumber > 0) return Math.floor(asNumber);
+		const parsed = Date.parse(value);
+		if (!Number.isFinite(parsed)) return undefined;
+		return Math.floor(parsed / 1000);
+	};
+
 	switch (operation) {
 		case 'createPolicy': {
 			const policyName = this.getNodeParameter('policyName', index) as string;
-			const firstResponseTime = this.getNodeParameter('firstResponseTime', index) as number;
-			const resolutionTime = this.getNodeParameter('resolutionTime', index, 0) as number;
-			const inboxIdValues = this.getNodeParameter('inboxIds.values', index, []) as Array<{ id: number }>;
+			const firstResponseTimeThreshold = this.getNodeParameter('firstResponseTimeThreshold', index) as number;
+			const nextResponseTimeThreshold = this.getNodeParameter('nextResponseTimeThreshold', index, 0) as number;
+			const resolutionTimeThreshold = this.getNodeParameter('resolutionTimeThreshold', index, 0) as number;
+			const onlyDuringBusinessHours = this.getNodeParameter('onlyDuringBusinessHours', index, false) as boolean;
+			const policyDescription = this.getNodeParameter('policyDescription', index, '') as string;
 			const body: any = {
 				name: policyName,
-				first_response_time: firstResponseTime,
+				first_response_time_threshold: firstResponseTimeThreshold,
 			};
-			if (resolutionTime) body.resolution_time = resolutionTime;
-			if (inboxIdValues.length > 0) body.inbox_ids = inboxIdValues.map(v => v.id);
+			if (nextResponseTimeThreshold) body.next_response_time_threshold = nextResponseTimeThreshold;
+			if (resolutionTimeThreshold) body.resolution_time_threshold = resolutionTimeThreshold;
+			if (onlyDuringBusinessHours) body.only_during_business_hours = onlyDuringBusinessHours;
+			if (policyDescription) body.description = policyDescription;
 			return await nooviChatApiRequest.call(this, 'POST', '/sla_policies', body);
 		}
 		case 'getPolicy':
@@ -1262,14 +1287,18 @@ async function handleSlaOperation(this: IExecuteFunctions, operation: string, in
 		}
 		case 'updatePolicy': {
 			const policyName = this.getNodeParameter('policyName', index, '') as string;
-			const firstResponseTime = this.getNodeParameter('firstResponseTime', index, 0) as number;
-			const resolutionTime = this.getNodeParameter('resolutionTime', index, 0) as number;
-			const inboxIdValues = this.getNodeParameter('inboxIds.values', index, []) as Array<{ id: number }>;
+			const firstResponseTimeThreshold = this.getNodeParameter('firstResponseTimeThreshold', index, 0) as number;
+			const nextResponseTimeThreshold = this.getNodeParameter('nextResponseTimeThreshold', index, 0) as number;
+			const resolutionTimeThreshold = this.getNodeParameter('resolutionTimeThreshold', index, 0) as number;
+			const onlyDuringBusinessHours = this.getNodeParameter('onlyDuringBusinessHours', index, false) as boolean;
+			const policyDescription = this.getNodeParameter('policyDescription', index, '') as string;
 			const body: any = {};
 			if (policyName) body.name = policyName;
-			if (firstResponseTime) body.first_response_time = firstResponseTime;
-			if (resolutionTime) body.resolution_time = resolutionTime;
-			if (inboxIdValues.length > 0) body.inbox_ids = inboxIdValues.map(v => v.id);
+			if (firstResponseTimeThreshold) body.first_response_time_threshold = firstResponseTimeThreshold;
+			if (nextResponseTimeThreshold) body.next_response_time_threshold = nextResponseTimeThreshold;
+			if (resolutionTimeThreshold) body.resolution_time_threshold = resolutionTimeThreshold;
+			if (onlyDuringBusinessHours) body.only_during_business_hours = onlyDuringBusinessHours;
+			if (policyDescription) body.description = policyDescription;
 			return await nooviChatApiRequest.call(this, 'PATCH', `/sla_policies/${policyId}`, body);
 		}
 		case 'deletePolicy':
@@ -1282,14 +1311,18 @@ async function handleSlaOperation(this: IExecuteFunctions, operation: string, in
 		}
 		case 'getMetrics': {
 			const qs: any = {};
-			if (startDate) qs.start_date = startDate;
-			if (endDate) qs.end_date = endDate;
+			const since = toEpochSeconds(startDate);
+			const until = toEpochSeconds(endDate);
+			if (since !== undefined) qs.since = since;
+			if (until !== undefined) qs.until = until;
 			return await nooviChatApiRequest.call(this, 'GET', '/applied_slas/metrics', {}, qs);
 		}
 		case 'exportCsv': {
 			const qs: any = {};
-			if (startDate) qs.start_date = startDate;
-			if (endDate) qs.end_date = endDate;
+			const since = toEpochSeconds(startDate);
+			const until = toEpochSeconds(endDate);
+			if (since !== undefined) qs.since = since;
+			if (until !== undefined) qs.until = until;
 			return await nooviChatApiRequest.call(this, 'GET', '/applied_slas/download', {}, qs);
 		}
 		default:
@@ -1576,6 +1609,26 @@ async function handleProfessionalOperation(this: IExecuteFunctions, operation: s
 async function handleServiceOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
 	const serviceId = this.getNodeParameter('serviceId', index, '') as string;
 
+	// Reminder templates live nested in the service payload (top-level alongside `service:`).
+	// Backend (services_controller.rb#sync_reminder_templates, 79-125) replaces the entire
+	// set on every PATCH/POST. To preserve existing reminders, callers must include them.
+	const buildReminderTemplates = () => {
+		const raw = this.getNodeParameter('reminderTemplates.templates', index, []) as Array<any>;
+		if (!Array.isArray(raw) || raw.length === 0) return null;
+		return raw.map((r) => {
+			const t: any = {
+				days_before: r.daysBefore ?? 0,
+				hours_before: r.hoursBefore ?? 0,
+				minutes_before: r.minutesBefore ?? 0,
+				body_template: r.bodyTemplate || '',
+				send_via: r.sendVia || 'whatsapp',
+				active: r.active !== undefined ? r.active : true,
+			};
+			if (r.label) t.label = r.label;
+			return t;
+		});
+	};
+
 	switch (operation) {
 		case 'create': {
 			const name = this.getNodeParameter('name', index) as string;
@@ -1587,6 +1640,8 @@ async function handleServiceOperation(this: IExecuteFunctions, operation: string
 			if (additionalFields.currency) body.service.currency = additionalFields.currency;
 			if (additionalFields.color) body.service.color = additionalFields.color;
 			if (additionalFields.onlineAvailable !== undefined) body.service.online_available = additionalFields.onlineAvailable;
+			const reminderTemplates = buildReminderTemplates();
+			if (reminderTemplates) body.reminder_templates = reminderTemplates;
 			return await nooviChatApiRequest.call(this, 'POST', '/services', body);
 		}
 		case 'get':
@@ -1603,48 +1658,12 @@ async function handleServiceOperation(this: IExecuteFunctions, operation: string
 			if (updateFields.currency) body.service.currency = updateFields.currency;
 			if (updateFields.color) body.service.color = updateFields.color;
 			if (updateFields.onlineAvailable !== undefined) body.service.online_available = updateFields.onlineAvailable;
+			const reminderTemplates = buildReminderTemplates();
+			if (reminderTemplates) body.reminder_templates = reminderTemplates;
 			return await nooviChatApiRequest.call(this, 'PATCH', `/services/${serviceId}`, body);
 		}
 		case 'delete':
 			return await nooviChatApiRequest.call(this, 'DELETE', `/services/${serviceId}`);
-		case 'listReminders':
-			return await nooviChatApiRequest.call(this, 'GET', `/services/${serviceId}/reminder_templates`);
-		case 'createReminder': {
-			const label = this.getNodeParameter('reminderLabel', index, '') as string;
-			const daysBefore = this.getNodeParameter('daysBefore', index, 0) as number;
-			const hoursBefore = this.getNodeParameter('hoursBefore', index, 0) as number;
-			const minutesBefore = this.getNodeParameter('minutesBefore', index, 0) as number;
-			const bodyTemplate = this.getNodeParameter('bodyTemplate', index) as string;
-			const sendVia = this.getNodeParameter('sendVia', index, 'whatsapp') as string;
-			const body: any = {
-				service_reminder_template: {
-					days_before: daysBefore,
-					hours_before: hoursBefore,
-					minutes_before: minutesBefore,
-					body_template: bodyTemplate,
-					send_via: sendVia,
-				},
-			};
-			if (label) body.service_reminder_template.label = label;
-			return await nooviChatApiRequest.call(this, 'POST', `/services/${serviceId}/reminder_templates`, body);
-		}
-		case 'updateReminder': {
-			const reminderTemplateId = this.getNodeParameter('reminderTemplateId', index) as string;
-			const reminderUpdateFields = this.getNodeParameter('reminderUpdateFields', index, {}) as any;
-			const body: any = { service_reminder_template: {} };
-			if (reminderUpdateFields.label) body.service_reminder_template.label = reminderUpdateFields.label;
-			if (reminderUpdateFields.daysBefore !== undefined) body.service_reminder_template.days_before = reminderUpdateFields.daysBefore;
-			if (reminderUpdateFields.hoursBefore !== undefined) body.service_reminder_template.hours_before = reminderUpdateFields.hoursBefore;
-			if (reminderUpdateFields.minutesBefore !== undefined) body.service_reminder_template.minutes_before = reminderUpdateFields.minutesBefore;
-			if (reminderUpdateFields.bodyTemplate) body.service_reminder_template.body_template = reminderUpdateFields.bodyTemplate;
-			if (reminderUpdateFields.sendVia) body.service_reminder_template.send_via = reminderUpdateFields.sendVia;
-			if (reminderUpdateFields.active !== undefined) body.service_reminder_template.active = reminderUpdateFields.active;
-			return await nooviChatApiRequest.call(this, 'PATCH', `/services/${serviceId}/reminder_templates/${reminderTemplateId}`, body);
-		}
-		case 'deleteReminder': {
-			const reminderTemplateId = this.getNodeParameter('reminderTemplateId', index) as string;
-			return await nooviChatApiRequest.call(this, 'DELETE', `/services/${serviceId}/reminder_templates/${reminderTemplateId}`);
-		}
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}

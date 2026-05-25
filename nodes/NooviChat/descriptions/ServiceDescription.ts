@@ -17,10 +17,6 @@ export const ServiceOperations: INodeProperties[] = [
 			{ name: 'Get Many', value: 'list', action: 'Get many services' },
 			{ name: 'Update', value: 'update', action: 'Update a service' },
 			{ name: 'Delete', value: 'delete', action: 'Delete (soft) a service' },
-			{ name: 'List Reminder Templates', value: 'listReminders', action: 'List reminder templates for a service' },
-			{ name: 'Create Reminder Template', value: 'createReminder', action: 'Create a reminder template for a service' },
-			{ name: 'Update Reminder Template', value: 'updateReminder', action: 'Update a reminder template' },
-			{ name: 'Delete Reminder Template', value: 'deleteReminder', action: 'Delete a reminder template' },
 		],
 		default: 'list',
 	},
@@ -36,29 +32,12 @@ export const ServiceFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['service'],
-				operation: ['get', 'update', 'delete', 'listReminders', 'createReminder', 'updateReminder', 'deleteReminder'],
+				operation: ['get', 'update', 'delete'],
 			},
 		},
 		default: '',
 		placeholder: 'e.g., 3',
 		description: 'ID of the service',
-	},
-
-	// --- Reminder Template ID ---
-	{
-		displayName: 'Reminder Template ID',
-		name: 'reminderTemplateId',
-		type: 'string',
-		required: true,
-		displayOptions: {
-			show: {
-				resource: ['service'],
-				operation: ['updateReminder', 'deleteReminder'],
-			},
-		},
-		default: '',
-		placeholder: 'e.g., 7',
-		description: 'ID of the reminder template',
 	},
 
 	// --- Create ---
@@ -215,169 +194,88 @@ export const ServiceFields: INodeProperties[] = [
 		],
 	},
 
-	// --- Create Reminder Template ---
+	// --- Reminder Templates (nested in create + update; replaces all on update) ---
+	// Backend (services_controller.rb#sync_reminder_templates, services_controller.rb:79-125):
+	// any reminder_templates submitted in the payload REPLACE the existing set entirely.
+	// To add a single reminder, you must submit the full list including pre-existing ones.
 	{
-		displayName: 'Label',
-		name: 'reminderLabel',
-		type: 'string',
+		displayName: 'Reminder Templates',
+		name: 'reminderTemplates',
+		type: 'fixedCollection',
+		typeOptions: { multipleValues: true },
 		displayOptions: {
 			show: {
 				resource: ['service'],
-				operation: ['createReminder'],
-			},
-		},
-		default: '',
-		placeholder: 'e.g., 1 dia antes',
-		description: 'Human-readable label for this reminder template',
-	},
-	{
-		displayName: 'Days Before',
-		name: 'daysBefore',
-		type: 'number',
-		displayOptions: {
-			show: {
-				resource: ['service'],
-				operation: ['createReminder'],
-			},
-		},
-		default: 0,
-		typeOptions: { minValue: 0 },
-		description: 'Number of days before the appointment to send the reminder',
-	},
-	{
-		displayName: 'Hours Before',
-		name: 'hoursBefore',
-		type: 'number',
-		displayOptions: {
-			show: {
-				resource: ['service'],
-				operation: ['createReminder'],
-			},
-		},
-		default: 0,
-		typeOptions: { minValue: 0 },
-		description: 'Number of hours before the appointment to send the reminder',
-	},
-	{
-		displayName: 'Minutes Before',
-		name: 'minutesBefore',
-		type: 'number',
-		displayOptions: {
-			show: {
-				resource: ['service'],
-				operation: ['createReminder'],
-			},
-		},
-		default: 0,
-		typeOptions: { minValue: 0 },
-		description: 'Number of minutes before the appointment to send the reminder',
-	},
-	{
-		displayName: 'Message Template',
-		name: 'bodyTemplate',
-		type: 'string',
-		required: true,
-		displayOptions: {
-			show: {
-				resource: ['service'],
-				operation: ['createReminder'],
-			},
-		},
-		default: '',
-		placeholder: 'e.g., Olá {{paciente}}, lembrete: sua consulta com {{profissional}} é amanhã às {{hora}}.',
-		description: 'Message body with Liquid template variables. Available: {{paciente}}, {{profissional}}, {{servico}}, {{data}}, {{hora}}, {{duracao}}, {{valor}}, {{empresa}}',
-		typeOptions: { rows: 4 },
-	},
-	{
-		displayName: 'Send Via',
-		name: 'sendVia',
-		type: 'options',
-		displayOptions: {
-			show: {
-				resource: ['service'],
-				operation: ['createReminder'],
-			},
-		},
-		options: [
-			{ name: 'WhatsApp', value: 'whatsapp' },
-			{ name: 'Email', value: 'email' },
-			{ name: 'SMS', value: 'sms' },
-		],
-		default: 'whatsapp',
-		description: 'Channel through which the reminder will be sent',
-	},
-
-	// --- Update Reminder Template ---
-	{
-		displayName: 'Update Fields',
-		name: 'reminderUpdateFields',
-		type: 'collection',
-		placeholder: 'Add Field',
-		displayOptions: {
-			show: {
-				resource: ['service'],
-				operation: ['updateReminder'],
+				operation: ['create', 'update'],
 			},
 		},
 		default: {},
+		description:
+			'Reminder templates for this service. On update, this REPLACES all existing reminders for the service.',
 		options: [
 			{
-				displayName: 'Label',
-				name: 'label',
-				type: 'string',
-				default: '',
-				description: 'Human-readable label for this reminder template',
-			},
-			{
-				displayName: 'Days Before',
-				name: 'daysBefore',
-				type: 'number',
-				default: 0,
-				typeOptions: { minValue: 0 },
-				description: 'Number of days before the appointment to send the reminder',
-			},
-			{
-				displayName: 'Hours Before',
-				name: 'hoursBefore',
-				type: 'number',
-				default: 0,
-				typeOptions: { minValue: 0 },
-				description: 'Number of hours before the appointment to send the reminder',
-			},
-			{
-				displayName: 'Minutes Before',
-				name: 'minutesBefore',
-				type: 'number',
-				default: 0,
-				typeOptions: { minValue: 0 },
-				description: 'Number of minutes before the appointment to send the reminder',
-			},
-			{
-				displayName: 'Message Template',
-				name: 'bodyTemplate',
-				type: 'string',
-				default: '',
-				description: 'Message body with Liquid template variables',
-				typeOptions: { rows: 4 },
-			},
-			{
-				displayName: 'Send Via',
-				name: 'sendVia',
-				type: 'options',
-				options: [
-					{ name: 'WhatsApp', value: 'whatsapp' },
-					{ name: 'Email', value: 'email' },
-					{ name: 'SMS', value: 'sms' },
+				name: 'templates',
+				displayName: 'Reminder',
+				values: [
+					{
+						displayName: 'Label',
+						name: 'label',
+						type: 'string',
+						default: '',
+						placeholder: 'e.g., 1 dia antes',
+						description: 'Human-readable label for this reminder',
+					},
+					{
+						displayName: 'Days Before',
+						name: 'daysBefore',
+						type: 'number',
+						default: 0,
+						typeOptions: { minValue: 0 },
+					},
+					{
+						displayName: 'Hours Before',
+						name: 'hoursBefore',
+						type: 'number',
+						default: 0,
+						typeOptions: { minValue: 0 },
+					},
+					{
+						displayName: 'Minutes Before',
+						name: 'minutesBefore',
+						type: 'number',
+						default: 0,
+						typeOptions: { minValue: 0 },
+					},
+					{
+						displayName: 'Message Template',
+						name: 'bodyTemplate',
+						type: 'string',
+						default: '',
+						placeholder:
+							'e.g., Olá {{paciente}}, lembrete: sua consulta com {{profissional}} é amanhã às {{hora}}.',
+						description:
+							'Message body with Liquid template variables. Available: {{paciente}}, {{profissional}}, {{servico}}, {{data}}, {{hora}}, {{duracao}}, {{valor}}, {{empresa}}',
+						typeOptions: { rows: 4 },
+					},
+					{
+						displayName: 'Send Via',
+						name: 'sendVia',
+						type: 'options',
+						options: [
+							{ name: 'WhatsApp', value: 'whatsapp' },
+							{ name: 'Email', value: 'email' },
+							{ name: 'SMS', value: 'sms' },
+						],
+						default: 'whatsapp',
+						description: 'Channel through which the reminder will be sent',
+					},
+					{
+						displayName: 'Active',
+						name: 'active',
+						type: 'boolean',
+						default: true,
+					},
 				],
-				default: 'whatsapp',
-				description: 'Channel through which the reminder will be sent',
-			},
-			{
-				displayName: 'Active',
-				name: 'active',
-				type: 'boolean',
-				default: true,
-				description: 'Whether this reminder template is active',
 			},
 		],
 	},
