@@ -175,20 +175,12 @@ export const AppointmentFields: INodeProperties[] = [
 				default: '',
 				description: 'New end time for the appointment',
 			},
-			{
-				displayName: 'Professional ID',
-				name: 'professionalId',
-				type: 'number',
-				default: 0,
-				description: 'Change the professional assigned to this appointment',
-			},
-			{
-				displayName: 'Service ID',
-				name: 'serviceId',
-				type: 'number',
-				default: 0,
-				description: 'Change the service for this appointment',
-			},
+			// `professionalId` and `serviceId` are intentionally NOT exposed here.
+			// Backend (appointments_controller.rb:287-291) restricts `update_params`
+			// to only [scheduled_at, ends_at, notes, partner_id, custom_attributes]
+			// — sending professional_id/service_id was silently dropped in
+			// 0.8.x, giving the false impression a "change professional"
+			// workflow worked. To change them, cancel and create a new appointment.
 			{
 				displayName: 'Notes',
 				name: 'notes',
@@ -196,6 +188,13 @@ export const AppointmentFields: INodeProperties[] = [
 				default: '',
 				description: 'Internal notes about the appointment',
 				typeOptions: { rows: 3 },
+			},
+			{
+				displayName: 'Custom Attributes (JSON)',
+				name: 'customAttributes',
+				type: 'json',
+				default: '{}',
+				description: 'Custom attribute key/value pairs to merge on the appointment',
 			},
 			{
 				displayName: 'Partner ID',

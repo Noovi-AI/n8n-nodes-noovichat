@@ -40,9 +40,13 @@ export const ConversationOperations: INodeProperties[] = [
 ];
 
 export const ConversationFields: INodeProperties[] = [
-	// Conversation ID for single operations
+	// Conversation Display ID for single operations.
+	// Backend (Chatwoot conversations_controller.rb:232) looks up by
+	// `display_id`, NOT the internal primary key. The display_id is the short
+	// public number visible in the dashboard URL (/conversations/12345).
+	// Passing the internal `id` returned by other endpoints leads to 404.
 	{
-		displayName: 'Conversation ID',
+		displayName: 'Conversation Display ID',
 		name: 'conversationId',
 		type: 'string',
 		required: true,
@@ -54,7 +58,8 @@ export const ConversationFields: INodeProperties[] = [
 		},
 		default: '',
 		placeholder: 'e.g., 12345',
-		description: 'Unique identifier of the conversation',
+		description:
+			'Public display number of the conversation (the short integer visible in the dashboard URL like /conversations/12345). NOT the internal primary key.',
 	},
 
 	// Create conversation fields

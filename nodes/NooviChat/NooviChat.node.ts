@@ -1507,14 +1507,19 @@ async function handleAppointmentOperation(this: IExecuteFunctions, operation: st
 			return await nooviChatApiRequest.call(this, 'GET', '/appointments', {}, qs);
 		}
 		case 'update': {
+			// Backend (appointments_controller.rb:287-291) update_params permits only:
+			//   scheduled_at, ends_at, notes, partner_id, custom_attributes
+			// professional_id and service_id are deliberately excluded from update
+			// — to change them, cancel the appointment and create a new one.
 			const updateFields = this.getNodeParameter('updateFields', index, {}) as any;
 			const body: any = { appointment: {} };
 			if (updateFields.scheduledAt) body.appointment.scheduled_at = updateFields.scheduledAt;
 			if (updateFields.endsAt) body.appointment.ends_at = updateFields.endsAt;
-			if (updateFields.professionalId) body.appointment.professional_id = updateFields.professionalId;
-			if (updateFields.serviceId) body.appointment.service_id = updateFields.serviceId;
 			if (updateFields.notes) body.appointment.notes = updateFields.notes;
 			if (updateFields.partnerId) body.appointment.partner_id = updateFields.partnerId;
+			if (updateFields.customAttributes) {
+				body.appointment.custom_attributes = parseJsonValue(updateFields.customAttributes);
+			}
 			return await nooviChatApiRequest.call(this, 'PATCH', `/appointments/${appointmentId}`, body);
 		}
 		case 'cancel': {

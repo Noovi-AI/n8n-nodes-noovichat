@@ -1,5 +1,48 @@
 # Changelog
 
+## 0.8.4 (2026-05-24)
+
+### Fixed (medium-severity bugs from the audit pass)
+
+- **Trigger · HMAC signature validation**: was reading `x-hub-signature`
+  and signing with `JSON.stringify(body)` (body-only). Backend
+  (`lib/webhooks/trigger.rb:46-50`) sends `X-Chatwoot-Signature` +
+  `X-Chatwoot-Timestamp` and signs `"${timestamp}.${body}"`. When a
+  `webhookSecret` was configured, the trigger silently dropped 100%
+  of events. The credential is optional and rarely configured, so
+  most users were not affected — but it was a latent bomb.
+  Fix: read canonical headers, sign with timestamp prefix, fail-closed
+  when timestamp missing.
+- **Conversation · ID label**: renamed "Conversation ID" → "Conversation
+  Display ID" with placeholder + description clarifying that the
+  backend (`conversations_controller.rb:232`) looks up by `display_id`
+  (the short public number in the URL like `/conversations/12345`),
+  not the internal primary key. Users who passed the internal `id`
+  returned by other endpoints saw confusing 404s.
+- **Campaign · ID label**: same fix — backend uses `display_id`
+  (`campaigns_controller.rb:30`).
+- **Appointment · Update**: removed `professionalId` and `serviceId`
+  fields from the Update Fields collection. Backend `update_params`
+  (`appointments_controller.rb:287-291`) intentionally excludes them
+  (only `scheduled_at, ends_at, notes, partner_id, custom_attributes`
+  are permitted). Sending them was silently dropped — workflows
+  "changing the professional" saw 200 OK but no actual change.
+  To change professional or service, cancel the appointment and
+  create a new one. Added `customAttributes` field that backend
+  actually accepts.
+
+### Notes
+
+- All 4 fixes are backwards-compatible at the workflow level
+  (the removed/relabelled fields never produced the result users
+  expected). HMAC fix only affects users with `nooviChatWebhookApi`
+  credential configured — and those were silently broken in 0.8.3.
+- 4 regression tests added (1 HMAC valid signature, 1 HMAC missing
+  timestamp, 2 appointment.update body shape). Test suite total:
+  143 → 147.
+
+---
+
 ## 0.8.3 (2026-05-24)
 
 ### Fixed (6 silent data-loss bugs surfaced by full audit)

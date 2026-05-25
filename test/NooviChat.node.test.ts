@@ -588,4 +588,40 @@ describe('NooviChat Node — execute', () => {
 		expect(call.body).toEqual({ service: { name: 'Renamed' } });
 		expect(call.body).not.toHaveProperty('reminder_templates');
 	});
+
+	// --- v0.8.4: Appointment.update does not send professional_id/service_id ---
+
+	it('should not send professional_id/service_id on appointment.update (backend rejects silently)', async () => {
+		const ctx = buildContext('appointment', 'update', {
+			appointmentId: '15',
+			updateFields: {
+				scheduledAt: '2026-06-10T14:00:00Z',
+				notes: 'New note',
+				// professionalId/serviceId no longer in UI; if anyone tries via expression,
+				// the handler ignores them.
+			},
+		});
+		await node.execute.call(ctx);
+		const call = ctx._mockRequest.mock.calls[0][0];
+		expect(call.method).toBe('PATCH');
+		expect(call.uri).toContain('/appointments/15');
+		expect(call.body.appointment).toEqual({
+			scheduled_at: '2026-06-10T14:00:00Z',
+			notes: 'New note',
+		});
+		expect(call.body.appointment).not.toHaveProperty('professional_id');
+		expect(call.body.appointment).not.toHaveProperty('service_id');
+	});
+
+	it('should accept custom_attributes JSON on appointment.update', async () => {
+		const ctx = buildContext('appointment', 'update', {
+			appointmentId: '20',
+			updateFields: {
+				customAttributes: { source: 'whatsapp', tag: 'vip' },
+			},
+		});
+		await node.execute.call(ctx);
+		const call = ctx._mockRequest.mock.calls[0][0];
+		expect(call.body.appointment.custom_attributes).toEqual({ source: 'whatsapp', tag: 'vip' });
+	});
 });

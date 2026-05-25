@@ -313,12 +313,14 @@ describe('NooviChatTrigger — webhook()', () => {
 		expect(new Date(outputItem.json.timestamp as string).getTime()).toBeGreaterThan(0);
 	});
 
-	it('should reject request when signature is invalid', async () => {
+	it('should reject request when signature header is missing (v0.8.4 — was x-hub-signature)', async () => {
+		// In 0.8.3 and earlier this validation read `x-hub-signature` (wrong header).
+		// 0.8.4 reads X-Chatwoot-Signature (canonical backend header).
 		const ctx = buildWebhookContext(
 			{ event: 'message_created', data: { id: 1 } },
 			'message_created',
 			{},
-			{ 'x-hub-signature': 'sha256=invalidsignature' },
+			{ 'x-hub-signature': 'sha256=ignored-old-header' }, // old header now ignored
 			{ webhookSecret: 'my-secret' },
 		);
 		const result = await trigger.webhook.call(ctx);
@@ -326,17 +328,60 @@ describe('NooviChatTrigger — webhook()', () => {
 		expect(result.workflowData![0]).toHaveLength(0);
 	});
 
-	it('should reject request when secret configured but no signature header', async () => {
+	it('should reject when X-Chatwoot-Signature present but X-Chatwoot-Timestamp missing', async () => {
 		const ctx = buildWebhookContext(
 			{ event: 'message_created', data: { id: 1 } },
 			'message_created',
 			{},
-			{},
+			{ 'x-chatwoot-signature': 'sha256=abc' },
 			{ webhookSecret: 'my-secret' },
 		);
 		const result = await trigger.webhook.call(ctx);
 
 		expect(result.workflowData![0]).toHaveLength(0);
+	});
+
+	it('should reject when signature value does not match', async () => {
+		const ctx = buildWebhookContext(
+			{ event: 'message_created', data: { id: 1 } },
+			'message_created',
+			{},
+			{
+				'x-chatwoot-signature': 'sha256=deadbeef00000000000000000000000000000000000000000000000000000000',
+				'x-chatwoot-timestamp': '1700000000',
+			},
+			{ webhookSecret: 'my-secret' },
+		);
+		const result = await trigger.webhook.call(ctx);
+
+		expect(result.workflowData![0]).toHaveLength(0);
+	});
+
+	it('should accept request when signature is valid (canonical backend contract)', async () => {
+		// Compute the exact signature the backend would produce:
+		//   sha256=HMAC-SHA256(secret, "${timestamp}.${JSON.stringify(body)}")
+		const crypto = require('crypto') as typeof import('crypto');
+		const secret = 'my-secret';
+		const body = { event: 'message_created', data: { id: 1 } };
+		const timestamp = '1700000000';
+		const signingPayload = `${timestamp}.${JSON.stringify(body)}`;
+		const validSig =
+			'sha256=' +
+			crypto.createHmac('sha256', secret).update(signingPayload).digest('hex');
+
+		const ctx = buildWebhookContext(
+			body,
+			'message_created',
+			{},
+			{
+				'x-chatwoot-signature': validSig,
+				'x-chatwoot-timestamp': timestamp,
+			},
+			{ webhookSecret: secret },
+		);
+		const result = await trigger.webhook.call(ctx);
+
+		expect(result.workflowData![0]).toHaveLength(1);
 	});
 
 	it('should proceed without signature validation when no secret configured', async () => {

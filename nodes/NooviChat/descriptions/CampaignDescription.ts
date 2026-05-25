@@ -36,8 +36,11 @@ export const CampaignOperations: INodeProperties[] = [
 ];
 
 export const CampaignFields: INodeProperties[] = [
+	// Campaign Display ID for single operations.
+	// Backend (Chatwoot campaigns_controller.rb:30) looks up by `display_id`,
+	// NOT the internal primary key `id`. Passing the wrong value returns 404.
 	{
-		displayName: 'Campaign ID',
+		displayName: 'Campaign Display ID',
 		name: 'campaignId',
 		type: 'string',
 		required: true,
@@ -48,7 +51,9 @@ export const CampaignFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'ID of the campaign',
+		placeholder: 'e.g., 7',
+		description:
+			'Public display number of the campaign (short integer). NOT the internal primary key returned in list responses.',
 	},
 
 	// Create campaign fields

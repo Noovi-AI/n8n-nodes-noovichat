@@ -217,24 +217,47 @@ export class NooviChatTrigger implements INodeType {
 		const event = this.getNodeParameter('event') as string;
 		const filters = this.getNodeParameter('filters', {}) as IDataObject;
 
-		// Validate webhook signature if secret is configured
+		// Validate webhook signature if secret is configured.
+		//
+		// Backend (Chatwoot lib/webhooks/trigger.rb:46-50):
+		//   headers['X-Chatwoot-Timestamp'] = ts
+		//   headers['X-Chatwoot-Signature'] = "sha256=#{HMAC-SHA256(secret, "#{ts}.#{body}")}"
+		//
+		// In 0.8.3 and earlier this validation looked at the wrong header
+		// (`x-hub-signature`) with the wrong signing payload (body only, no
+		// timestamp prefix). Result: when a webhookSecret was configured the
+		// trigger silently dropped every event. Fixed in 0.8.4 to match the
+		// backend contract exactly.
 		try {
 			const webhookCredentials = await this.getCredentials('nooviChatWebhookApi');
 			if (webhookCredentials?.webhookSecret) {
-				const headerSignature = this.getHeaderData()['x-hub-signature'] as string | undefined;
-				if (!headerSignature) {
+				const headers = this.getHeaderData() as IDataObject;
+				const headerSignature = (headers['x-chatwoot-signature'] ||
+					headers['X-Chatwoot-Signature']) as string | undefined;
+				const headerTimestamp = (headers['x-chatwoot-timestamp'] ||
+					headers['X-Chatwoot-Timestamp']) as string | undefined;
+
+				if (!headerSignature || !headerTimestamp) {
+					// Fail-closed: when secret is set, both headers are required.
 					return { workflowData: [[]] };
 				}
 
+				// Note: re-serializing the parsed body is not always byte-identical
+				// with the original raw bytes (key order, unicode escaping).
+				// Ruby's `to_json` and Node's `JSON.stringify` produce compatible
+				// output for the shapes Chatwoot sends today. If HMAC verification
+				// starts failing for specific payloads, the proper fix is to read
+				// the raw request body — not exposed in older n8n versions, so we
+				// use re-serialize as the pragmatic baseline.
+				const signingPayload = `${headerTimestamp}.${JSON.stringify(body)}`;
 				const expectedSignature = crypto
 					.createHmac('sha256', webhookCredentials.webhookSecret as string)
-					.update(JSON.stringify(body))
+					.update(signingPayload)
 					.digest('hex');
 
 				const expectedFull = `sha256=${expectedSignature}`;
 				const expectedBuf = Buffer.from(expectedFull);
 				const actualBuf = Buffer.from(headerSignature);
-				// Use constant-time comparison to prevent timing attacks
 				if (
 					expectedBuf.length !== actualBuf.length ||
 					!crypto.timingSafeEqual(expectedBuf, actualBuf)
