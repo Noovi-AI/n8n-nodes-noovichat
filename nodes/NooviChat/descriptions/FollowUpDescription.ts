@@ -247,7 +247,13 @@ export const FollowUpFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Filter follow-ups by conversation. Leave empty to list all follow-ups in the account.',
+		// Backend change 2026-05-30 (Chatwoot MT-02): when a conversation is set, the
+		// conversation-scoped list now returns only the API token user's own follow-ups
+		// unless that user is an account administrator. Use an admin token to list every
+		// agent's follow-ups on the conversation. The account-level list (empty here) was
+		// already scoped this way. Response shape is unchanged.
+		description:
+			'Filter follow-ups by conversation. Leave empty to list all follow-ups in the account. Note: when set, a non-admin API token only sees its own follow-ups on that conversation (use an admin token to see all).',
 	},
 
 	// Get Many options
