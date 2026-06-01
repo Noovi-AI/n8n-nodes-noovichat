@@ -67,6 +67,35 @@ grep -r "endpoint_path" "/home/debian/projects/Noovichat/NooviWoot-N8N/nodes/"
 
 ## Mudanças na API (histórico de incidents)
 
+### 2026-06-01 — Follow-up send window (`send_window`)
+
+**Feature backend**: follow-up automations e pipeline follow-up rules ganharam
+um campo opcional `send_window` (jsonb) que restringe o horário de envio
+(ex.: 08:00–18:00, Seg–Sex). Follow-ups que cairiam fora — inclusive itens de
+sequências multi-item — são adiados para a próxima abertura, no fuso da conta.
+
+Endpoints afetados no backend:
+- `POST/PATCH /api/v1/accounts/{id}/follow-up-automations`
+- `POST/PATCH /api/v1/accounts/{id}/pipelines/{pid}/follow-up-rules`
+
+Formato: `{ "enabled": true, "days": [1,2,3,4,5], "start": "08:00", "end": "18:00" }`
+(`days`: 0=domingo..6=sábado; `end` > `start`). Default `{}` = sem restrição
+(backward-compatible — clientes antigos não quebram).
+
+**Status do n8n node**: ✅ NENHUMA mudança necessária. O node **não expõe**
+`follow-up-automations` nem `follow-up-rules` como resources — o resource
+`Follow-up` cobre apenas follow-ups manuais (`/conversations/:id/follow-ups`)
+e templates; o resource `Pipeline` cobre pipelines e stages. Como nenhum
+endpoint consumido pelo node aceita `send_window`, não há contrato a propagar.
+A mudança é puramente aditiva e opcional no backend.
+
+**Oportunidade (próximo minor, opcional)**: se for desejável permitir
+configurar a janela de envio via n8n, é preciso **adicionar resources novos**
+ao node — "Follow-up Automation" e "Pipeline Follow-up Rule" — com CRUD
+completo (incluindo `send_window`, `trigger_type`, `delay_minutes`, etc).
+Isso é expansão de escopo, não sync de contrato; tratar como feature própria.
+O mesmo vale para o NooviChat-MCP (ver `Chatwoot/.claude/rules/mcp-sync.md`).
+
 ### 2026-05-07 — Pipeline stages format (incident `array-coalesce`)
 
 **Sintoma observado**: cliente edita descrição de stage via API → 191 cards
