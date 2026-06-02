@@ -32,6 +32,7 @@ import { AppointmentOperations, AppointmentFields } from './descriptions/Appoint
 import { ProfessionalOperations, ProfessionalFields } from './descriptions/ProfessionalDescription';
 import { ServiceOperations, ServiceFields } from './descriptions/ServiceDescription';
 import { PartnerOperations, PartnerFields } from './descriptions/PartnerDescription';
+import { BroadcastOperations, BroadcastFields, BroadcastBlacklistOperations, BroadcastBlacklistFields } from './descriptions/BroadcastDescription';
 
 export class NooviChat implements INodeType {
 	description: INodeTypeDescription = {
@@ -94,6 +95,8 @@ export class NooviChat implements INodeType {
 					{ name: 'Professional', value: 'professional' },
 					{ name: 'Service', value: 'service' },
 					{ name: 'Partner', value: 'partner' },
+					{ name: 'Broadcast', value: 'broadcast' },
+					{ name: 'Broadcast Blacklist', value: 'broadcastBlacklist' },
 				],
 				default: 'conversation',
 			},
@@ -144,6 +147,10 @@ export class NooviChat implements INodeType {
 			...ServiceFields,
 			...PartnerOperations,
 			...PartnerFields,
+			...BroadcastOperations,
+			...BroadcastFields,
+			...BroadcastBlacklistOperations,
+			...BroadcastBlacklistFields,
 		],
 	};
 
@@ -226,6 +233,12 @@ export class NooviChat implements INodeType {
 						break;
 					case 'partner':
 						responseData = await handlePartnerOperation.call(this, operation, i);
+						break;
+					case 'broadcast':
+						responseData = await handleBroadcastOperation.call(this, operation, i);
+						break;
+					case 'broadcastBlacklist':
+						responseData = await handleBroadcastBlacklistOperation.call(this, operation, i);
 						break;
 					default:
 						throw new NodeOperationError(this.getNode(), `Unknown resource: "${resource}"`, { itemIndex: i });
@@ -1702,6 +1715,113 @@ async function handlePartnerOperation(this: IExecuteFunctions, operation: string
 		}
 		case 'delete':
 			return await nooviChatApiRequest.call(this, 'DELETE', `/partners/${partnerId}`);
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+// Broadcast (Disparador em Massa) handlers
+async function handleBroadcastOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	const broadcastId = this.getNodeParameter('broadcastId', index, '') as string;
+
+	switch (operation) {
+		case 'create': {
+			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
+			const inboxIdsRaw = this.getNodeParameter('inboxIds', index, '') as string;
+			const broadcast: any = {
+				name: this.getNodeParameter('name', index) as string,
+				source_type: this.getNodeParameter('sourceType', index) as string,
+				message_type: this.getNodeParameter('messageType', index) as string,
+				source_config: parseJsonValue(this.getNodeParameter('sourceConfig', index, '{}')),
+				message_payload: parseJsonValue(this.getNodeParameter('messagePayload', index, '{}')),
+			};
+			if (inboxIdsRaw) {
+				broadcast.inbox_ids = inboxIdsRaw.split(',').map((s) => Number(s.trim())).filter((n) => !Number.isNaN(n));
+			}
+			if (additionalFields.description) broadcast.description = additionalFields.description;
+			if (additionalFields.rotationMode) broadcast.rotation_mode = additionalFields.rotationMode;
+			if (additionalFields.inboxWeights) broadcast.inbox_weights = parseJsonValue(additionalFields.inboxWeights);
+			if (additionalFields.delayMinSeconds !== undefined) broadcast.delay_min_seconds = additionalFields.delayMinSeconds;
+			if (additionalFields.delayMaxSeconds !== undefined) broadcast.delay_max_seconds = additionalFields.delayMaxSeconds;
+			if (additionalFields.pauseEveryN) broadcast.pause_every_n = additionalFields.pauseEveryN;
+			if (additionalFields.pauseDurationSeconds) broadcast.pause_duration_seconds = additionalFields.pauseDurationSeconds;
+			if (additionalFields.windowStartTime) broadcast.window_start_time = additionalFields.windowStartTime;
+			if (additionalFields.windowEndTime) broadcast.window_end_time = additionalFields.windowEndTime;
+			if (additionalFields.allowedWeekdays) {
+				broadcast.allowed_weekdays = (additionalFields.allowedWeekdays as string).split(',').map((s) => Number(s.trim())).filter((n) => !Number.isNaN(n));
+			}
+			if (additionalFields.startMode) broadcast.start_mode = additionalFields.startMode;
+			if (additionalFields.scheduledAt) broadcast.scheduled_at = additionalFields.scheduledAt;
+			if (additionalFields.enableSpintax !== undefined) broadcast.enable_spintax = additionalFields.enableSpintax;
+			if (additionalFields.enableFollowUp !== undefined) broadcast.enable_follow_up = additionalFields.enableFollowUp;
+			if (additionalFields.followUpAfterHours) broadcast.follow_up_after_hours = additionalFields.followUpAfterHours;
+			if (additionalFields.followUpMessage) broadcast.follow_up_message = additionalFields.followUpMessage;
+			return await nooviChatApiRequest.call(this, 'POST', '/broadcasts', { broadcast });
+		}
+		case 'get':
+			return await nooviChatApiRequest.call(this, 'GET', `/broadcasts/${broadcastId}`);
+		case 'list': {
+			const filters = this.getNodeParameter('filters', index, {}) as any;
+			const qs: any = {};
+			if (filters.status) qs.status = filters.status;
+			if (filters.q) qs.q = filters.q;
+			if (filters.limit !== undefined) qs.limit = filters.limit;
+			if (filters.offset !== undefined) qs.offset = filters.offset;
+			return await nooviChatApiRequest.call(this, 'GET', '/broadcasts', {}, qs);
+		}
+		case 'update': {
+			const updateFields = this.getNodeParameter('updateFields', index, {}) as any;
+			const broadcast: any = {};
+			if (updateFields.name) broadcast.name = updateFields.name;
+			if (updateFields.description !== undefined) broadcast.description = updateFields.description;
+			return await nooviChatApiRequest.call(this, 'PATCH', `/broadcasts/${broadcastId}`, { broadcast });
+		}
+		case 'delete':
+			return await nooviChatApiRequest.call(this, 'DELETE', `/broadcasts/${broadcastId}`);
+		case 'pause':
+			return await nooviChatApiRequest.call(this, 'POST', `/broadcasts/${broadcastId}/pause`);
+		case 'resume':
+			return await nooviChatApiRequest.call(this, 'POST', `/broadcasts/${broadcastId}/resume`);
+		case 'cancel':
+			return await nooviChatApiRequest.call(this, 'POST', `/broadcasts/${broadcastId}/cancel`);
+		case 'duplicate':
+			return await nooviChatApiRequest.call(this, 'POST', `/broadcasts/${broadcastId}/duplicate`);
+		case 'getContacts': {
+			const f = this.getNodeParameter('contactFilters', index, {}) as any;
+			const qs: any = {};
+			if (f.status) qs.status = f.status;
+			if (f.q) qs.q = f.q;
+			if (f.limit !== undefined) qs.limit = f.limit;
+			if (f.offset !== undefined) qs.offset = f.offset;
+			return await nooviChatApiRequest.call(this, 'GET', `/broadcasts/${broadcastId}/contacts`, {}, qs);
+		}
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+// Broadcast Blacklist handlers
+async function handleBroadcastBlacklistOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	switch (operation) {
+		case 'list': {
+			const f = this.getNodeParameter('blacklistFilters', index, {}) as any;
+			const qs: any = {};
+			if (f.q) qs.q = f.q;
+			if (f.limit !== undefined) qs.limit = f.limit;
+			if (f.offset !== undefined) qs.offset = f.offset;
+			return await nooviChatApiRequest.call(this, 'GET', '/broadcast_blacklist_entries', {}, qs);
+		}
+		case 'add': {
+			// Backend usa params no nível raiz (não aninhado): params.require(:phone_number)
+			const body: any = { phone_number: this.getNodeParameter('phoneNumber', index) as string };
+			const reason = this.getNodeParameter('reason', index, '') as string;
+			if (reason) body.reason = reason;
+			return await nooviChatApiRequest.call(this, 'POST', '/broadcast_blacklist_entries', body);
+		}
+		case 'remove': {
+			const entryId = this.getNodeParameter('entryId', index) as string;
+			return await nooviChatApiRequest.call(this, 'DELETE', `/broadcast_blacklist_entries/${entryId}`);
+		}
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}

@@ -91,6 +91,8 @@ export class NooviChatTrigger implements INodeType {
 					{ name: 'Follow-up Failed', value: 'follow_up_failed', description: 'A follow-up failed to send' },
 					{ name: 'Follow-up Cancelled', value: 'follow_up_cancelled', description: 'A follow-up was cancelled' },
 					{ name: 'Broadcast Follow-up Sent', value: 'broadcast_follow_up_sent', description: 'A broadcast follow-up was sent to a non-replier' },
+					{ name: 'Broadcast Started', value: 'broadcast_started', description: 'A broadcast started sending (entered running state)' },
+					{ name: 'Broadcast Completed', value: 'broadcast_completed', description: 'A broadcast finished sending all contacts' },
 					// NooviChat exclusive — Activity events
 					{ name: 'Activity Due', value: 'activity_due', description: 'An activity is due now' },
 					// NooviChat exclusive — SLA events
