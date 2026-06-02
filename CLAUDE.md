@@ -102,6 +102,7 @@ nodes/NooviChat/
   descriptions/              ← per-resource config (operations, parameters)
     ActivityDescription.ts
     AgentDescription.ts
+    AppointmentDescription.ts   ← Appointments
     CampaignDescription.ts
     CannedResponseDescription.ts
     CardDescription.ts          ← Pipeline cards
@@ -113,10 +114,14 @@ nodes/NooviChat/
     LabelDescription.ts
     LeadScoringDescription.ts
     MessageDescription.ts
+    PartnerDescription.ts       ← Whitelabel partners
     PipelineDescription.ts
+    ProfessionalDescription.ts  ← Appointments professionals
+    ServiceDescription.ts       ← Appointments services
     SlaDescription.ts
     TeamDescription.ts
     WahaDescription.ts          ← WhatsApp (WAHA)
+    WhatsappTemplateDescription.ts ← WhatsApp templates
     WebhookDescription.ts
 
 credentials/
