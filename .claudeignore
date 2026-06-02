@@ -1,0 +1,8 @@
+# NooviWoot-N8N (TypeScript n8n node) — diretórios ruidosos
+node_modules/
+dist/
+*.log
+*.lock
+*.tsbuildinfo
+*.map
+coverage/
