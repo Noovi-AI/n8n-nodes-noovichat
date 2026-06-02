@@ -38,24 +38,24 @@ npm view @nooviai/n8n-nodes-noovichat version
 
 Publicação de node quebrado durante horário comercial afeta clientes
 imediatamente quando eles dão "update" no painel n8n. Siga a janela
-do monorepo. Ver `../.claude/rules/deploy-safety.md`.
+do monorepo. Ver `../docs/rules/deploy-safety.md`.
 
 ## LEITURA OBRIGATÓRIA — `api-sync.md`
 
 Este node **espelha** a API REST do Chatwoot em
 `../Chatwoot/app/controllers/api/v1/accounts/`. Qualquer mudança lá
-pode exigir update aqui. **Sempre** leia `.claude/rules/api-sync.md`
+pode exigir update aqui. **Sempre** leia `docs/rules/api-sync.md`
 antes de começar a editar.
 
 O Chatwoot tem um checklist reverso em
-`../Chatwoot/.claude/rules/n8n-sync.md` que lembra devs do Chatwoot
+`../Chatwoot/docs/rules/n8n-sync.md` que lembra devs do Chatwoot
 de avisar quando mudam a API.
 
 ## Rules aplicáveis do monorepo root
 
-- `../.claude/rules/deploy-safety.md` — gates universais (npm publish está coberto)
-- `../.claude/rules/git-discipline.md` — conventional commits, tag git antes do publish
-- `../.claude/rules/subproject-router.md` — roteamento por cwd
+- `../docs/rules/deploy-safety.md` — gates universais (npm publish está coberto)
+- `../docs/rules/git-discipline.md` — conventional commits, tag git antes do publish
+- `../docs/rules/subproject-router.md` — roteamento por cwd
 
 O root `.claude/settings.json` tem hook bloqueante que intercepta
 `npm publish` em working tree sujo ou horário comercial.
@@ -129,7 +129,7 @@ NooviChat API (Rails)
 api/v1/accounts/:accountId/<recurso>
 ```
 
-**CRÍTICO**: Quando a API do NooviChat é atualizada (novos endpoints, campos renomeados, recursos adicionados), este node pode precisar de atualização correspondente. Ver `.claude/rules/api-sync.md`.
+**CRÍTICO**: Quando a API do NooviChat é atualizada (novos endpoints, campos renomeados, recursos adicionados), este node pode precisar de atualização correspondente. Ver `docs/rules/api-sync.md`.
 
 ## Build e Publicação
 
@@ -142,7 +142,7 @@ npm publish       # publica no npm (requer auth)
 
 ## Configuração Claude Code detalhada
 
-Ver `.claude/rules/` para:
+Ver `docs/rules/` para:
 - `architecture.md` — estrutura do node, padrões n8n SDK
 - `commands.md` — build, test, publish
 - `api-sync.md` — como sincronizar com mudanças na API do NooviChat

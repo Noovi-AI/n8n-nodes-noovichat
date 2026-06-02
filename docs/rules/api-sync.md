@@ -94,7 +94,7 @@ configurar a janela de envio via n8n, é preciso **adicionar resources novos**
 ao node — "Follow-up Automation" e "Pipeline Follow-up Rule" — com CRUD
 completo (incluindo `send_window`, `trigger_type`, `delay_minutes`, etc).
 Isso é expansão de escopo, não sync de contrato; tratar como feature própria.
-O mesmo vale para o NooviChat-MCP (ver `Chatwoot/.claude/rules/mcp-sync.md`).
+O mesmo vale para o NooviChat-MCP (ver `Chatwoot/docs/rules/mcp-sync.md`).
 
 ### 2026-05-07 — Pipeline stages format (incident `array-coalesce`)
 
