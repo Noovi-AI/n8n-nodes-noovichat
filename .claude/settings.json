@@ -25,13 +25,34 @@
       "Bash(mkdir:*)",
       "Bash(cat:*)",
       "Bash(curl:*)",
-      "Bash(du -sh:*)"
+      "Bash(du -sh:*)",
+      "Read",
+      "Write",
+      "Edit",
+      "Grep",
+      "Glob",
+      "Bash(git fetch:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git show:*)",
+      "Bash(git switch:*)",
+      "Bash(git tag:*)",
+      "Bash(gh:*)",
+      "Bash(grep:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(find:*)",
+      "Bash(jq:*)",
+      "Bash(npm version:*)",
+      "Bash(npm pack:*)",
+      "Bash(npm view:*)"
     ],
     "deny": [
       "Bash(sudo:*)",
       "Bash(rm -rf:*)",
       "Bash(git push --force:*)",
-      "Bash(git reset --hard:*)"
+      "Bash(git reset --hard:*)",
+      "Bash(git push -f:*)",
+      "Bash(git clean -fd:*)"
     ]
   }
 }
