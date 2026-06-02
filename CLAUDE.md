@@ -63,6 +63,17 @@ The root `.claude/settings.json` has a blocking hook that intercepts `npm publis
 
 **`npm publish` is NOT part of the loop** — run `/pre-publish-audit` first; it needs human approval + golden rules (gated by the root pre-deploy-gate hook). The Obsidian doc update (step 7) IS part of the loop and closes it.
 
+### Mandatory tests (even in MVP)
+
+MVP philosophy allows skipping tests for speed — but tests are REQUIRED, no exception, for:
+1. **HTTP/pagination logic** — any change to `GenericFunctions.ts` (request building, pagination, auth header) → Jest test for the request shape.
+2. **New/renamed operation or field** — any `descriptions/*Description.ts` change that must mirror the Chatwoot API → test that the operation maps to the correct route/params (api-sync).
+3. **Credential schema** — any change to `credentials/*.credentials.ts` → test the auth wiring.
+4. **Trigger/webhook events** — any change to the trigger node's events array → test.
+5. **Bug-report fixes** — any fix from a client-reported broken workflow → regression test in the same commit.
+
+When in doubt, add the test. A published broken version cannot be removed and breaks clients' workflows publicly.
+
 ---
 
 ## Package
