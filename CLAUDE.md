@@ -1,70 +1,55 @@
-# NooviWoot-N8N — n8n Community Node para NooviChat
+# NooviWoot-N8N — n8n Community Node for NooviChat
 
-Node n8n da **Noovi AI** que integra o NooviChat (nosso fork do Chatwoot) com workflows de automação no n8n.
+**Noovi AI** n8n node that integrates NooviChat (our Chatwoot fork) with automation workflows in n8n.
 
-## ⛔ REGRAS DE OURO — npm Publish & Integridade
+## ⛔ GOLDEN RULES — npm Publish & Integrity
 
-Este projeto vive dentro do monorepo NooviChat
-(`/home/debian/projects/Noovichat/`). As **3 regras de ouro do monorepo**
-aplicam aqui:
+This project lives inside the NooviChat monorepo (`/home/debian/projects/Noovichat/`). The **3 monorepo golden rules** apply here:
 
-### 1. Proibido `npm publish` "adoidado"
+### 1. No reflexive `npm publish`
 
-Nunca execute `npm publish` como reflexo. Uma versão publicada no npm
-**não pode ser removida** (só depreciada). Se você publica versão
-quebrada, clientes que atualizam o node quebram seus workflows — e o
-damage é público.
+Never run `npm publish` as a reflex. A version published to npm **cannot be removed** (only deprecated). If you publish a broken version, clients who update the node break their workflows — and the damage is public.
 
-### 2. Bateria de testes local é OBRIGATÓRIA antes de publish
+### 2. Local test battery is MANDATORY before publish
 
 ```bash
 git diff --exit-code && git diff --cached --exit-code
 npm run lint
 npm run build
 npm run test
-# Validar que dist/ tem todos os arquivos esperados
+# Validate that dist/ has all expected files
 ls dist/nodes/NooviChat/NooviChat.node.js
 ls dist/nodes/NooviChat/NooviChatTrigger.node.js
 ls dist/credentials/NooviChatApi.credentials.js
-# Só então:
-npm version patch  # cria commit + tag automaticamente
+# Only then:
+npm version patch  # creates commit + tag automatically
 git push --follow-tags
 npm publish --access public
-# Validar no registry
+# Validate in the registry
 npm view @nooviai/n8n-nodes-noovichat version
 ```
 
-### 3. Janela de publish proibida: Seg-Sex 08:00-19:00 BRT e sexta noite
+### 3. Forbidden publish window: Mon-Fri 08:00-19:00 BRT and Friday night
 
-Publicação de node quebrado durante horário comercial afeta clientes
-imediatamente quando eles dão "update" no painel n8n. Siga a janela
-do monorepo. Ver `../docs/rules/deploy-safety.md`.
+Publishing a broken node during business hours affects clients immediately when they hit "update" in the n8n panel. Follow the monorepo window. See `../docs/rules/deploy-safety.md`.
 
-## LEITURA OBRIGATÓRIA — `api-sync.md`
+## MANDATORY READING — `api-sync.md`
 
-Este node **espelha** a API REST do Chatwoot em
-`../Chatwoot/app/controllers/api/v1/accounts/`. Qualquer mudança lá
-pode exigir update aqui. **Sempre** leia `docs/rules/api-sync.md`
-antes de começar a editar.
+This node **mirrors** the Chatwoot REST API at `../Chatwoot/app/controllers/api/v1/accounts/`. Any change there may require an update here. **Always** read `docs/rules/api-sync.md` before you start editing.
 
-O Chatwoot tem um checklist reverso em
-`../Chatwoot/docs/rules/n8n-sync.md` que lembra devs do Chatwoot
-de avisar quando mudam a API.
+Chatwoot has a reverse checklist in `../Chatwoot/docs/rules/n8n-sync.md` that reminds Chatwoot devs to flag when they change the API.
 
-## Rules aplicáveis do monorepo root
+## Applicable monorepo root rules
 
-- `../docs/rules/deploy-safety.md` — gates universais (npm publish está coberto)
-- `../docs/rules/git-discipline.md` — conventional commits, tag git antes do publish
-- `../docs/rules/subproject-router.md` — roteamento por cwd
+- `../docs/rules/deploy-safety.md` — universal gates (npm publish is covered)
+- `../docs/rules/git-discipline.md` — conventional commits, git tag before publish
+- `../docs/rules/subproject-router.md` — routing by cwd
 
-O root `.claude/settings.json` tem hook bloqueante que intercepta
-`npm publish` em working tree sujo ou horário comercial.
+The root `.claude/settings.json` has a blocking hook that intercepts `npm publish` on a dirty working tree or during business hours.
 
 ---
 
-
-
-## Pacote
+## Package
 
 ```
 @nooviai/n8n-nodes-noovichat
@@ -74,20 +59,20 @@ GitHub: Noovi-AI/n8n-nodes-noovichat
 ## Stack
 
 - **TypeScript** + Node.js ≥ 18
-- **n8n-workflow** SDK para tipagem e runtime do n8n
-- **Jest** para testes
-- **Gulp** para build de ícones SVG
-- **ESLint** com `eslint-plugin-n8n-nodes-base`
+- **n8n-workflow** SDK for n8n typing and runtime
+- **Jest** for tests
+- **Gulp** for SVG icon builds
+- **ESLint** with `eslint-plugin-n8n-nodes-base`
 
-## Estrutura
+## Structure
 
 ```
 nodes/NooviChat/
-  NooviChat.node.ts          ← node principal (ações CRUD)
-  NooviChatTrigger.node.ts   ← node trigger (webhooks)
-  GenericFunctions.ts        ← HTTP request helper + paginação
-  noovichat.svg              ← ícone do node
-  descriptions/              ← configurações de cada recurso (operações, parâmetros)
+  NooviChat.node.ts          ← main node (CRUD actions)
+  NooviChatTrigger.node.ts   ← trigger node (webhooks)
+  GenericFunctions.ts        ← HTTP request helper + pagination
+  noovichat.svg              ← node icon
+  descriptions/              ← per-resource config (operations, parameters)
     ActivityDescription.ts
     AgentDescription.ts
     CampaignDescription.ts
@@ -109,16 +94,16 @@ nodes/NooviChat/
 
 credentials/
   NooviChatApi.credentials.ts           ← baseUrl + apiAccessToken
-  NooviChatWebhookApi.credentials.ts    ← auth para triggers
+  NooviChatWebhookApi.credentials.ts    ← auth for triggers
 
-dist/     ← gerado por npm run build (não commitar)
-test/     ← testes Jest
-workflows/ ← exemplos de workflows n8n
+dist/     ← generated by npm run build (do not commit)
+test/     ← Jest tests
+workflows/ ← example n8n workflows
 ```
 
-## Relação com NooviChat (Chatwoot)
+## Relationship with NooviChat (Chatwoot)
 
-Este node consome a API REST do NooviChat:
+This node consumes the NooviChat REST API:
 
 ```
 n8n workflow
@@ -126,23 +111,23 @@ n8n workflow
     │  HTTP (api_access_token)
     ▼
 NooviChat API (Rails)
-api/v1/accounts/:accountId/<recurso>
+api/v1/accounts/:accountId/<resource>
 ```
 
-**CRÍTICO**: Quando a API do NooviChat é atualizada (novos endpoints, campos renomeados, recursos adicionados), este node pode precisar de atualização correspondente. Ver `docs/rules/api-sync.md`.
+**CRITICAL**: When the NooviChat API changes (new endpoints, renamed fields, added resources), this node may need a matching update. See `docs/rules/api-sync.md`.
 
-## Build e Publicação
+## Build and Publish
 
 ```bash
-npm run build     # compila TypeScript → dist/
+npm run build     # compile TypeScript → dist/
 npm run lint      # ESLint
 npm run test      # Jest
-npm publish       # publica no npm (requer auth)
+npm publish       # publish to npm (requires auth)
 ```
 
-## Configuração Claude Code detalhada
+## Detailed Claude Code configuration
 
-Ver `docs/rules/` para:
-- `architecture.md` — estrutura do node, padrões n8n SDK
+See `docs/rules/` for:
+- `architecture.md` — node structure, n8n SDK patterns
 - `commands.md` — build, test, publish
-- `api-sync.md` — como sincronizar com mudanças na API do NooviChat
+- `api-sync.md` — how to sync with NooviChat API changes
