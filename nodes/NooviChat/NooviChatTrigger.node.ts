@@ -85,6 +85,12 @@ export class NooviChatTrigger implements INodeType {
 					// NooviChat exclusive — Follow-up events
 					{ name: 'Follow-up Due', value: 'follow_up_due', description: 'A follow-up task is due now' },
 					{ name: 'Follow-up Overdue', value: 'follow_up_overdue', description: 'A follow-up task is overdue' },
+					// NooviChat exclusive — Follow-up lifecycle events (Chatwoot fase-11)
+					{ name: 'Follow-up Scheduled', value: 'follow_up_scheduled', description: 'A follow-up was scheduled' },
+					{ name: 'Follow-up Sent', value: 'follow_up_sent', description: 'A follow-up message was sent' },
+					{ name: 'Follow-up Failed', value: 'follow_up_failed', description: 'A follow-up failed to send' },
+					{ name: 'Follow-up Cancelled', value: 'follow_up_cancelled', description: 'A follow-up was cancelled' },
+					{ name: 'Broadcast Follow-up Sent', value: 'broadcast_follow_up_sent', description: 'A broadcast follow-up was sent to a non-replier' },
 					// NooviChat exclusive — Activity events
 					{ name: 'Activity Due', value: 'activity_due', description: 'An activity is due now' },
 					// NooviChat exclusive — SLA events

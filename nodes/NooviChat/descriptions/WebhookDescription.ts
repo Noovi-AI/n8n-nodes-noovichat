@@ -99,6 +99,12 @@ export const WebhookFields: INodeProperties[] = [
 			// NooviChat exclusive — Follow-up events
 			{ name: 'Follow-up Due', value: 'follow_up_due' },
 			{ name: 'Follow-up Overdue', value: 'follow_up_overdue' },
+			// NooviChat exclusive — Follow-up lifecycle events (Chatwoot fase-11)
+			{ name: 'Follow-up Scheduled', value: 'follow_up_scheduled' },
+			{ name: 'Follow-up Sent', value: 'follow_up_sent' },
+			{ name: 'Follow-up Failed', value: 'follow_up_failed' },
+			{ name: 'Follow-up Cancelled', value: 'follow_up_cancelled' },
+			{ name: 'Broadcast Follow-up Sent', value: 'broadcast_follow_up_sent' },
 			// NooviChat exclusive — Activity events
 			{ name: 'Activity Due', value: 'activity_due' },
 			// NooviChat exclusive — SLA events
