@@ -61,7 +61,7 @@ The root `.claude/settings.json` has a blocking hook that intercepts `npm publis
 6. **Atomic commit** — Conventional Commits, one logical unit. `npm version` bump when releasing.
 7. **⛔ Close the cycle — update Obsidian docs (`/doc-obsidian`) — MANDATORY, NEVER skip.** Update the canonical technical docs in the Obsidian vault for anything that changed (node operations, resources, API mirroring). Obsidian is the single source of truth (see `../docs/rules/obsidian.md`). Vault: `/home/debian/projects/Obsidian/NooviAI/NooviChat/NooviWoot-N8N/`; commit/push from the external repo `/home/debian/projects/Obsidian` (`git add` explicit, never `-A`; `git push origin main`). If nothing documentable changed, state that and skip — but always ask.
 
-**`npm publish` is NOT part of the loop** — it needs human approval + golden rules (gated by the root pre-deploy-gate hook). The Obsidian doc update (step 7) IS part of the loop and closes it.
+**`npm publish` is NOT part of the loop** — run `/pre-publish-audit` first; it needs human approval + golden rules (gated by the root pre-deploy-gate hook). The Obsidian doc update (step 7) IS part of the loop and closes it.
 
 ---
 
