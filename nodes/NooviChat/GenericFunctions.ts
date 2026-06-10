@@ -58,14 +58,17 @@ export function parseJsonValue(value: unknown): any {
 	return value;
 }
 
-export async function nooviChatApiRequest(
+/**
+ * Resolve credentials, validate the baseUrl against SSRF, and build the fully
+ * scoped request URI (`/api/v1/accounts/:account_id<endpoint>`). Shared by the
+ * JSON request helper and the raw (text/CSV) helper so the security checks live
+ * in one place.
+ */
+async function resolveRequestTarget(
 	this: NooviChatContext,
-	method: IHttpRequestMethods,
 	endpoint: string,
-	body: IDataObject = {},
-	qs: IDataObject = {},
-	itemIndex = 0,
-): Promise<any> {
+	itemIndex: number,
+): Promise<{ uri: string; apiAccessToken: string }> {
 	const credentials = await this.getCredentials('nooviChatApi');
 	const rawBaseUrl = (credentials.baseUrl as string).replace(/\/$/, '');
 
@@ -108,7 +111,6 @@ export async function nooviChatApiRequest(
 		throw new Error(`NooviChat baseUrl is not a valid URL: ${rawBaseUrl}`);
 	}
 
-	const baseUrl = rawBaseUrl;
 	const accountId = (this as any).getNodeParameter('accountId', itemIndex) as number;
 	if (!Number.isInteger(accountId) || accountId <= 0) {
 		throw new NodeOperationError(
@@ -117,11 +119,27 @@ export async function nooviChatApiRequest(
 		);
 	}
 
+	return {
+		uri: `${rawBaseUrl}/api/v1/accounts/${accountId}${endpoint}`,
+		apiAccessToken: credentials.apiAccessToken as string,
+	};
+}
+
+export async function nooviChatApiRequest(
+	this: NooviChatContext,
+	method: IHttpRequestMethods,
+	endpoint: string,
+	body: IDataObject = {},
+	qs: IDataObject = {},
+	itemIndex = 0,
+): Promise<any> {
+	const { uri, apiAccessToken } = await resolveRequestTarget.call(this, endpoint, itemIndex);
+
 	const options: IRequestOptions = {
 		method,
-		uri: `${baseUrl}/api/v1/accounts/${accountId}${endpoint}`,
+		uri,
 		headers: {
-			api_access_token: credentials.apiAccessToken as string,
+			api_access_token: apiAccessToken,
 			'Content-Type': 'application/json',
 		},
 		body,
@@ -138,6 +156,49 @@ export async function nooviChatApiRequest(
 
 	try {
 		return await this.helpers.request(options);
+	} catch (error: any) {
+		const statusCode: number | undefined = error?.statusCode ?? error?.response?.statusCode;
+		const context = `${method} ${endpoint}`;
+		const detail = statusCode ? ` (HTTP ${statusCode})` : '';
+		throw new Error(
+			`NooviChat API Error${detail} [${context}]: ${error.message || 'Unknown error'}`,
+		);
+	}
+}
+
+/**
+ * Like {@link nooviChatApiRequest} but returns the raw response body as a string
+ * instead of parsing JSON. Used for endpoints that emit `text/csv` (pipeline
+ * card export and import template) where forcing `json: true` would corrupt the
+ * payload. Reuses the same SSRF validation and account scoping.
+ */
+export async function nooviChatApiRequestRaw(
+	this: NooviChatContext,
+	method: IHttpRequestMethods,
+	endpoint: string,
+	qs: IDataObject = {},
+	itemIndex = 0,
+): Promise<string> {
+	const { uri, apiAccessToken } = await resolveRequestTarget.call(this, endpoint, itemIndex);
+
+	const options: IRequestOptions = {
+		method,
+		uri,
+		headers: {
+			api_access_token: apiAccessToken,
+			Accept: 'text/csv',
+		},
+		qs,
+		json: false, // keep the CSV body as a plain string
+	};
+
+	if (Object.keys(qs).length === 0) {
+		delete options.qs;
+	}
+
+	try {
+		const response = await this.helpers.request(options);
+		return typeof response === 'string' ? response : String(response);
 	} catch (error: any) {
 		const statusCode: number | undefined = error?.statusCode ?? error?.response?.statusCode;
 		const context = `${method} ${endpoint}`;

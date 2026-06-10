@@ -40,6 +40,8 @@ export const CardOperations: INodeProperties[] = [
 			{ name: 'Bulk Delete', value: 'bulkDelete', action: 'Bulk delete cards' },
 			{ name: 'Get Lead Score', value: 'getLeadScore', action: 'Get card lead score' },
 			{ name: 'Recalculate Lead Score', value: 'recalculateLeadScore', action: 'Recalculate lead score' },
+			{ name: 'Export (CSV)', value: 'export', action: 'Export cards to CSV' },
+			{ name: 'Get Import Template (CSV)', value: 'getImportTemplate', action: 'Get the CSV import template' },
 		],
 		default: 'getAll',
 	},
@@ -303,7 +305,7 @@ export const CardFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['card'],
-				operation: ['getAll'],
+				operation: ['getAll', 'export'],
 			},
 		},
 		default: {},
@@ -337,6 +339,15 @@ export const CardFields: INodeProperties[] = [
 				default: 0,
 				description:
 					'Filter by conversation display ID (the short public number visible in the URL)',
+			},
+			{
+				displayName: 'Labels',
+				name: 'labels',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g., vip, urgente',
+				description:
+					'Filter by conversation label titles. Separate multiple labels with commas — a card matches if it has any of them.',
 			},
 		],
 	},

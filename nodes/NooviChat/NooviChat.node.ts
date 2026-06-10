@@ -6,7 +6,7 @@ import {
 	NodeOperationError,
 } from 'n8n-workflow';
 
-import { nooviChatApiRequest, nooviChatApiRequestAllItems, formatExecutionData, parseJsonValue } from './GenericFunctions';
+import { nooviChatApiRequest, nooviChatApiRequestAllItems, nooviChatApiRequestRaw, formatExecutionData, parseJsonValue } from './GenericFunctions';
 
 // Import all descriptions
 import { ConversationOperations, ConversationFields } from './descriptions/ConversationDescription';
@@ -923,18 +923,14 @@ async function handleCardOperation(this: IExecuteFunctions, operation: string, i
 		case 'get':
 			return await nooviChatApiRequest.call(this, 'GET', `/pipeline_cards/${cardId}`);
 		case 'getAll': {
-			// Legacy controller (pipeline_cards_controller.rb) SUPPORTED_INDEX_FILTERS:
-			//   pipeline_id, pipeline_stage, conversation_display_id, contact_id, exclude_id,
-			//   limit, offset, cursor
-			// `assignee_id` and `status` are silently dropped (server logs unsupported-filter
-			// warning but proceeds — see incident 2026-04-14-pipeline-cards-contact-id-filter).
-			// `per_page` is also ignored; controller honors only `limit`/`offset`/`cursor`.
+			// pipeline_cards_controller.rb SUPPORTED_INDEX_FILTERS now also covers
+			//   labels, priority, value_min/value_max, agent_id, date_start/date_end,
+			//   status, sla_exceeded (applied via PipelineCardFilterable#apply_card_filters)
+			// on top of the legacy pipeline_id / pipeline_stage / conversation_display_id /
+			// contact_id / exclude_id. `labels` is passed as a repeated `labels[]` param.
+			// The controller honors `limit`/`offset`/`cursor` for pagination (not `per_page`).
 			const filters = this.getNodeParameter('filters', index, {}) as any;
-			const qs: any = {};
-			if (filters.pipelineId) qs.pipeline_id = filters.pipelineId;
-			if (filters.stageId) qs.pipeline_stage = filters.stageId;
-			if (filters.contactId) qs.contact_id = filters.contactId;
-			if (filters.conversationDisplayId) qs.conversation_display_id = filters.conversationDisplayId;
+			const qs = buildCardFilterQs(filters);
 			if (!returnAll) qs.limit = limit;
 			if (returnAll) {
 				return await nooviChatApiRequestAllItems.call(this, 'GET', '/pipeline_cards', {}, qs);
@@ -1000,9 +996,50 @@ async function handleCardOperation(this: IExecuteFunctions, operation: string, i
 			return await nooviChatApiRequest.call(this, 'GET', `/pipeline_cards/${cardId}`);
 		case 'recalculateLeadScore':
 			return await nooviChatApiRequest.call(this, 'POST', `/pipeline_cards/${cardId}/recalculate_score`);
+		case 'export': {
+			// GET /pipeline/cards/export → text/csv. Honors the same filters as getAll
+			// (card_exports_controller#index via PipelineCardFilterable). Returns the raw
+			// CSV as a string field rather than parsed JSON.
+			const filters = this.getNodeParameter('filters', index, {}) as any;
+			const qs = buildCardFilterQs(filters);
+			const csv = await nooviChatApiRequestRaw.call(this, 'GET', '/pipeline/cards/export', qs);
+			return { csv };
+		}
+		case 'getImportTemplate': {
+			// GET /pipeline/cards/template → text/csv import template (headers + sample row).
+			const csv = await nooviChatApiRequestRaw.call(this, 'GET', '/pipeline/cards/template');
+			return { csv };
+		}
+		// TODO(follow-up): import-upload (POST /pipeline/cards/import) is NOT implemented here.
+		// It requires multipart/form-data (import_file binary + pipeline_id) which the current
+		// nooviChatApiRequest (json:true) and nooviChatApiRequestRaw helpers do not support.
+		// Implementing it cleanly needs a dedicated multipart/formData transport reading an
+		// n8n binary property — deferred to keep this change low-risk. Export + template ship now.
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
+}
+
+/**
+ * Build the querystring for the pipeline-card index/export filters. Both
+ * endpoints share `PipelineCardFilterable#apply_card_filters` on the backend.
+ * `labels` is a comma-separated list of label titles sent as a repeated
+ * `labels[]` param (Rails `Array.wrap(params[:labels])`).
+ */
+function buildCardFilterQs(filters: any): any {
+	const qs: any = {};
+	if (filters.pipelineId) qs.pipeline_id = filters.pipelineId;
+	if (filters.stageId) qs.pipeline_stage = filters.stageId;
+	if (filters.contactId) qs.contact_id = filters.contactId;
+	if (filters.conversationDisplayId) qs.conversation_display_id = filters.conversationDisplayId;
+	if (filters.labels) {
+		const labels = String(filters.labels)
+			.split(',')
+			.map((l: string) => l.trim())
+			.filter((l: string) => l !== '');
+		if (labels.length > 0) qs['labels[]'] = labels;
+	}
+	return qs;
 }
 
 // Follow-up handlers
