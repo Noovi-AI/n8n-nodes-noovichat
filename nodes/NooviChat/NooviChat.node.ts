@@ -33,6 +33,8 @@ import { ProfessionalOperations, ProfessionalFields } from './descriptions/Profe
 import { ServiceOperations, ServiceFields } from './descriptions/ServiceDescription';
 import { PartnerOperations, PartnerFields } from './descriptions/PartnerDescription';
 import { BroadcastOperations, BroadcastFields, BroadcastBlacklistOperations, BroadcastBlacklistFields } from './descriptions/BroadcastDescription';
+import { CommercialAnalysisOperations, CommercialAnalysisFields } from './descriptions/CommercialAnalysisDescription';
+import { SequenceOperations, SequenceFields } from './descriptions/SequenceDescription';
 
 export class NooviChat implements INodeType {
 	description: INodeTypeDescription = {
@@ -97,6 +99,8 @@ export class NooviChat implements INodeType {
 					{ name: 'Partner', value: 'partner' },
 					{ name: 'Broadcast', value: 'broadcast' },
 					{ name: 'Broadcast Blacklist', value: 'broadcastBlacklist' },
+					{ name: 'Commercial Analysis', value: 'commercialAnalysis' },
+					{ name: 'Sequence', value: 'sequence' },
 				],
 				default: 'conversation',
 			},
@@ -151,6 +155,10 @@ export class NooviChat implements INodeType {
 			...BroadcastFields,
 			...BroadcastBlacklistOperations,
 			...BroadcastBlacklistFields,
+			...CommercialAnalysisOperations,
+			...CommercialAnalysisFields,
+			...SequenceOperations,
+			...SequenceFields,
 		],
 	};
 
@@ -239,6 +247,12 @@ export class NooviChat implements INodeType {
 						break;
 					case 'broadcastBlacklist':
 						responseData = await handleBroadcastBlacklistOperation.call(this, operation, i);
+						break;
+					case 'commercialAnalysis':
+						responseData = await handleCommercialAnalysisOperation.call(this, operation, i);
+						break;
+					case 'sequence':
+						responseData = await handleSequenceOperation.call(this, operation, i);
 						break;
 					default:
 						throw new NodeOperationError(this.getNode(), `Unknown resource: "${resource}"`, { itemIndex: i });
@@ -406,17 +420,24 @@ async function handleContactOperation(this: IExecuteFunctions, operation: string
 			if (additionalFields.email) body.email = additionalFields.email;
 			if (additionalFields.phoneNumber) body.phone_number = additionalFields.phoneNumber;
 			if (additionalFields.inboxId) body.inbox_id = additionalFields.inboxId;
+			if (additionalFields.sourceId) body.source_id = additionalFields.sourceId;
 			if (additionalFields.identifier) body.identifier = additionalFields.identifier;
 			if (additionalFields.customAttributes) {
 				body.custom_attributes = parseJsonValue(additionalFields.customAttributes);
 			}
 			return await nooviChatApiRequest.call(this, 'POST', '/contacts', body);
 		}
-		case 'get':
-			return await nooviChatApiRequest.call(this, 'GET', `/contacts/${contactId}`);
+		case 'get': {
+			// The backend DEFAULTS to including contact_inboxes when the param is absent
+			// (contacts_controller#set_include_contact_inboxes), so the off state must be
+			// sent explicitly as false — otherwise the toggle can never turn it off.
+			const includeContactInboxes = this.getNodeParameter('includeContactInboxes', index, false) as boolean;
+			return await nooviChatApiRequest.call(this, 'GET', `/contacts/${contactId}`, {}, { include_contact_inboxes: includeContactInboxes });
+		}
 		case 'getAll': {
 			const sort = this.getNodeParameter('sort', index, 'name') as string;
-			const qs: any = { sort };
+			const includeContactInboxes = this.getNodeParameter('includeContactInboxes', index, false) as boolean;
+			const qs: any = { sort, include_contact_inboxes: includeContactInboxes };
 			if (!returnAll) qs.per_page = limit;
 			if (returnAll) {
 				return await nooviChatApiRequestAllItems.call(this, 'GET', '/contacts', {}, qs);
@@ -439,7 +460,8 @@ async function handleContactOperation(this: IExecuteFunctions, operation: string
 			return await nooviChatApiRequest.call(this, 'DELETE', `/contacts/${contactId}`);
 		case 'search': {
 			const query = this.getNodeParameter('query', index) as string;
-			const qs: any = { q: query };
+			const includeContactInboxes = this.getNodeParameter('includeContactInboxes', index, false) as boolean;
+			const qs: any = { q: query, include_contact_inboxes: includeContactInboxes };
 			if (!returnAll) qs.per_page = limit;
 			if (returnAll) {
 				return await nooviChatApiRequestAllItems.call(this, 'GET', '/contacts/search', {}, qs);
@@ -1858,6 +1880,83 @@ async function handleBroadcastBlacklistOperation(this: IExecuteFunctions, operat
 		case 'remove': {
 			const entryId = this.getNodeParameter('entryId', index) as string;
 			return await nooviChatApiRequest.call(this, 'DELETE', `/broadcast_blacklist_entries/${entryId}`);
+		}
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+// Commercial Analysis handlers
+async function handleCommercialAnalysisOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	switch (operation) {
+		case 'generate': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const periodFrom = this.getNodeParameter('periodFrom', index) as string;
+			const periodTo = this.getNodeParameter('periodTo', index) as string;
+			const force = this.getNodeParameter('force', index, false) as boolean;
+			const body: any = { inbox_id: inboxId, period_from: periodFrom, period_to: periodTo };
+			if (force) body.force = true;
+			return await nooviChatApiRequest.call(this, 'POST', '/commercial-analyses', body);
+		}
+		case 'list': {
+			const inboxIdFilter = this.getNodeParameter('inboxIdFilter', index, '') as string;
+			const page = this.getNodeParameter('page', index, 1) as number;
+			const qs: any = { page };
+			if (inboxIdFilter) qs.inbox_id = inboxIdFilter;
+			return await nooviChatApiRequest.call(this, 'GET', '/commercial-analyses', {}, qs);
+		}
+		case 'getStatus': {
+			const reportId = this.getNodeParameter('reportId', index) as string;
+			return await nooviChatApiRequest.call(this, 'GET', `/commercial-analyses/${reportId}/status`);
+		}
+		case 'get': {
+			const reportId = this.getNodeParameter('reportId', index) as string;
+			return await nooviChatApiRequest.call(this, 'GET', `/commercial-analyses/${reportId}`);
+		}
+		case 'delete': {
+			const reportId = this.getNodeParameter('reportId', index) as string;
+			return await nooviChatApiRequest.call(this, 'DELETE', `/commercial-analyses/${reportId}`);
+		}
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+// Pipeline sequence handlers (activity sequences attached to a card)
+async function handleSequenceOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	const cardId = this.getNodeParameter('cardId', index) as string;
+	const base = `/pipeline/cards/${cardId}/sequences`;
+
+	switch (operation) {
+		case 'list':
+			return await nooviChatApiRequest.call(this, 'GET', base);
+		case 'start': {
+			const definitionId = this.getNodeParameter('definitionId', index) as string;
+			return await nooviChatApiRequest.call(this, 'POST', base, { definition_id: definitionId });
+		}
+		case 'startExternal': {
+			const definitionId = this.getNodeParameter('definitionId', index) as string;
+			const context = this.getNodeParameter('context', index, {}) as any;
+			const body: any = { definition_id: definitionId };
+			const parsedContext = parseJsonValue(context);
+			if (parsedContext && Object.keys(parsedContext).length > 0) body.context = parsedContext;
+			return await nooviChatApiRequest.call(this, 'POST', `${base}/external_start`, body);
+		}
+		case 'pause': {
+			const sequenceId = this.getNodeParameter('sequenceId', index) as string;
+			return await nooviChatApiRequest.call(this, 'PATCH', `${base}/${sequenceId}/pause`);
+		}
+		case 'resume': {
+			const sequenceId = this.getNodeParameter('sequenceId', index) as string;
+			return await nooviChatApiRequest.call(this, 'PATCH', `${base}/${sequenceId}/resume`);
+		}
+		case 'completeStep': {
+			const sequenceId = this.getNodeParameter('sequenceId', index) as string;
+			return await nooviChatApiRequest.call(this, 'PATCH', `${base}/${sequenceId}/complete_step`);
+		}
+		case 'cancel': {
+			const sequenceId = this.getNodeParameter('sequenceId', index) as string;
+			return await nooviChatApiRequest.call(this, 'DELETE', `${base}/${sequenceId}`);
 		}
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });

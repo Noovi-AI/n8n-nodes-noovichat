@@ -109,6 +109,14 @@ export const ContactFields: INodeProperties[] = [
 				description: 'ID of the inbox to associate the contact with',
 			},
 			{
+				displayName: 'Source ID',
+				name: 'sourceId',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g., +5511999998888',
+				description: 'External source identifier for the contact_inbox association (used together with Inbox ID, e.g. the phone number on the channel)',
+			},
+			{
 				displayName: 'Identifier',
 				name: 'identifier',
 				type: 'string',
@@ -303,5 +311,18 @@ export const ContactFields: INodeProperties[] = [
 		],
 		default: 'name',
 		description: 'Field to sort the results by',
+	},
+	{
+		displayName: 'Include Contact Inboxes',
+		name: 'includeContactInboxes',
+		type: 'boolean',
+		displayOptions: {
+			show: {
+				resource: ['contact'],
+				operation: ['getAll', 'get', 'search'],
+			},
+		},
+		default: false,
+		description: 'Whether to include each contact\'s inbox associations (contact_inboxes) in the response',
 	},
 ];

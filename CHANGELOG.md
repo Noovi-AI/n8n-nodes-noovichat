@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.12.0 (2026-06-13)
+
+### Added (downstream parity with the API docs + MCP audit 2026-06-13)
+
+- **Commercial Analysis** resource: Generate (async, 202 + report id),
+  Get Many (filter by inbox, paginated), Get Status (poll), Get (full
+  9-section report) and Delete. Mirrors `/api/v1/accounts/:id/commercial-analyses`.
+  The PDF export is intentionally not exposed (binary payload).
+- **Sequence** resource (pipeline activity-sequences attached to a card):
+  Get Many, Start, Start (External, with free-form context), Pause, Resume,
+  Complete Step and Cancel. Closes the parity gap with the MCP server, which
+  already exposed these. Requires the `pipeline_sequences` feature flag (403
+  otherwise); a duplicate active sequence of the same definition returns 422.
+- **Contact**: `Source ID` field on Create (sets the contact_inbox external id
+  alongside Inbox ID) and an `Include Contact Inboxes` toggle on Get / Get Many
+  / Search (adds each contact's inbox associations to the response).
+
 ## 0.8.4 (2026-05-24)
 
 ### Fixed (medium-severity bugs from the audit pass)
