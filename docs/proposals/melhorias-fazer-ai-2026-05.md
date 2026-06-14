@@ -4,7 +4,8 @@
 > **Autor:** Time NooviChat (research + draft)
 > **Versão node atual:** `0.8.0`
 > **Versão fazer-ai analisada:** `2.3.0` (released 2026-04-19)
-> **Status:** 🟡 PROPOSTA — aguarda aprovação para entrar em roadmap
+> **Status:** 🟡 NOTA HISTÓRICA/PROPOSTA — não é roadmap. Se aprovada, mover
+> o planejamento para `/home/debian/projects/Noovichat/Roadmap/`.
 > **Esforço total:** 5–7 dias dev (incremental, batched em 2-3 minor releases)
 
 ---
@@ -597,7 +598,7 @@ de testes, single credential type.
 ## Próximos passos
 
 - [ ] **Aprovação humana** desta lista de prioridades
-      (luizbranco@clickhype.com.br review obrigatório)
+      (revisão obrigatória por responsável técnico Noovi)
 - [ ] Criar issues no repo `Noovi-AI/n8n-nodes-noovichat` para cada
       proposta aprovada (1 issue = 1 PR)
 - [ ] Bump `0.8.0 → 0.9.0` ao mergear primeira proposta (minor — Proposta 1)

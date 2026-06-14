@@ -1,1 +1,336 @@
-{"name": "[NooviChat] Onboarding Pós-Pagamento (Exp 6)", "nodes": [{"parameters": {"httpMethod": "POST", "path": "noovichat-onboarding", "options": {}}, "id": "n-webhook", "name": "Webhook", "type": "n8n-nodes-base.webhook", "typeVersion": 1.1, "position": [0, 300], "webhookId": "noovichat-onboarding"}, {"parameters": {"jsCode": "\n// Extract customer data from webhook payload\n// Webhook typeVersion 1.1 outputs body directly as $json\nconst payload = $input.first().json;\nconst customer = payload.customer || {};\nconst subscription = payload.subscription || {};\n\nconst customerEmail = customer.email || '';\nconst customerName = customer.name || '';\nconst customerPhone = customer.phone || '';\nconst planName = subscription.plan || '';\nconst licenseKey = subscription.license_key || '';\nconst amount = String(subscription.amount || '');\n\nif (!customerEmail) {\n    // Also try nested body (for backward compatibility with webhook v2)\n    const bodyPayload = payload.body || {};\n    const bodyCustomer = bodyPayload.customer || {};\n    if (bodyCustomer.email) {\n        return [{\n            json: {\n                customerEmail: bodyCustomer.email,\n                customerName: bodyCustomer.name || '',\n                customerPhone: bodyCustomer.phone || '',\n                planName: (bodyPayload.subscription || {}).plan || '',\n                licenseKey: (bodyPayload.subscription || {}).license_key || '',\n                amount: String((bodyPayload.subscription || {}).amount || '')\n            }\n        }];\n    }\n    throw new Error('Invalid payload: customer.email is required. Keys: ' + Object.keys(payload).join(','));\n}\n\n// Call WAHA to notify CS (best-effort)\nconst CS_NUMBER = '5511969286131';\ntry {\n    await this.helpers.request({\n        method: 'POST',\n        url: 'https://connect.clickhype.com.br/api/sendText',\n        headers: {\n            'X-Api-Key': '114b07498736705405515defa83bd537',\n            'Content-Type': 'application/json'\n        },\n        body: JSON.stringify({\n            chatId: CS_NUMBER + '@c.us',\n            text: `🎉 *Novo cliente NooviChat!*\\n\\n👤 ${customerName}\\n📧 ${customerEmail}\\n📱 ${customerPhone}\\n📦 ${planName}\\n🔑 ${licenseKey}`,\n            session: 'default'\n        })\n    });\n} catch (e) {\n    console.log('WAHA notification failed (non-critical):', e.message);\n}\n\n// Call NooviTrack (best-effort - endpoint may not exist yet)\ntry {\n    await this.helpers.request({\n        method: 'POST',\n        url: 'https://track.nooviai.com/api/contacts',\n        headers: { \n            'Content-Type': 'application/json',\n            'X-Source': 'noovihub-webhook'\n        },\n        body: JSON.stringify({ \n            name: customerName, email: customerEmail, phone: customerPhone, \n            plan: planName, license_key: licenseKey, source: 'payment_webhook' \n        })\n    });\n} catch (e) {\n    console.log('NooviTrack sync failed (non-critical):', e.message);\n}\n\nreturn [{\n    json: { customerEmail, customerName, customerPhone, planName, licenseKey, amount }\n}];\n"}, "id": "n-code", "name": "Code - Integrations", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [240, 300]}, {"parameters": {"fromEmail": "Noovi <noovi@nooviai.com>", "toEmail": "={{ $json.customerEmail }}", "subject": "=🎉 Bem-vindo ao NooviChat, {{ $json.customerName }}!", "emailFormat": "html", "html": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;\">\n  <div style=\"text-align:center;margin-bottom:30px;\">\n    <h2 style=\"color:#6366f1;\">Noovi</h2>\n  </div>\n  <h1 style=\"color:#1a1a2e;\">Bem-vindo ao NooviChat! 🚀</h1>\n  <p>Olá, <strong>{{ $json.customerName }}</strong>!</p>\n  <p>[PLACEHOLDER NOO-258 - Copywriter: boas-vindas, próximos passos, link de acesso, plano: {{ $json.planName }}]</p>\n  <div style=\"margin:30px 0;\">\n    <a href=\"https://hub.nooviai.com/dashboard\" style=\"background:#6366f1;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;\">Acessar Meu Painel →</a>\n  </div>\n  <p>Abraços,<br><strong>Equipe Noovi</strong></p>\n  <hr style=\"margin-top:30px;border:1px solid #e0e0e0;\">\n  <p style=\"font-size:12px;color:#666;\">Noovi | hub.nooviai.com | Licença: {{ $json.licenseKey }}</p>\n</body>\n</html>", "options": {}}, "id": "n-e1", "name": "Email E1 - Boas-vindas (Imediato)", "type": "n8n-nodes-base.emailSend", "typeVersion": 2.1, "position": [480, 300], "credentials": {"smtp": {"id": "TVcM2RwMaxklrs7f", "name": "SMTP - Noovi (Hostinger)"}}}, {"parameters": {"unit": "hours", "amount": 24, "resumeAt": "timeInterval"}, "id": "n-w1", "name": "Wait 24h", "type": "n8n-nodes-base.wait", "typeVersion": 1.1, "position": [720, 300], "webhookId": "wait-n-w1"}, {"parameters": {"fromEmail": "Noovi <noovi@nooviai.com>", "toEmail": "={{ $json.customerEmail }}", "subject": "=📱 Configure seu WhatsApp no NooviChat agora", "emailFormat": "html", "html": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;\">\n  <div style=\"text-align:center;margin-bottom:30px;\">\n    <h2 style=\"color:#6366f1;\">Noovi</h2>\n  </div>\n  <h1 style=\"color:#1a1a2e;\">Configure seu WhatsApp em 5 minutos 📱</h1>\n  <p>Olá, <strong>{{ $json.customerName }}</strong>!</p>\n  <p>[PLACEHOLDER NOO-258 - Copywriter: guia passo a passo para conectar WhatsApp via QR Code]</p>\n  <div style=\"margin:30px 0;\">\n    <a href=\"https://chat.clickhype.com.br\" style=\"background:#25d366;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;\">Conectar WhatsApp →</a>\n  </div>\n  <p>Abraços,<br><strong>Equipe Noovi</strong></p>\n  <hr style=\"margin-top:30px;border:1px solid #e0e0e0;\">\n  <p style=\"font-size:12px;color:#666;\">Noovi | hub.nooviai.com | Licença: {{ $json.licenseKey }}</p>\n</body>\n</html>", "options": {}}, "id": "n-e2", "name": "Email E2 - Setup WhatsApp (+24h)", "type": "n8n-nodes-base.emailSend", "typeVersion": 2.1, "position": [960, 300], "credentials": {"smtp": {"id": "TVcM2RwMaxklrs7f", "name": "SMTP - Noovi (Hostinger)"}}}, {"parameters": {"unit": "hours", "amount": 48, "resumeAt": "timeInterval"}, "id": "n-w2", "name": "Wait 48h", "type": "n8n-nodes-base.wait", "typeVersion": 1.1, "position": [1200, 300], "webhookId": "wait-n-w2"}, {"parameters": {"fromEmail": "Noovi <noovi@nooviai.com>", "toEmail": "={{ $json.customerEmail }}", "subject": "=🤖 Conheça o Captain AI — seu assistente inteligente", "emailFormat": "html", "html": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;\">\n  <div style=\"text-align:center;margin-bottom:30px;\">\n    <h2 style=\"color:#6366f1;\">Noovi</h2>\n  </div>\n  <h1 style=\"color:#1a1a2e;\">Automatize com Captain AI 🤖</h1>\n  <p>Olá, <strong>{{ $json.customerName }}</strong>!</p>\n  <p>[PLACEHOLDER NOO-258 - Copywriter: introdução Captain AI, 3 casos de uso, tutorial, CTA]</p>\n  <div style=\"margin:30px 0;\">\n    <a href=\"https://chat.clickhype.com.br\" style=\"background:#6366f1;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;\">Criar meu primeiro bot →</a>\n  </div>\n  <p>Abraços,<br><strong>Equipe Noovi</strong></p>\n  <hr style=\"margin-top:30px;border:1px solid #e0e0e0;\">\n  <p style=\"font-size:12px;color:#666;\">Noovi | hub.nooviai.com | Licença: {{ $json.licenseKey }}</p>\n</body>\n</html>", "options": {}}, "id": "n-e3", "name": "Email E3 - Captain AI (+3d)", "type": "n8n-nodes-base.emailSend", "typeVersion": 2.1, "position": [1440, 300], "credentials": {"smtp": {"id": "TVcM2RwMaxklrs7f", "name": "SMTP - Noovi (Hostinger)"}}}, {"parameters": {"unit": "days", "amount": 4, "resumeAt": "timeInterval"}, "id": "n-w3", "name": "Wait 4 dias", "type": "n8n-nodes-base.wait", "typeVersion": 1.1, "position": [1680, 300], "webhookId": "wait-n-w3"}, {"parameters": {"fromEmail": "Noovi <noovi@nooviai.com>", "toEmail": "={{ $json.customerEmail }}", "subject": "=👋 Como está indo? Podemos ajudar?", "emailFormat": "html", "html": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;\">\n  <div style=\"text-align:center;margin-bottom:30px;\">\n    <h2 style=\"color:#6366f1;\">Noovi</h2>\n  </div>\n  <h1 style=\"color:#1a1a2e;\">Check-in da semana 👋</h1>\n  <p>Olá, <strong>{{ $json.customerName }}</strong>!</p>\n  <p>[PLACEHOLDER NOO-258 - Copywriter: check-in amigável, link para agendar suporte com CS]</p>\n  <div style=\"margin:30px 0;\">\n    <a href=\"https://hub.nooviai.com/dashboard\" style=\"background:#6366f1;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;\">Agendar Suporte Gratuito →</a>\n  </div>\n  <p>Abraços,<br><strong>Equipe Noovi</strong></p>\n  <hr style=\"margin-top:30px;border:1px solid #e0e0e0;\">\n  <p style=\"font-size:12px;color:#666;\">Noovi | hub.nooviai.com | Licença: {{ $json.licenseKey }}</p>\n</body>\n</html>", "options": {}}, "id": "n-e4", "name": "Email E4 - Check-in (+7d)", "type": "n8n-nodes-base.emailSend", "typeVersion": 2.1, "position": [1920, 300], "credentials": {"smtp": {"id": "TVcM2RwMaxklrs7f", "name": "SMTP - Noovi (Hostinger)"}}}, {"parameters": {"unit": "days", "amount": 7, "resumeAt": "timeInterval"}, "id": "n-w4", "name": "Wait 7 dias", "type": "n8n-nodes-base.wait", "typeVersion": 1.1, "position": [2160, 300], "webhookId": "wait-n-w4"}, {"parameters": {"fromEmail": "Noovi <noovi@nooviai.com>", "toEmail": "={{ $json.customerEmail }}", "subject": "=⭐ Resultados reais de quem usa NooviChat", "emailFormat": "html", "html": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;\">\n  <div style=\"text-align:center;margin-bottom:30px;\">\n    <h2 style=\"color:#6366f1;\">Noovi</h2>\n  </div>\n  <h1 style=\"color:#1a1a2e;\">Veja o que nossos clientes conquistaram ⭐</h1>\n  <p>Olá, <strong>{{ $json.customerName }}</strong>!</p>\n  <p>[PLACEHOLDER NOO-258 - Copywriter: 2-3 cases de sucesso, métricas, depoimentos, CTA referral]</p>\n  <div style=\"margin:30px 0;\">\n    <a href=\"https://hub.nooviai.com\" style=\"background:#6366f1;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;\">Compartilhar NooviChat →</a>\n  </div>\n  <p>Abraços,<br><strong>Equipe Noovi</strong></p>\n  <hr style=\"margin-top:30px;border:1px solid #e0e0e0;\">\n  <p style=\"font-size:12px;color:#666;\">Noovi | hub.nooviai.com | Licença: {{ $json.licenseKey }}</p>\n</body>\n</html>", "options": {}}, "id": "n-e5", "name": "Email E5 - Caso de Sucesso (+14d)", "type": "n8n-nodes-base.emailSend", "typeVersion": 2.1, "position": [2400, 300], "credentials": {"smtp": {"id": "TVcM2RwMaxklrs7f", "name": "SMTP - Noovi (Hostinger)"}}}], "connections": {"Webhook": {"main": [[{"node": "Code - Integrations", "type": "main", "index": 0}]]}, "Code - Integrations": {"main": [[{"node": "Email E1 - Boas-vindas (Imediato)", "type": "main", "index": 0}]]}, "Email E1 - Boas-vindas (Imediato)": {"main": [[{"node": "Wait 24h", "type": "main", "index": 0}]]}, "Wait 24h": {"main": [[{"node": "Email E2 - Setup WhatsApp (+24h)", "type": "main", "index": 0}]]}, "Email E2 - Setup WhatsApp (+24h)": {"main": [[{"node": "Wait 48h", "type": "main", "index": 0}]]}, "Wait 48h": {"main": [[{"node": "Email E3 - Captain AI (+3d)", "type": "main", "index": 0}]]}, "Email E3 - Captain AI (+3d)": {"main": [[{"node": "Wait 4 dias", "type": "main", "index": 0}]]}, "Wait 4 dias": {"main": [[{"node": "Email E4 - Check-in (+7d)", "type": "main", "index": 0}]]}, "Email E4 - Check-in (+7d)": {"main": [[{"node": "Wait 7 dias", "type": "main", "index": 0}]]}, "Wait 7 dias": {"main": [[{"node": "Email E5 - Caso de Sucesso (+14d)", "type": "main", "index": 0}]]}}, "settings": {"executionOrder": "v1", "saveManualExecutions": true, "callerPolicy": "workflowsFromSameOwner"}, "staticData": null}
+{
+  "name": "[NooviChat] Onboarding Pós-Pagamento (Exp 6)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "noovichat-onboarding",
+        "options": {}
+      },
+      "id": "n-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "noovichat-onboarding"
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// Extract customer data from webhook payload\n// Webhook typeVersion 1.1 outputs body directly as $json\nconst payload = $input.first().json;\nconst customer = payload.customer || {};\nconst subscription = payload.subscription || {};\n\nconst customerEmail = customer.email || '';\nconst customerName = customer.name || '';\nconst customerPhone = customer.phone || '';\nconst planName = subscription.plan || '';\nconst licenseKey = subscription.license_key || '';\nconst amount = String(subscription.amount || '');\n\nif (!customerEmail) {\n    // Also try nested body (for backward compatibility with webhook v2)\n    const bodyPayload = payload.body || {};\n    const bodyCustomer = bodyPayload.customer || {};\n    if (bodyCustomer.email) {\n        return [{\n            json: {\n                customerEmail: bodyCustomer.email,\n                customerName: bodyCustomer.name || '',\n                customerPhone: bodyCustomer.phone || '',\n                planName: (bodyPayload.subscription || {}).plan || '',\n                licenseKey: (bodyPayload.subscription || {}).license_key || '',\n                amount: String((bodyPayload.subscription || {}).amount || '')\n            }\n        }];\n    }\n    throw new Error('Invalid payload: customer.email is required. Keys: ' + Object.keys(payload).join(','));\n}\n\n// Optional CS notification. Configure these env vars in your n8n instance.\nconst WAHA_NOTIFY_URL = $env.WAHA_NOTIFY_URL || '';\nconst WAHA_API_KEY = $env.WAHA_API_KEY || '';\nconst CS_NUMBER = $env.NOOVI_CS_NUMBER || '';\n\nif (WAHA_NOTIFY_URL && WAHA_API_KEY && CS_NUMBER) {\n    try {\n        await this.helpers.request({\n            method: 'POST',\n            url: WAHA_NOTIFY_URL,\n            headers: {\n                'X-Api-Key': WAHA_API_KEY,\n                'Content-Type': 'application/json'\n            },\n            body: JSON.stringify({\n                chatId: CS_NUMBER + '@c.us',\n                text: `🎉 *Novo cliente NooviChat!*\\n\\n👤 ${customerName}\\n📧 ${customerEmail}\\n📱 ${customerPhone}\\n📦 ${planName}\\n🔑 ${licenseKey}`,\n                session: $env.WAHA_SESSION || 'default'\n            })\n        });\n    } catch (e) {\n        console.log('WAHA notification failed (non-critical):', e.message);\n    }\n} else {\n    console.log('WAHA notification skipped: configure WAHA_NOTIFY_URL, WAHA_API_KEY and NOOVI_CS_NUMBER.');\n}\n\n// Optional CRM sync. Configure NOOVITRACK_CONTACTS_URL when available.\nconst NOOVITRACK_CONTACTS_URL = $env.NOOVITRACK_CONTACTS_URL || '';\nif (NOOVITRACK_CONTACTS_URL) {\n    try {\n        await this.helpers.request({\n            method: 'POST',\n            url: NOOVITRACK_CONTACTS_URL,\n            headers: {\n                'Content-Type': 'application/json',\n                'X-Source': 'noovihub-webhook'\n            },\n            body: JSON.stringify({\n                name: customerName, email: customerEmail, phone: customerPhone,\n                plan: planName, license_key: licenseKey, source: 'payment_webhook'\n            })\n        });\n    } catch (e) {\n        console.log('NooviTrack sync failed (non-critical):', e.message);\n    }\n} else {\n    console.log('NooviTrack sync skipped: configure NOOVITRACK_CONTACTS_URL.');\n}\n\nreturn [{\n    json: { customerEmail, customerName, customerPhone, planName, licenseKey, amount }\n}];\n"
+      },
+      "id": "n-code",
+      "name": "Code - Integrations",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "Noovi <noovi@nooviai.com>",
+        "toEmail": "={{ $json.customerEmail }}",
+        "subject": "=🎉 Bem-vindo ao NooviChat, {{ $json.customerName }}!",
+        "emailFormat": "html",
+        "html": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;\">\n  <div style=\"text-align:center;margin-bottom:30px;\">\n    <h2 style=\"color:#6366f1;\">Noovi</h2>\n  </div>\n  <h1 style=\"color:#1a1a2e;\">Bem-vindo ao NooviChat! 🚀</h1>\n  <p>Olá, <strong>{{ $json.customerName }}</strong>!</p>\n  <p>[PLACEHOLDER NOO-258 - Copywriter: boas-vindas, próximos passos, link de acesso, plano: {{ $json.planName }}]</p>\n  <div style=\"margin:30px 0;\">\n    <a href=\"https://hub.nooviai.com/dashboard\" style=\"background:#6366f1;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;\">Acessar Meu Painel →</a>\n  </div>\n  <p>Abraços,<br><strong>Equipe Noovi</strong></p>\n  <hr style=\"margin-top:30px;border:1px solid #e0e0e0;\">\n  <p style=\"font-size:12px;color:#666;\">Noovi | hub.nooviai.com | Licença: {{ $json.licenseKey }}</p>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "n-e1",
+      "name": "Email E1 - Boas-vindas (Imediato)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        300
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "REPLACE_WITH_SMTP_CREDENTIAL_ID",
+          "name": "SMTP - configure no n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "unit": "hours",
+        "amount": 24,
+        "resumeAt": "timeInterval"
+      },
+      "id": "n-w1",
+      "name": "Wait 24h",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        300
+      ],
+      "webhookId": "wait-n-w1"
+    },
+    {
+      "parameters": {
+        "fromEmail": "Noovi <noovi@nooviai.com>",
+        "toEmail": "={{ $json.customerEmail }}",
+        "subject": "=📱 Configure seu WhatsApp no NooviChat agora",
+        "emailFormat": "html",
+        "html": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;\">\n  <div style=\"text-align:center;margin-bottom:30px;\">\n    <h2 style=\"color:#6366f1;\">Noovi</h2>\n  </div>\n  <h1 style=\"color:#1a1a2e;\">Configure seu WhatsApp em 5 minutos 📱</h1>\n  <p>Olá, <strong>{{ $json.customerName }}</strong>!</p>\n  <p>[PLACEHOLDER NOO-258 - Copywriter: guia passo a passo para conectar WhatsApp via QR Code]</p>\n  <div style=\"margin:30px 0;\">\n    <a href=\"{{ $env.NOOVICHAT_APP_URL || 'https://chat.seudominio.com' }}\" style=\"background:#25d366;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;\">Conectar WhatsApp →</a>\n  </div>\n  <p>Abraços,<br><strong>Equipe Noovi</strong></p>\n  <hr style=\"margin-top:30px;border:1px solid #e0e0e0;\">\n  <p style=\"font-size:12px;color:#666;\">Noovi | hub.nooviai.com | Licença: {{ $json.licenseKey }}</p>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "n-e2",
+      "name": "Email E2 - Setup WhatsApp (+24h)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        960,
+        300
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "REPLACE_WITH_SMTP_CREDENTIAL_ID",
+          "name": "SMTP - configure no n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "unit": "hours",
+        "amount": 48,
+        "resumeAt": "timeInterval"
+      },
+      "id": "n-w2",
+      "name": "Wait 48h",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        300
+      ],
+      "webhookId": "wait-n-w2"
+    },
+    {
+      "parameters": {
+        "fromEmail": "Noovi <noovi@nooviai.com>",
+        "toEmail": "={{ $json.customerEmail }}",
+        "subject": "=🤖 Conheça o Captain AI — seu assistente inteligente",
+        "emailFormat": "html",
+        "html": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;\">\n  <div style=\"text-align:center;margin-bottom:30px;\">\n    <h2 style=\"color:#6366f1;\">Noovi</h2>\n  </div>\n  <h1 style=\"color:#1a1a2e;\">Automatize com Captain AI 🤖</h1>\n  <p>Olá, <strong>{{ $json.customerName }}</strong>!</p>\n  <p>[PLACEHOLDER NOO-258 - Copywriter: introdução Captain AI, 3 casos de uso, tutorial, CTA]</p>\n  <div style=\"margin:30px 0;\">\n    <a href=\"{{ $env.NOOVICHAT_APP_URL || 'https://chat.seudominio.com' }}\" style=\"background:#6366f1;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;\">Criar meu primeiro bot →</a>\n  </div>\n  <p>Abraços,<br><strong>Equipe Noovi</strong></p>\n  <hr style=\"margin-top:30px;border:1px solid #e0e0e0;\">\n  <p style=\"font-size:12px;color:#666;\">Noovi | hub.nooviai.com | Licença: {{ $json.licenseKey }}</p>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "n-e3",
+      "name": "Email E3 - Captain AI (+3d)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1440,
+        300
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "REPLACE_WITH_SMTP_CREDENTIAL_ID",
+          "name": "SMTP - configure no n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "unit": "days",
+        "amount": 4,
+        "resumeAt": "timeInterval"
+      },
+      "id": "n-w3",
+      "name": "Wait 4 dias",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1680,
+        300
+      ],
+      "webhookId": "wait-n-w3"
+    },
+    {
+      "parameters": {
+        "fromEmail": "Noovi <noovi@nooviai.com>",
+        "toEmail": "={{ $json.customerEmail }}",
+        "subject": "=👋 Como está indo? Podemos ajudar?",
+        "emailFormat": "html",
+        "html": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;\">\n  <div style=\"text-align:center;margin-bottom:30px;\">\n    <h2 style=\"color:#6366f1;\">Noovi</h2>\n  </div>\n  <h1 style=\"color:#1a1a2e;\">Check-in da semana 👋</h1>\n  <p>Olá, <strong>{{ $json.customerName }}</strong>!</p>\n  <p>[PLACEHOLDER NOO-258 - Copywriter: check-in amigável, canais de suporte informados no onboarding]</p>\n  <div style=\"margin:30px 0;\">\n    <a href=\"https://hub.nooviai.com/dashboard\" style=\"background:#6366f1;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;\">Abrir Canais de Suporte →</a>\n  </div>\n  <p>Abraços,<br><strong>Equipe Noovi</strong></p>\n  <hr style=\"margin-top:30px;border:1px solid #e0e0e0;\">\n  <p style=\"font-size:12px;color:#666;\">Noovi | hub.nooviai.com | Licença: {{ $json.licenseKey }}</p>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "n-e4",
+      "name": "Email E4 - Check-in (+7d)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1920,
+        300
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "REPLACE_WITH_SMTP_CREDENTIAL_ID",
+          "name": "SMTP - configure no n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "unit": "days",
+        "amount": 7,
+        "resumeAt": "timeInterval"
+      },
+      "id": "n-w4",
+      "name": "Wait 7 dias",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2160,
+        300
+      ],
+      "webhookId": "wait-n-w4"
+    },
+    {
+      "parameters": {
+        "fromEmail": "Noovi <noovi@nooviai.com>",
+        "toEmail": "={{ $json.customerEmail }}",
+        "subject": "=⭐ Resultados reais de quem usa NooviChat",
+        "emailFormat": "html",
+        "html": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;\">\n  <div style=\"text-align:center;margin-bottom:30px;\">\n    <h2 style=\"color:#6366f1;\">Noovi</h2>\n  </div>\n  <h1 style=\"color:#1a1a2e;\">Veja o que nossos clientes conquistaram ⭐</h1>\n  <p>Olá, <strong>{{ $json.customerName }}</strong>!</p>\n  <p>[PLACEHOLDER NOO-258 - Copywriter: cases autorizados, métricas validadas, depoimentos, CTA referral]</p>\n  <div style=\"margin:30px 0;\">\n    <a href=\"https://hub.nooviai.com\" style=\"background:#6366f1;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;\">Compartilhar NooviChat →</a>\n  </div>\n  <p>Abraços,<br><strong>Equipe Noovi</strong></p>\n  <hr style=\"margin-top:30px;border:1px solid #e0e0e0;\">\n  <p style=\"font-size:12px;color:#666;\">Noovi | hub.nooviai.com | Licença: {{ $json.licenseKey }}</p>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "n-e5",
+      "name": "Email E5 - Caso de Sucesso (+14d)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        2400,
+        300
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "REPLACE_WITH_SMTP_CREDENTIAL_ID",
+          "name": "SMTP - configure no n8n"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code - Integrations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Integrations": {
+      "main": [
+        [
+          {
+            "node": "Email E1 - Boas-vindas (Imediato)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email E1 - Boas-vindas (Imediato)": {
+      "main": [
+        [
+          {
+            "node": "Wait 24h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 24h": {
+      "main": [
+        [
+          {
+            "node": "Email E2 - Setup WhatsApp (+24h)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email E2 - Setup WhatsApp (+24h)": {
+      "main": [
+        [
+          {
+            "node": "Wait 48h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 48h": {
+      "main": [
+        [
+          {
+            "node": "Email E3 - Captain AI (+3d)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email E3 - Captain AI (+3d)": {
+      "main": [
+        [
+          {
+            "node": "Wait 4 dias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 4 dias": {
+      "main": [
+        [
+          {
+            "node": "Email E4 - Check-in (+7d)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email E4 - Check-in (+7d)": {
+      "main": [
+        [
+          {
+            "node": "Wait 7 dias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 7 dias": {
+      "main": [
+        [
+          {
+            "node": "Email E5 - Caso de Sucesso (+14d)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null
+}

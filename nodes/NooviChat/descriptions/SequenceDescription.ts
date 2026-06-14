@@ -2,7 +2,7 @@ import { INodeProperties } from 'n8n-workflow';
 
 // Pipeline Pro — activity sequences attached to a card (time-triggered cadence
 // of steps, defined in pipeline/activity_sequences). Mirrors the MCP
-// pipeline-sequences tools. Requires the `pipeline_sequences` feature flag
+// pipeline-sequences tools. Requires the `pipeline_sequences` operational account authorization
 // (else HTTP 403). A card can only have ONE active/paused sequence of the same
 // definition at a time (422 on duplicate). Routes:
 //   /api/v1/accounts/:account_id/pipeline/cards/:card_id/sequences

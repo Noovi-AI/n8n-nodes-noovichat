@@ -11,7 +11,7 @@
 - **Sequence** resource (pipeline activity-sequences attached to a card):
   Get Many, Start, Start (External, with free-form context), Pause, Resume,
   Complete Step and Cancel. Closes the parity gap with the MCP server, which
-  already exposed these. Requires the `pipeline_sequences` feature flag (403
+  already exposed these. Requires the `pipeline_sequences` operational account authorization (403
   otherwise); a duplicate active sequence of the same definition returns 422.
 - **Contact**: `Source ID` field on Create (sets the contact_inbox external id
   alongside Inbox ID) and an `Include Contact Inboxes` toggle on Get / Get Many

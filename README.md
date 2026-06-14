@@ -3,7 +3,7 @@
 [![npm version](https://badge.fury.io/js/@nooviai%2Fn8n-nodes-noovichat.svg)](https://badge.fury.io/js/@nooviai%2Fn8n-nodes-noovichat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-n8n community node for **[NooviChat](https://noovichat.com)** — the most complete n8n integration for Chatwoot-based platforms, with NooviChat CRM, sales pipeline, lead scoring and WhatsApp automation features.
+n8n community node for **[NooviChat](https://noovichat.com)** — an integration for Chatwoot-based platforms with NooviChat CRM, sales pipeline, lead scoring and WhatsApp automation features.
 
 > **Works with Chatwoot too.** This node is fully compatible with standard [Chatwoot](https://www.chatwoot.com) installations. All base resources (Conversations, Contacts, Messages, Inboxes, Agents, Teams, Labels, etc.) work out of the box with any Chatwoot instance. NooviChat is an enhanced fork of Chatwoot — if you use Chatwoot, you get all the base features. If you use NooviChat, you also unlock the exclusive features below.
 
@@ -99,7 +99,7 @@ Manage WhatsApp sessions directly from your n8n workflows. Monitor connection st
 
 ### Trigger Node
 
-Automatically registers and removes webhooks via the NooviChat API when you activate/deactivate a workflow. Supports **20 events** — far more than any existing Chatwoot node.
+Automatically registers and removes webhooks via the NooviChat API when you activate/deactivate a workflow. Supports **20 events**, including base Chatwoot events and NooviChat pipeline, follow-up, SLA and WAHA events.
 
 **Standard events (Chatwoot compatible):**
 `conversation_created`, `conversation_status_changed`, `conversation_updated`, `conversation_typing_on`, `conversation_typing_off`, `message_created`, `message_updated`, `contact_created`, `contact_updated`, `webwidget_triggered`

@@ -3,7 +3,7 @@ import { INodeProperties } from 'n8n-workflow';
 // Commercial Analysis (Análise Comercial) — AI-generated commercial reports
 // scoped by inbox + date period. Async generation: Generate returns 202 with
 // { id, status }, poll Get Status until "completed", then read the full report
-// with Get. Requires the `commercial_analysis` feature flag (else HTTP 403).
+// with Get. Requires the `commercial_analysis` operational account authorization (else HTTP 403).
 // Routes: /api/v1/accounts/:account_id/commercial-analyses (index/create/show/
 // destroy + member GET status). The PDF export is intentionally not exposed
 // here (binary payload).
