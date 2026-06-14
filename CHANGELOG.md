@@ -261,11 +261,10 @@ filtered out — only confirmed bugs included in this patch.
 
 ### Notes
 
-- Atendimentos module on the Chatwoot side requires
-  `account.enable_features!(:appointments_module)`. Without the flag,
-  endpoints return `403 feature_not_enabled`.
-- The plan tier (trimestral+) auto-enables via heartbeat from Site backend;
-  alternatively SuperAdmin enables manually per account.
+- Atendimentos is authorized by the NooviChat license/account operational
+  state. When the account is not authorized, the API may return HTTP 403.
+- Plans do not change the feature set; the Site heartbeat or SuperAdmin can
+  synchronize the operational authorization state for the account.
 - Refs: Roadmap/internal/chatwoot/fase-07-atendimentos.md (FX2)
 
 ---

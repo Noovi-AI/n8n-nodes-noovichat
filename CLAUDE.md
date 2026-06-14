@@ -1,6 +1,8 @@
+@AGENTS.md
+
 # NooviWoot-N8N — n8n Community Node for NooviChat
 
-**Noovi AI** n8n node that integrates NooviChat (our Chatwoot fork) with automation workflows in n8n.
+**Noovi** n8n node that integrates NooviChat (our Chatwoot fork) with automation workflows in n8n.
 
 ## ⛔ GOLDEN RULES — npm Publish & Integrity
 
