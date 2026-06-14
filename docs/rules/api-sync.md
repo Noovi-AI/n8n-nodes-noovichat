@@ -27,10 +27,10 @@ Ao modificar um controller em `Chatwoot/app/controllers/api/v1/accounts/`:
 
 ```bash
 # Verificar se o endpoint afetado tem uma Description correspondente
-ls "/home/debian/projects/Noovichat/NooviWoot-N8N/nodes/NooviChat/descriptions/"
+ls "$(git rev-parse --show-toplevel)/nodes/NooviChat/descriptions/"
 
 # Buscar uso do endpoint no node
-grep -r "endpoint_path" "/home/debian/projects/Noovichat/NooviWoot-N8N/nodes/"
+grep -r "endpoint_path" "$(git rev-parse --show-toplevel)/nodes/"
 ```
 
 ## Checklist ao alterar API do NooviChat
@@ -139,7 +139,7 @@ em `errors.url`. Sem mudança no código do node — apenas surface o erro.
 ## Publicar atualização após sync
 
 ```bash
-cd "/home/debian/projects/Noovichat/NooviWoot-N8N"
+cd "$(git rev-parse --show-toplevel)"
 
 # 1. Atualizar versão
 npm version patch   # para fixes de compatibilidade

@@ -3,7 +3,7 @@
 ## Desenvolvimento
 
 ```bash
-cd "/home/debian/projects/Noovichat/NooviWoot-N8N"
+cd "$(git rev-parse --show-toplevel)"
 
 # Instalar dependências
 npm install
@@ -27,7 +27,7 @@ npm run format
 ## Testes
 
 ```bash
-cd "/home/debian/projects/Noovichat/NooviWoot-N8N"
+cd "$(git rev-parse --show-toplevel)"
 
 # Rodar todos os testes
 npm run test
@@ -50,7 +50,7 @@ du -sh dist/
 ## Publicar no npm
 
 ```bash
-cd "/home/debian/projects/Noovichat/NooviWoot-N8N"
+cd "$(git rev-parse --show-toplevel)"
 
 # Verificar versão atual
 cat package.json | grep '"version"'
@@ -82,7 +82,7 @@ npm publish --access public --tag beta
 ## Git
 
 ```bash
-cd "/home/debian/projects/Noovichat/NooviWoot-N8N"
+cd "$(git rev-parse --show-toplevel)"
 git status
 git log --oneline -10
 git add <arquivos>

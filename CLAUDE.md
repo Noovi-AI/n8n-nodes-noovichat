@@ -6,7 +6,7 @@
 
 ## ⛔ GOLDEN RULES — npm Publish & Integrity
 
-This project lives inside the NooviChat monorepo (`/home/debian/projects/Noovichat/`). The **3 monorepo golden rules** apply here:
+This project lives inside the NooviChat monorepo. The **3 monorepo golden rules** apply here:
 
 ### 1. No reflexive `npm publish`
 
@@ -61,7 +61,7 @@ The root `.claude/settings.json` has a blocking hook that intercepts `npm publis
 4. **Test** — load the built node in an n8n sandbox (`npm pack` + install, or `npm link`); exercise the changed operation/trigger against a real Chatwoot instance.
 5. **Upstream-API sync analysis (MANDATORY for every fix AND feature)** — this node consumes the Chatwoot REST API. Did the Chatwoot API change (or did you change a Description that must match it)? Cross-check `docs/rules/api-sync.md` and the Chatwoot side `../Chatwoot/docs/rules/n8n-sync.md`. Customer-facing n8n tutorial lives at `../Site/frontend/src/app/(docs)/docs/noovichat/tutorials/n8n-node/`. If nothing API-facing changed, say so explicitly. Never skip the question.
 6. **Atomic commit** — Conventional Commits, one logical unit. `npm version` bump when releasing.
-7. **⛔ Close the cycle — update internal docs — MANDATORY, NEVER skip.** Update canonical technical docs according to the private documentation process for anything that changed (node operations, resources, API mirroring). If nothing documentable changed, state that and skip — but always ask.
+7. **⛔ Close the cycle — update internal docs — MANDATORY, NEVER skip.** Update the appropriate internal technical documentation for anything that changed (node operations, resources, API mirroring). If nothing documentable changed, state that and skip — but always ask.
 
 **`npm publish` is NOT part of the loop** — run `/pre-publish-audit` first; it needs human approval + golden rules (gated by the root pre-deploy-gate hook). The internal docs update (step 7) IS part of the loop and closes it.
 

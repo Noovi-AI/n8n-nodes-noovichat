@@ -5,7 +5,7 @@
 
 n8n community node for **[NooviChat](https://noovichat.com)** — an integration for Chatwoot-based platforms with NooviChat CRM, sales pipeline, lead scoring and WhatsApp automation features.
 
-> **Works with Chatwoot too.** This node is fully compatible with standard [Chatwoot](https://www.chatwoot.com) installations. All base resources (Conversations, Contacts, Messages, Inboxes, Agents, Teams, Labels, etc.) work out of the box with any Chatwoot instance. NooviChat is an enhanced fork of Chatwoot — if you use Chatwoot, you get all the base features. If you use NooviChat, you also unlock the exclusive features below.
+> **Works with supported Chatwoot-compatible APIs too.** Base operations (Conversations, Contacts, Messages, Inboxes, Agents, Teams, Labels, etc.) target the Chatwoot API shape. NooviChat-only resources require NooviChat.
 
 ---
 
@@ -23,7 +23,7 @@ n8n community node for **[NooviChat](https://noovichat.com)** — an integration
 | **Campaigns (one-off & ongoing)** | ❌ | ✅ |
 | **SLA Policies & Metrics** | ❌ | ✅ |
 | **WhatsApp/WAHA Session Management** | ❌ | ✅ |
-| **20 webhook trigger events** | ❌ (4–6 events) | ✅ |
+| **Expanded webhook trigger events** | ❌ (4–6 events) | ✅ |
 | **Pipeline & Card webhook events** | ❌ | ✅ |
 | **Bulk operations (update, move, delete)** | ❌ | ✅ |
 | **Pipeline analytics (win rate, velocity, conversion)** | ❌ | ✅ |
@@ -99,7 +99,7 @@ Manage WhatsApp sessions directly from your n8n workflows. Monitor connection st
 
 ### Trigger Node
 
-Automatically registers and removes webhooks via the NooviChat API when you activate/deactivate a workflow. Supports **20 events**, including base Chatwoot events and NooviChat pipeline, follow-up, SLA and WAHA events.
+Automatically registers and removes webhooks via the NooviChat API when you activate/deactivate a workflow. Supports base Chatwoot events plus NooviChat pipeline, follow-up, broadcast, appointment, SLA and WAHA events.
 
 **Standard events (Chatwoot compatible):**
 `conversation_created`, `conversation_status_changed`, `conversation_updated`, `conversation_typing_on`, `conversation_typing_off`, `message_created`, `message_updated`, `contact_created`, `contact_updated`, `webwidget_triggered`

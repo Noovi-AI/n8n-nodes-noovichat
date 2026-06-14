@@ -47,7 +47,7 @@ describe('NooviChatTrigger — description', () => {
 		);
 	});
 
-	it('should list all 21 events', () => {
+	it('should list representative base and NooviChat events', () => {
 		const eventProperty = trigger.description.properties.find((p) => p.name === 'event');
 		expect(eventProperty).toBeDefined();
 
@@ -61,7 +61,10 @@ describe('NooviChatTrigger — description', () => {
 			'pipeline_card_created', 'pipeline_card_updated', 'pipeline_card_stage_changed',
 			'pipeline_card_won', 'pipeline_card_lost',
 			'follow_up_due', 'follow_up_overdue',
+			'follow_up_scheduled', 'follow_up_sent', 'follow_up_failed',
+			'broadcast_started', 'broadcast_completed',
 			'activity_due', 'sla_breach', 'waha_status_changed',
+			'appointment.created', 'appointment.updated', 'reminder.sent',
 		];
 
 		for (const event of expectedEvents) {

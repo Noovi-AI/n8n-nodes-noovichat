@@ -125,10 +125,9 @@
 
 ### Audit methodology
 
-Two parallel Opus sub-agents auditing body fields (vs strong params)
-and IDs/query/headers, with every finding validated by direct `grep`
-against the controller source before being accepted. False positives
-filtered out — only confirmed bugs included in this patch.
+Auditoria de payloads, IDs, query params e headers validada diretamente
+contra os controllers antes de aceitar cada achado. False positives foram
+filtrados — apenas bugs confirmados entraram neste patch.
 
 ---
 
@@ -265,7 +264,7 @@ filtered out — only confirmed bugs included in this patch.
   state. When the account is not authorized, the API may return HTTP 403.
 - Plans do not change the feature set; the Site heartbeat or SuperAdmin can
   synchronize the operational authorization state for the account.
-- Refs: Roadmap/internal/chatwoot/fase-07-atendimentos.md (FX2)
+- Referência interna de implementação removida da documentação pública.
 
 ---
 

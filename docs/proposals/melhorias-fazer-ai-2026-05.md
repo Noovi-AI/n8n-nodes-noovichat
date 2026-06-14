@@ -4,8 +4,8 @@
 > **Autor:** Time NooviChat (research + draft)
 > **Versão node atual:** `0.8.0`
 > **Versão fazer-ai analisada:** `2.3.0` (released 2026-04-19)
-> **Status:** 🟡 NOTA HISTÓRICA/PROPOSTA — não é roadmap. Se aprovada, mover
-> o planejamento para `/home/debian/projects/Noovichat/Roadmap/`.
+> **Status:** 🟡 NOTA HISTÓRICA/PROPOSTA — não é roadmap. Se aprovada, registrar
+> o planejamento no Roadmap interno canônico antes de execução.
 > **Esforço total:** 5–7 dias dev (incremental, batched em 2-3 minor releases)
 
 ---
@@ -18,8 +18,8 @@ node concorrente da comunidade `fazer-ai/n8n-nodes-chatwoot` v2.3.0
 (19 resources, espelha upstream Chatwoot + extensões internal-chat
 e kanban próprias do fork deles).
 
-A pesquisa completa está em `/tmp/mcp-research-n8n-fork.md` (snapshot
-externo ao repo — não é fonte de verdade, apenas insumo desta proposta).
+A pesquisa completa foi mantida como snapshot local da sessão original e
+não faz parte da documentação pública.
 
 Esta proposta sintetiza os achados em **5 ações priorizadas**, todas
 alinhadas às nossas regras vigentes:
@@ -687,11 +687,11 @@ Cada proposta só é considerada "merged & released" quando:
 
 ## Referências
 
-- Pesquisa-fonte: `/tmp/mcp-research-n8n-fork.md` (snapshot 2026-05-07)
+- Pesquisa-fonte: snapshot histórico de 2026-05-07
 - Convenções: `../../CLAUDE.md`, `../../docs/rules/{api-sync,architecture,patterns}.md`
 - Cadence: `../../../docs/rules/release-cadence.md`,
   `../../../docs/rules/deploy-safety.md`,
   `../../../docs/rules/git-discipline.md`
-- Doc style: `../../../Roadmap/internal/chatwoot/fase-1.6-whatsapp-templates-api.md`
+- Doc style: documentação interna canônica de roadmap
 - Sobreposição MCP: a coordenar com time `@nooviai/noovichat-mcp` —
   pontos detalhados em cada proposta
