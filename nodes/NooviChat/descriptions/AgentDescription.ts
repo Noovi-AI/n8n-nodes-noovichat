@@ -117,6 +117,23 @@ export const AgentFields: INodeProperties[] = [
 		default: 'online',
 		description: 'Availability status of the agent',
 	},
+	{
+		displayName: 'Custom Role ID',
+		name: 'customRoleId',
+		type: 'number',
+		displayOptions: {
+			show: {
+				resource: ['agent'],
+				operation: ['create', 'update'],
+			},
+		},
+		default: 0,
+		typeOptions: {
+			minValue: 0,
+		},
+		description:
+			'ID of a Custom Role (Funcao Personalizada) of the same account to assign to the agent, layering granular permissions on top of the base role. Leave 0 to skip; the role can be created via the Custom Roles API. Foreign-account IDs are ignored by the server.',
+	},
 
 	// Get Many options
 	{

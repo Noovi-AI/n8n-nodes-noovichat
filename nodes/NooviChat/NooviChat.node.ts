@@ -549,7 +549,11 @@ async function handleAgentOperation(this: IExecuteFunctions, operation: string, 
 			const name = this.getNodeParameter('name', index) as string;
 			const email = this.getNodeParameter('email', index) as string;
 			const role = this.getNodeParameter('role', index, 'agent') as string;
-			return await nooviChatApiRequest.call(this, 'POST', '/agents', { name, email, role });
+			const customRoleId = this.getNodeParameter('customRoleId', index, 0) as number;
+			const body: any = { name, email, role };
+			// custom_role_id is read at the body root by Chatwoot (outside the agent wrapper)
+			if (customRoleId) body.custom_role_id = customRoleId;
+			return await nooviChatApiRequest.call(this, 'POST', '/agents', body);
 		}
 		case 'getAll': {
 			if (returnAll) {
@@ -565,6 +569,9 @@ async function handleAgentOperation(this: IExecuteFunctions, operation: string, 
 			if (name) body.name = name;
 			if (role) body.role = role;
 			if (availability) body.availability = availability;
+			const customRoleId = this.getNodeParameter('customRoleId', index, 0) as number;
+			// custom_role_id is read at the body root by Chatwoot (outside the agent wrapper)
+			if (customRoleId) body.custom_role_id = customRoleId;
 			return await nooviChatApiRequest.call(this, 'PATCH', `/agents/${agentId}`, body);
 		}
 		case 'delete':
