@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.13.0 (2026-06-17)
+
+### Added
+
+- **Follow-up → Create Template Item**: new operation to add a step to a
+  follow-up template (`POST /follow-up-templates/:id/items`). Supports the step
+  types text/image/audio/video/document and the new **whatsapp_template** type —
+  a step that references a Meta-approved WhatsApp template (name/language/
+  namespace + a BODY parameter mapping via JSON) and sends it on an official
+  WhatsApp inbox outside the 24h window, falling back to the Content text on
+  non-official providers (WAHA/UazAPI) or inside the window. Mirrors the Chatwoot
+  follow-up template item contract.
+
 ## 0.12.0 (2026-06-13)
 
 ### Added (downstream parity with the API docs + MCP audit 2026-06-13)

@@ -624,4 +624,28 @@ describe('NooviChat Node — execute', () => {
 		const call = ctx._mockRequest.mock.calls[0][0];
 		expect(call.body.appointment.custom_attributes).toEqual({ source: 'whatsapp', tag: 'vip' });
 	});
+
+	it('should POST a whatsapp_template item on followUp.createTemplateItem', async () => {
+		const ctx = buildContext('followUp', 'createTemplateItem', {
+			templateId: '3',
+			itemType: 'whatsapp_template',
+			itemContent: 'Olá {{contact_name}}, lembrete.',
+			itemDelaySeconds: 0,
+			whatsappTemplateName: 'lembrete_consulta',
+			whatsappTemplateLanguage: 'pt_BR',
+			whatsappTemplateNamespace: '',
+			whatsappTemplateMapping: { body: [{ type: 'variable', value: 'contact_name' }] },
+		});
+		await node.execute.call(ctx);
+		const call = ctx._mockRequest.mock.calls[0][0];
+		expect(call.method).toBe('POST');
+		expect(call.uri).toContain('/follow-up-templates/3/items');
+		const item = call.body.follow_up_template_item;
+		expect(item.item_type).toBe('whatsapp_template');
+		expect(item.whatsapp_template_name).toBe('lembrete_consulta');
+		expect(item.whatsapp_template_mapping).toEqual({
+			body: [{ type: 'variable', value: 'contact_name' }],
+		});
+		expect(item).not.toHaveProperty('whatsapp_template_namespace');
+	});
 });

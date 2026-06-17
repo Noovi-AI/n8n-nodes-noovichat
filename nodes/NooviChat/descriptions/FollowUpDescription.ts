@@ -36,6 +36,7 @@ export const FollowUpOperations: INodeProperties[] = [
 			{ name: 'Update Template', value: 'updateTemplate', action: 'Update a follow-up template' },
 			{ name: 'Delete Template', value: 'deleteTemplate', action: 'Delete a follow-up template' },
 			{ name: 'Preview Template', value: 'previewTemplate', action: 'Preview a follow-up template' },
+			{ name: 'Create Template Item', value: 'createTemplateItem', action: 'Add a step to a follow-up template' },
 		],
 		default: 'getAll',
 	},
@@ -197,11 +198,95 @@ export const FollowUpFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['followUp'],
-				operation: ['updateTemplate', 'deleteTemplate', 'previewTemplate'],
+				operation: ['updateTemplate', 'deleteTemplate', 'previewTemplate', 'createTemplateItem'],
 			},
 		},
 		default: '',
 		description: 'ID of the template',
+	},
+	// Template item (step) fields — operation: createTemplateItem
+	{
+		displayName: 'Item Type',
+		name: 'itemType',
+		type: 'options',
+		required: true,
+		displayOptions: {
+			show: { resource: ['followUp'], operation: ['createTemplateItem'] },
+		},
+		options: [
+			{ name: 'Text', value: 'text' },
+			{ name: 'Image', value: 'image' },
+			{ name: 'Audio', value: 'audio' },
+			{ name: 'Video', value: 'video' },
+			{ name: 'Document', value: 'document' },
+			{ name: 'WhatsApp Template', value: 'whatsapp_template' },
+		],
+		default: 'text',
+		description:
+			'Step type. "text" requires Content; "whatsapp_template" sends a Meta-approved template on official WhatsApp inboxes outside the 24h window and falls back to Content text otherwise',
+	},
+	{
+		displayName: 'Content',
+		name: 'itemContent',
+		type: 'string',
+		displayOptions: {
+			show: { resource: ['followUp'], operation: ['createTemplateItem'] },
+		},
+		default: '',
+		typeOptions: { rows: 3 },
+		description:
+			'Message body (required for "text"). For "whatsapp_template" it is the plain-text fallback used on non-official providers (WAHA/UazAPI) or inside the 24h window',
+	},
+	{
+		displayName: 'Delay (Seconds)',
+		name: 'itemDelaySeconds',
+		type: 'number',
+		displayOptions: {
+			show: { resource: ['followUp'], operation: ['createTemplateItem'] },
+		},
+		default: 0,
+		description: 'Seconds after the previous step before this one fires',
+	},
+	{
+		displayName: 'WhatsApp Template Name',
+		name: 'whatsappTemplateName',
+		type: 'string',
+		displayOptions: {
+			show: { resource: ['followUp'], operation: ['createTemplateItem'], itemType: ['whatsapp_template'] },
+		},
+		default: '',
+		description: 'Approved Meta template name (required for the whatsapp_template type)',
+	},
+	{
+		displayName: 'WhatsApp Template Language',
+		name: 'whatsappTemplateLanguage',
+		type: 'string',
+		displayOptions: {
+			show: { resource: ['followUp'], operation: ['createTemplateItem'], itemType: ['whatsapp_template'] },
+		},
+		default: '',
+		description: 'Approved template language code, e.g. pt_BR',
+	},
+	{
+		displayName: 'WhatsApp Template Namespace',
+		name: 'whatsappTemplateNamespace',
+		type: 'string',
+		displayOptions: {
+			show: { resource: ['followUp'], operation: ['createTemplateItem'], itemType: ['whatsapp_template'] },
+		},
+		default: '',
+		description: 'Template namespace (360Dialog only)',
+	},
+	{
+		displayName: 'WhatsApp Template Mapping (JSON)',
+		name: 'whatsappTemplateMapping',
+		type: 'json',
+		displayOptions: {
+			show: { resource: ['followUp'], operation: ['createTemplateItem'], itemType: ['whatsapp_template'] },
+		},
+		default: '{\n  "body": [\n    { "type": "variable", "value": "contact_name" }\n  ]\n}',
+		description:
+			'BODY parameter mapping. Each entry fills {{1}}, {{2}}, … with a follow-up variable (type "variable", value e.g. "contact_name") or literal text (type "text")',
 	},
 	{
 		displayName: 'Template Name',

@@ -1135,6 +1135,30 @@ async function handleFollowUpOperation(this: IExecuteFunctions, operation: strin
 			return await nooviChatApiRequest.call(this, 'DELETE', `/follow-up-templates/${templateId}`);
 		case 'previewTemplate':
 			return await nooviChatApiRequest.call(this, 'POST', `/follow-up-templates/${templateId}/preview`);
+		case 'createTemplateItem': {
+			const itemType = this.getNodeParameter('itemType', index) as string;
+			const itemContent = this.getNodeParameter('itemContent', index, '') as string;
+			const itemDelaySeconds = this.getNodeParameter('itemDelaySeconds', index, 0) as number;
+			const itemBody: any = {
+				item_type: itemType,
+				content: itemContent,
+				delay_seconds: itemDelaySeconds,
+			};
+			if (itemType === 'whatsapp_template') {
+				itemBody.whatsapp_template_name = this.getNodeParameter('whatsappTemplateName', index, '') as string;
+				itemBody.whatsapp_template_language = this.getNodeParameter('whatsappTemplateLanguage', index, '') as string;
+				const ns = this.getNodeParameter('whatsappTemplateNamespace', index, '') as string;
+				if (ns) itemBody.whatsapp_template_namespace = ns;
+				const rawMapping = this.getNodeParameter('whatsappTemplateMapping', index, '') as string | object;
+				if (rawMapping) {
+					itemBody.whatsapp_template_mapping =
+						typeof rawMapping === 'string' ? JSON.parse(rawMapping) : rawMapping;
+				}
+			}
+			return await nooviChatApiRequest.call(this, 'POST', `/follow-up-templates/${templateId}/items`, {
+				follow_up_template_item: itemBody,
+			});
+		}
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
