@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.14.0 (2026-06-17)
+
+### Added
+
+- **Agent → Custom Role ID**: optional field on the Agent **Create** and
+  **Update** operations to assign a NooviChat-native Custom Role (Funcao
+  Personalizada) to an agent, layering granular permissions on top of the base
+  `agent`/`administrator` role. The id is sent at the request body root (outside
+  the `agent` wrapper), matching how Chatwoot reads `custom_role_id`; `0` skips
+  it and foreign-account ids are ignored server-side. Manage the roles
+  themselves via the `/custom_roles` API (documented in the Site reference).
+
 ## 0.13.0 (2026-06-17)
 
 ### Added
