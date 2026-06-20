@@ -345,6 +345,10 @@ async function handleConversationOperation(this: IExecuteFunctions, operation: s
 			}
 			return await nooviChatApiRequest.call(this, 'POST', '/conversations/filter', parsed, { per_page: limit });
 		}
+		case 'getSummary':
+			return await nooviChatApiRequest.call(this, 'GET', `/conversations/${conversationId}/summary`);
+		case 'generateSummary':
+			return await nooviChatApiRequest.call(this, 'POST', `/conversations/${conversationId}/summarize`);
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}

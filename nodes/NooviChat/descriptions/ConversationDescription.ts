@@ -34,6 +34,12 @@ export const ConversationOperations: INodeProperties[] = [
 			{ name: 'Toggle Status', value: 'toggleStatus', action: 'Toggle conversation status' },
 			{ name: 'Add Label', value: 'addLabel', action: 'Add labels to conversation' },
 			{ name: 'Filter', value: 'filter', action: 'Filter conversations' },
+			{ name: 'Get Summary', value: 'getSummary', action: 'Get the AI summary of a conversation' },
+			{
+				name: 'Generate Summary',
+				value: 'generateSummary',
+				action: 'Generate or regenerate the AI summary of a conversation',
+			},
 		],
 		default: 'getAll',
 	},
@@ -53,7 +59,16 @@ export const ConversationFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['conversation'],
-				operation: ['get', 'update', 'delete', 'assign', 'toggleStatus', 'addLabel'],
+				operation: [
+					'get',
+					'update',
+					'delete',
+					'assign',
+					'toggleStatus',
+					'addLabel',
+					'getSummary',
+					'generateSummary',
+				],
 			},
 		},
 		default: '',

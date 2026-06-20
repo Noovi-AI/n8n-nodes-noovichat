@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.15.0 (2026-06-20)
+
+### Added
+
+- **Conversation → Get Summary / Generate Summary**: two new operations on the
+  Conversation resource. **Get Summary** (`GET /conversations/:id/summary`)
+  returns the stored AI summary and its `summary_generated_at` timestamp.
+  **Generate Summary** (`POST /conversations/:id/summarize`) generates or
+  regenerates the summary via native Noovi AI and returns the refreshed payload.
+  Requires AI credentials configured on the account; otherwise the endpoint
+  responds that AI is unavailable.
+
 ## 0.14.0 (2026-06-17)
 
 ### Added
