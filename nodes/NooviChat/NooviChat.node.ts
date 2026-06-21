@@ -35,6 +35,7 @@ import { PartnerOperations, PartnerFields } from './descriptions/PartnerDescript
 import { BroadcastOperations, BroadcastFields, BroadcastBlacklistOperations, BroadcastBlacklistFields } from './descriptions/BroadcastDescription';
 import { CommercialAnalysisOperations, CommercialAnalysisFields } from './descriptions/CommercialAnalysisDescription';
 import { SequenceOperations, SequenceFields } from './descriptions/SequenceDescription';
+import { WhatsAppHubOperations, WhatsAppHubFields } from './descriptions/WhatsAppHubDescription';
 
 export class NooviChat implements INodeType {
 	description: INodeTypeDescription = {
@@ -101,6 +102,7 @@ export class NooviChat implements INodeType {
 					{ name: 'Broadcast Blacklist', value: 'broadcastBlacklist' },
 					{ name: 'Commercial Analysis', value: 'commercialAnalysis' },
 					{ name: 'Sequence', value: 'sequence' },
+					{ name: 'WhatsApp Hub (NooviConnect)', value: 'whatsAppHub' },
 				],
 				default: 'conversation',
 			},
@@ -159,6 +161,8 @@ export class NooviChat implements INodeType {
 			...CommercialAnalysisFields,
 			...SequenceOperations,
 			...SequenceFields,
+			...WhatsAppHubOperations,
+			...WhatsAppHubFields,
 		],
 	};
 
@@ -253,6 +257,9 @@ export class NooviChat implements INodeType {
 						break;
 					case 'sequence':
 						responseData = await handleSequenceOperation.call(this, operation, i);
+						break;
+					case 'whatsAppHub':
+						responseData = await handleWhatsAppHubOperation.call(this, operation, i);
 						break;
 					default:
 						throw new NodeOperationError(this.getNode(), `Unknown resource: "${resource}"`, { itemIndex: i });
@@ -1993,6 +2000,76 @@ async function handleSequenceOperation(this: IExecuteFunctions, operation: strin
 			const sequenceId = this.getNodeParameter('sequenceId', index) as string;
 			return await nooviChatApiRequest.call(this, 'DELETE', `${base}/${sequenceId}`);
 		}
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+// WhatsApp Hub (NooviConnect) handlers
+// Endpoints: GET /noovi_connect (index — no inboxId)
+//            GET /noovi_connect/:id/groups
+//            GET /noovi_connect/:id/newsletters
+//            GET /noovi_connect/:id/hub_report
+//            POST /noovi_connect/:id/create_group
+//            GET /noovi_connect/:id/group_participants?group_jid=...
+//            POST /noovi_connect/:id/add_participants
+async function handleWhatsAppHubOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	switch (operation) {
+		case 'getSessions':
+			// GET /api/v1/accounts/:accountId/noovi_connect — lists all NooviConnect sessions
+			return await nooviChatApiRequest.call(this, 'GET', '/noovi_connect');
+
+		case 'getGroups': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			return await nooviChatApiRequest.call(this, 'GET', `/noovi_connect/${inboxId}/groups`);
+		}
+
+		case 'getChannels': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			return await nooviChatApiRequest.call(this, 'GET', `/noovi_connect/${inboxId}/newsletters`);
+		}
+
+		case 'getReport': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			return await nooviChatApiRequest.call(this, 'GET', `/noovi_connect/${inboxId}/hub_report`);
+		}
+
+		case 'createGroup': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const title = this.getNodeParameter('title', index) as string;
+			const participantsRaw = this.getNodeParameter('participants', index) as string;
+			const participants = participantsRaw
+				.split(',')
+				.map((p: string) => p.trim())
+				.filter((p: string) => p.length > 0);
+			return await nooviChatApiRequest.call(this, 'POST', `/noovi_connect/${inboxId}/create_group`, {
+				title,
+				participants,
+			});
+		}
+
+		case 'getParticipants': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const groupJid = this.getNodeParameter('groupJid', index) as string;
+			return await nooviChatApiRequest.call(this, 'GET', `/noovi_connect/${inboxId}/group_participants`, {}, {
+				group_jid: groupJid,
+			});
+		}
+
+		case 'addParticipants': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const groupJid = this.getNodeParameter('groupJid', index) as string;
+			const phonesRaw = this.getNodeParameter('phones', index) as string;
+			const phones = phonesRaw
+				.split(',')
+				.map((p: string) => p.trim())
+				.filter((p: string) => p.length > 0);
+			return await nooviChatApiRequest.call(this, 'POST', `/noovi_connect/${inboxId}/add_participants`, {
+				group_jid: groupJid,
+				phones,
+			});
+		}
+
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
