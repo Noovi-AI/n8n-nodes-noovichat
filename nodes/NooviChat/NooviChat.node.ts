@@ -1885,6 +1885,8 @@ async function handleBroadcastOperation(this: IExecuteFunctions, operation: stri
 			return await nooviChatApiRequest.call(this, 'POST', `/broadcasts/${broadcastId}/resume`);
 		case 'cancel':
 			return await nooviChatApiRequest.call(this, 'POST', `/broadcasts/${broadcastId}/cancel`);
+		case 'retryFailed':
+			return await nooviChatApiRequest.call(this, 'POST', `/broadcasts/${broadcastId}/retry_failed`);
 		case 'duplicate':
 			return await nooviChatApiRequest.call(this, 'POST', `/broadcasts/${broadcastId}/duplicate`);
 		case 'getContacts': {

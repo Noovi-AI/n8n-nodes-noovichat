@@ -24,6 +24,7 @@ export const BroadcastOperations: INodeProperties[] = [
 			{ name: 'Pause', value: 'pause', action: 'Pause a broadcast' },
 			{ name: 'Resume', value: 'resume', action: 'Resume a broadcast' },
 			{ name: 'Cancel', value: 'cancel', action: 'Cancel a broadcast' },
+			{ name: 'Retry Failed', value: 'retryFailed', action: 'Retry failed contacts of a broadcast' },
 			{ name: 'Duplicate', value: 'duplicate', action: 'Duplicate a broadcast' },
 			{ name: 'Get Contacts', value: 'getContacts', action: 'Get the contacts of a broadcast' },
 		],
@@ -41,7 +42,7 @@ export const BroadcastFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['broadcast'],
-				operation: ['get', 'update', 'delete', 'pause', 'resume', 'cancel', 'duplicate', 'getContacts'],
+				operation: ['get', 'update', 'delete', 'pause', 'resume', 'cancel', 'retryFailed', 'duplicate', 'getContacts'],
 			},
 		},
 		default: '',
