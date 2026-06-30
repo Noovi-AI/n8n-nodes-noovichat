@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.17.0 (2026-06-30)
+
+### Added
+
+- **Broadcast → WhatsApp Group source (NC-32)**: the Broadcast **Create**
+  operation now supports `source_type = whatsapp_group`. A new **Group Targets
+  (JSON)** field carries the `broadcast_targets` array
+  (`[{ "target_kind": "group", "provider_jid": "<id>@g.us", "metadata": { "name": "..." } }]`),
+  which the NooviChat `/broadcasts` controller permits as a nested attribute.
+  Recipients are entire WhatsApp groups instead of individual contacts; every
+  inbox used must be a group-capable provider (WAHA/UAZAPI). The **Source Config
+  (JSON)** field is now only shown for the csv/tags/kanban source types.
+- **WhatsApp Hub (NooviConnect) — 13 new operations (NC-50)**: extends the Hub
+  beyond the previous 7 with full group administration and rich messages, all
+  mapped to existing `/noovi_connect/:inboxId/*` endpoints:
+  **Remove / Promote / Demote Participants** (`{remove,promote,demote}_participants`),
+  **Get Group Invite Link** (`group_invite_link`),
+  **Set Group Name / Topic / Photo / Locked / Announce**
+  (`set_group_{name,topic,photo,locked,announce}`),
+  **Leave Group** (`leave_group`),
+  **Send Poll** (`send_poll`), **Send Location** (`send_location`) and
+  **Unfollow Newsletter** (`unfollow_newsletter`).
+
 ## 0.15.0 (2026-06-20)
 
 ### Added

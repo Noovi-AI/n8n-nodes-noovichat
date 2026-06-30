@@ -1829,13 +1829,20 @@ async function handleBroadcastOperation(this: IExecuteFunctions, operation: stri
 		case 'create': {
 			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
 			const inboxIdsRaw = this.getNodeParameter('inboxIds', index, '') as string;
+			const sourceType = this.getNodeParameter('sourceType', index) as string;
 			const broadcast: any = {
 				name: this.getNodeParameter('name', index) as string,
-				source_type: this.getNodeParameter('sourceType', index) as string,
+				source_type: sourceType,
 				message_type: this.getNodeParameter('messageType', index) as string,
 				source_config: parseJsonValue(this.getNodeParameter('sourceConfig', index, '{}')),
 				message_payload: parseJsonValue(this.getNodeParameter('messagePayload', index, '{}')),
 			};
+			// WhatsApp Group source: recipients are entire groups carried as
+			// broadcast_targets ([{ target_kind, provider_jid, metadata }]), not
+			// source_config rows. The Chatwoot controller permits this nested array.
+			if (sourceType === 'whatsapp_group') {
+				broadcast.broadcast_targets = parseJsonValue(this.getNodeParameter('broadcastTargets', index, '[]'));
+			}
 			if (inboxIdsRaw) {
 				broadcast.inbox_ids = inboxIdsRaw.split(',').map((s) => Number(s.trim())).filter((n) => !Number.isNaN(n));
 			}
@@ -2008,13 +2015,27 @@ async function handleSequenceOperation(this: IExecuteFunctions, operation: strin
 }
 
 // WhatsApp Hub (NooviConnect) handlers
+// Split a comma-separated user string into a trimmed, non-empty list.
+function splitCsv(raw: string): string[] {
+	return (raw || '')
+		.split(',')
+		.map((p: string) => p.trim())
+		.filter((p: string) => p.length > 0);
+}
+
 // Endpoints: GET /noovi_connect (index — no inboxId)
 //            GET /noovi_connect/:id/groups
 //            GET /noovi_connect/:id/newsletters
 //            GET /noovi_connect/:id/hub_report
 //            POST /noovi_connect/:id/create_group
 //            GET /noovi_connect/:id/group_participants?group_jid=...
-//            POST /noovi_connect/:id/add_participants
+//            GET /noovi_connect/:id/group_invite_link?group_jid=...
+//            POST /noovi_connect/:id/{add,remove,promote,demote}_participants
+//            POST /noovi_connect/:id/set_group_{name,topic,photo,locked,announce}
+//            POST /noovi_connect/:id/leave_group
+//            POST /noovi_connect/:id/send_poll
+//            POST /noovi_connect/:id/send_location
+//            POST /noovi_connect/:id/unfollow_newsletter
 async function handleWhatsAppHubOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
 	switch (operation) {
 		case 'getSessions':
@@ -2039,11 +2060,7 @@ async function handleWhatsAppHubOperation(this: IExecuteFunctions, operation: st
 		case 'createGroup': {
 			const inboxId = this.getNodeParameter('inboxId', index) as string;
 			const title = this.getNodeParameter('title', index) as string;
-			const participantsRaw = this.getNodeParameter('participants', index) as string;
-			const participants = participantsRaw
-				.split(',')
-				.map((p: string) => p.trim())
-				.filter((p: string) => p.length > 0);
+			const participants = splitCsv(this.getNodeParameter('participants', index) as string);
 			return await nooviChatApiRequest.call(this, 'POST', `/noovi_connect/${inboxId}/create_group`, {
 				title,
 				participants,
@@ -2058,17 +2075,119 @@ async function handleWhatsAppHubOperation(this: IExecuteFunctions, operation: st
 			});
 		}
 
-		case 'addParticipants': {
+		case 'getInviteLink': {
 			const inboxId = this.getNodeParameter('inboxId', index) as string;
 			const groupJid = this.getNodeParameter('groupJid', index) as string;
-			const phonesRaw = this.getNodeParameter('phones', index) as string;
-			const phones = phonesRaw
-				.split(',')
-				.map((p: string) => p.trim())
-				.filter((p: string) => p.length > 0);
-			return await nooviChatApiRequest.call(this, 'POST', `/noovi_connect/${inboxId}/add_participants`, {
+			return await nooviChatApiRequest.call(this, 'GET', `/noovi_connect/${inboxId}/group_invite_link`, {}, {
+				group_jid: groupJid,
+			});
+		}
+
+		case 'addParticipants':
+		case 'removeParticipants':
+		case 'promoteParticipants':
+		case 'demoteParticipants': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const groupJid = this.getNodeParameter('groupJid', index) as string;
+			const phones = splitCsv(this.getNodeParameter('phones', index) as string);
+			// camelCase op → snake_case controller action (e.g. removeParticipants → remove_participants)
+			const action = operation.replace(/([A-Z])/g, '_$1').toLowerCase();
+			return await nooviChatApiRequest.call(this, 'POST', `/noovi_connect/${inboxId}/${action}`, {
 				group_jid: groupJid,
 				phones,
+			});
+		}
+
+		case 'setGroupName': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const groupJid = this.getNodeParameter('groupJid', index) as string;
+			const name = this.getNodeParameter('groupName', index) as string;
+			return await nooviChatApiRequest.call(this, 'POST', `/noovi_connect/${inboxId}/set_group_name`, {
+				group_jid: groupJid,
+				name,
+			});
+		}
+
+		case 'setGroupTopic': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const groupJid = this.getNodeParameter('groupJid', index) as string;
+			const topic = this.getNodeParameter('groupTopic', index, '') as string;
+			return await nooviChatApiRequest.call(this, 'POST', `/noovi_connect/${inboxId}/set_group_topic`, {
+				group_jid: groupJid,
+				topic,
+			});
+		}
+
+		case 'setGroupPhoto': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const groupJid = this.getNodeParameter('groupJid', index) as string;
+			const photo = parseJsonValue(this.getNodeParameter('groupPhoto', index, '{}'));
+			return await nooviChatApiRequest.call(this, 'POST', `/noovi_connect/${inboxId}/set_group_photo`, {
+				group_jid: groupJid,
+				photo,
+			});
+		}
+
+		case 'setGroupLocked': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const groupJid = this.getNodeParameter('groupJid', index) as string;
+			const locked = this.getNodeParameter('groupLocked', index, false) as boolean;
+			return await nooviChatApiRequest.call(this, 'POST', `/noovi_connect/${inboxId}/set_group_locked`, {
+				group_jid: groupJid,
+				locked,
+			});
+		}
+
+		case 'setGroupAnnounce': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const groupJid = this.getNodeParameter('groupJid', index) as string;
+			const announce = this.getNodeParameter('groupAnnounce', index, false) as boolean;
+			return await nooviChatApiRequest.call(this, 'POST', `/noovi_connect/${inboxId}/set_group_announce`, {
+				group_jid: groupJid,
+				announce,
+			});
+		}
+
+		case 'leaveGroup': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const groupJid = this.getNodeParameter('groupJid', index) as string;
+			return await nooviChatApiRequest.call(this, 'POST', `/noovi_connect/${inboxId}/leave_group`, {
+				group_jid: groupJid,
+			});
+		}
+
+		case 'sendPoll': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const phone = this.getNodeParameter('phone', index) as string;
+			const question = this.getNodeParameter('question', index) as string;
+			const options = splitCsv(this.getNodeParameter('pollOptions', index) as string);
+			const maxAnswer = this.getNodeParameter('maxAnswer', index, 1) as number;
+			return await nooviChatApiRequest.call(this, 'POST', `/noovi_connect/${inboxId}/send_poll`, {
+				phone,
+				question,
+				options,
+				max_answer: maxAnswer,
+			});
+		}
+
+		case 'sendLocation': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const phone = this.getNodeParameter('phone', index) as string;
+			const body: any = {
+				phone,
+				latitude: this.getNodeParameter('latitude', index) as string,
+				longitude: this.getNodeParameter('longitude', index) as string,
+			};
+			const title = this.getNodeParameter('locationTitle', index, '') as string;
+			if (title) body.title = title;
+			return await nooviChatApiRequest.call(this, 'POST', `/noovi_connect/${inboxId}/send_location`, body);
+		}
+
+		case 'unfollowNewsletter': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const newsletterId = this.getNodeParameter('newsletterId', index) as string;
+			return await nooviChatApiRequest.call(this, 'POST', `/noovi_connect/${inboxId}/unfollow_newsletter`, {
+				newsletter_id: newsletterId,
 			});
 		}
 

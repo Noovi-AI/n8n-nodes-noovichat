@@ -768,3 +768,302 @@ describe('Webhook auto-registration / removal (Trigger)', () => {
 		expect(mockStaticData.webhookId).toBeUndefined();
 	});
 });
+
+// ---------------------------------------------------------------------------
+// Broadcast → WhatsApp Group source (NC-32)
+// ---------------------------------------------------------------------------
+
+describe('Broadcast — WhatsApp Group source (NC-32)', () => {
+	let node: NooviChat;
+
+	beforeEach(() => {
+		node = new NooviChat();
+	});
+
+	it('broadcast.create (whatsapp_group) — sends source_type and broadcast_targets', async () => {
+		const targets = [
+			{ target_kind: 'group', provider_jid: '120363000000000000@g.us', metadata: { name: 'Leads' } },
+		];
+		const ctx = buildContext('broadcast', 'create', {
+			name: 'Group blast',
+			sourceType: 'whatsapp_group',
+			messageType: 'custom',
+			sourceConfig: '{}',
+			messagePayload: '{ "messages": [{ "type": "text", "content": "Oi" }] }',
+			broadcastTargets: targets,
+			inboxIds: '2',
+			additionalFields: {},
+		});
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'POST',
+				uri: expect.stringContaining('/broadcasts'),
+				body: expect.objectContaining({
+					broadcast: expect.objectContaining({
+						source_type: 'whatsapp_group',
+						broadcast_targets: targets,
+						inbox_ids: [2],
+					}),
+				}),
+			}),
+		);
+	});
+
+	it('broadcast.create (csv) — does NOT add broadcast_targets', async () => {
+		const ctx = buildContext('broadcast', 'create', {
+			name: 'CSV blast',
+			sourceType: 'csv',
+			messageType: 'custom',
+			sourceConfig: '{ "csv_rows": [] }',
+			messagePayload: '{ "messages": [] }',
+			inboxIds: '',
+			additionalFields: {},
+		});
+		await node.execute.call(ctx);
+
+		const body = ctx._mockRequest.mock.calls[0][0].body;
+		expect(body.broadcast).not.toHaveProperty('broadcast_targets');
+		expect(body.broadcast.source_type).toBe('csv');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// WhatsApp Hub — group management & rich messages (NC-50)
+// ---------------------------------------------------------------------------
+
+describe('WhatsApp Hub — group ops (NC-50)', () => {
+	let node: NooviChat;
+
+	beforeEach(() => {
+		node = new NooviChat();
+	});
+
+	it('removeParticipants — POST remove_participants with group_jid + phones array', async () => {
+		const ctx = buildContext('whatsAppHub', 'removeParticipants', {
+			inboxId: '5',
+			groupJid: '120363@g.us',
+			phones: '5511999998888, 5521999997777',
+		});
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'POST',
+				uri: expect.stringContaining('/noovi_connect/5/remove_participants'),
+				body: { group_jid: '120363@g.us', phones: ['5511999998888', '5521999997777'] },
+			}),
+		);
+	});
+
+	it('promoteParticipants — maps op to snake_case action', async () => {
+		const ctx = buildContext('whatsAppHub', 'promoteParticipants', {
+			inboxId: '5',
+			groupJid: '120363@g.us',
+			phones: '5511999998888',
+		});
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				uri: expect.stringContaining('/noovi_connect/5/promote_participants'),
+			}),
+		);
+	});
+
+	it('demoteParticipants — maps op to snake_case action', async () => {
+		const ctx = buildContext('whatsAppHub', 'demoteParticipants', {
+			inboxId: '5',
+			groupJid: '120363@g.us',
+			phones: '5511999998888',
+		});
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				uri: expect.stringContaining('/noovi_connect/5/demote_participants'),
+			}),
+		);
+	});
+
+	it('getInviteLink — GET group_invite_link with group_jid as qs', async () => {
+		const ctx = buildContext('whatsAppHub', 'getInviteLink', {
+			inboxId: '5',
+			groupJid: '120363@g.us',
+		});
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'GET',
+				uri: expect.stringContaining('/noovi_connect/5/group_invite_link'),
+				qs: { group_jid: '120363@g.us' },
+			}),
+		);
+	});
+
+	it('setGroupName — POST set_group_name with name', async () => {
+		const ctx = buildContext('whatsAppHub', 'setGroupName', {
+			inboxId: '5',
+			groupJid: '120363@g.us',
+			groupName: 'New name',
+		});
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'POST',
+				uri: expect.stringContaining('/noovi_connect/5/set_group_name'),
+				body: { group_jid: '120363@g.us', name: 'New name' },
+			}),
+		);
+	});
+
+	it('setGroupTopic — POST set_group_topic with topic', async () => {
+		const ctx = buildContext('whatsAppHub', 'setGroupTopic', {
+			inboxId: '5',
+			groupJid: '120363@g.us',
+			groupTopic: 'New topic',
+		});
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				uri: expect.stringContaining('/noovi_connect/5/set_group_topic'),
+				body: { group_jid: '120363@g.us', topic: 'New topic' },
+			}),
+		);
+	});
+
+	it('setGroupPhoto — POST set_group_photo with parsed photo object', async () => {
+		const ctx = buildContext('whatsAppHub', 'setGroupPhoto', {
+			inboxId: '5',
+			groupJid: '120363@g.us',
+			groupPhoto: '{ "url": "https://x.com/a.jpg" }',
+		});
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				uri: expect.stringContaining('/noovi_connect/5/set_group_photo'),
+				body: { group_jid: '120363@g.us', photo: { url: 'https://x.com/a.jpg' } },
+			}),
+		);
+	});
+
+	it('setGroupLocked — POST set_group_locked with boolean', async () => {
+		const ctx = buildContext('whatsAppHub', 'setGroupLocked', {
+			inboxId: '5',
+			groupJid: '120363@g.us',
+			groupLocked: true,
+		});
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				uri: expect.stringContaining('/noovi_connect/5/set_group_locked'),
+				body: { group_jid: '120363@g.us', locked: true },
+			}),
+		);
+	});
+
+	it('setGroupAnnounce — POST set_group_announce with boolean', async () => {
+		const ctx = buildContext('whatsAppHub', 'setGroupAnnounce', {
+			inboxId: '5',
+			groupJid: '120363@g.us',
+			groupAnnounce: true,
+		});
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				uri: expect.stringContaining('/noovi_connect/5/set_group_announce'),
+				body: { group_jid: '120363@g.us', announce: true },
+			}),
+		);
+	});
+
+	it('leaveGroup — POST leave_group with group_jid', async () => {
+		const ctx = buildContext('whatsAppHub', 'leaveGroup', {
+			inboxId: '5',
+			groupJid: '120363@g.us',
+		});
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'POST',
+				uri: expect.stringContaining('/noovi_connect/5/leave_group'),
+				body: { group_jid: '120363@g.us' },
+			}),
+		);
+	});
+
+	it('sendPoll — POST send_poll with options array and max_answer', async () => {
+		const ctx = buildContext('whatsAppHub', 'sendPoll', {
+			inboxId: '5',
+			phone: '5511999998888',
+			question: 'Pick one',
+			pollOptions: 'A, B, C',
+			maxAnswer: 2,
+		});
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'POST',
+				uri: expect.stringContaining('/noovi_connect/5/send_poll'),
+				body: { phone: '5511999998888', question: 'Pick one', options: ['A', 'B', 'C'], max_answer: 2 },
+			}),
+		);
+	});
+
+	it('sendLocation — POST send_location, omits title when empty', async () => {
+		const ctx = buildContext('whatsAppHub', 'sendLocation', {
+			inboxId: '5',
+			phone: '5511999998888',
+			latitude: '-23.55',
+			longitude: '-46.63',
+			locationTitle: '',
+		});
+		await node.execute.call(ctx);
+
+		const body = ctx._mockRequest.mock.calls[0][0].body;
+		expect(body).toEqual({ phone: '5511999998888', latitude: '-23.55', longitude: '-46.63' });
+		expect(body).not.toHaveProperty('title');
+	});
+
+	it('sendLocation — includes title when provided', async () => {
+		const ctx = buildContext('whatsAppHub', 'sendLocation', {
+			inboxId: '5',
+			phone: '5511999998888',
+			latitude: '-23.55',
+			longitude: '-46.63',
+			locationTitle: 'HQ',
+		});
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				body: expect.objectContaining({ title: 'HQ' }),
+			}),
+		);
+	});
+
+	it('unfollowNewsletter — POST unfollow_newsletter with newsletter_id', async () => {
+		const ctx = buildContext('whatsAppHub', 'unfollowNewsletter', {
+			inboxId: '5',
+			newsletterId: '12036@newsletter',
+		});
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'POST',
+				uri: expect.stringContaining('/noovi_connect/5/unfollow_newsletter'),
+				body: { newsletter_id: '12036@newsletter' },
+			}),
+		);
+	});
+});
