@@ -292,7 +292,7 @@ export const WhatsAppHubFields: INodeProperties[] = [
 			},
 		},
 		default: '{\n  "url": "https://example.com/photo.jpg"\n}',
-		description: 'WAHA file object for the new group picture: { "url": "..." } or { "mimetype": "image/jpeg", "data": "<base64>" }',
+		description: 'File object for the new group picture: { "url": "..." } or { "mimetype": "image/jpeg", "data": "<base64>" }',
 	},
 
 	// ------------------------------------------------------------------

@@ -121,7 +121,7 @@ export const BroadcastFields: INodeProperties[] = [
 		displayOptions: { show: { resource: ['broadcast'], operation: ['create'] } },
 		default: '',
 		placeholder: '2,3470',
-		description: 'Comma-separated inbox IDs used to send (WhatsApp/API/SMS compatible). For the WhatsApp Group source type, every inbox must be a provider that supports groups (WAHA/UAZAPI)',
+		description: 'Comma-separated inbox IDs used to send (WhatsApp/API/SMS compatible). For the WhatsApp Group source type, every inbox must be a provider that supports groups',
 	},
 	{
 		displayName: 'Additional Fields',
