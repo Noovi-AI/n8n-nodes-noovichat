@@ -1066,4 +1066,98 @@ describe('WhatsApp Hub — group ops (NC-50)', () => {
 			}),
 		);
 	});
+
+	it('getProfile — GET profile', async () => {
+		const ctx = buildContext('whatsAppHub', 'getProfile', { inboxId: '5' });
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ method: 'GET', uri: expect.stringContaining('/noovi_connect/5/profile') }),
+		);
+	});
+
+	it('setProfileStatus — POST set_profile_status with status', async () => {
+		const ctx = buildContext('whatsAppHub', 'setProfileStatus', { inboxId: '5', profileStatus: 'Disponível' });
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'POST',
+				uri: expect.stringContaining('/noovi_connect/5/set_profile_status'),
+				body: { status: 'Disponível' },
+			}),
+		);
+	});
+
+	it('checkNumber — GET check_number with phone query', async () => {
+		const ctx = buildContext('whatsAppHub', 'checkNumber', { inboxId: '5', phone: '5511999999999' });
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'GET',
+				uri: expect.stringContaining('/noovi_connect/5/check_number'),
+				qs: { phone: '5511999999999' },
+			}),
+		);
+	});
+
+	it('getLabels — GET labels', async () => {
+		const ctx = buildContext('whatsAppHub', 'getLabels', { inboxId: '5' });
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ method: 'GET', uri: expect.stringContaining('/noovi_connect/5/labels') }),
+		);
+	});
+
+	it('getLabelChats — GET label_chats with label_id query', async () => {
+		const ctx = buildContext('whatsAppHub', 'getLabelChats', { inboxId: '5', labelId: '3' });
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'GET',
+				uri: expect.stringContaining('/noovi_connect/5/label_chats'),
+				qs: { label_id: '3' },
+			}),
+		);
+	});
+
+	it('getGroupPicture — GET group_picture with group_jid query', async () => {
+		const ctx = buildContext('whatsAppHub', 'getGroupPicture', { inboxId: '5', groupJid: '120363@g.us' });
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'GET',
+				uri: expect.stringContaining('/noovi_connect/5/group_picture'),
+				qs: { group_jid: '120363@g.us' },
+			}),
+		);
+	});
+
+	it('getGroupInfoFromLink — GET group_info_from_link with link query', async () => {
+		const ctx = buildContext('whatsAppHub', 'getGroupInfoFromLink', {
+			inboxId: '5',
+			groupLink: 'https://chat.whatsapp.com/abc',
+		});
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'GET',
+				uri: expect.stringContaining('/noovi_connect/5/group_info_from_link'),
+				qs: { link: 'https://chat.whatsapp.com/abc' },
+			}),
+		);
+	});
+
+	it('joinGroupWithLink — POST join_group_with_link with link', async () => {
+		const ctx = buildContext('whatsAppHub', 'joinGroupWithLink', {
+			inboxId: '5',
+			groupLink: 'https://chat.whatsapp.com/abc',
+		});
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'POST',
+				uri: expect.stringContaining('/noovi_connect/5/join_group_with_link'),
+				body: { link: 'https://chat.whatsapp.com/abc' },
+			}),
+		);
+	});
 });

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.18.0 (2026-07-02)
+
+### Added
+
+- **WhatsApp Hub (NooviConnect) — 8 new operations**: extends the Hub with
+  profile and labels coverage — **Get Profile**, **Set Profile Status**,
+  **Check Number** (does a number have WhatsApp), **List Labels** + **Chats by
+  Label** (WhatsApp Business labels, Business accounts only), **Get Group
+  Picture**, **Group Info From Link** (preview a group from an invite link) and
+  **Join Group by Link**. Mirrors the new NooviConnect endpoints documented in
+  the Chatwoot OpenAPI and the public WhatsApp Hub docs.
+
 ## 0.17.0 (2026-06-30)
 
 ### Added

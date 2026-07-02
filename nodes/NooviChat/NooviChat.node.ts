@@ -2191,6 +2191,64 @@ async function handleWhatsAppHubOperation(this: IExecuteFunctions, operation: st
 			});
 		}
 
+		case 'getProfile': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			return await nooviChatApiRequest.call(this, 'GET', `/noovi_connect/${inboxId}/profile`);
+		}
+
+		case 'setProfileStatus': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const status = this.getNodeParameter('profileStatus', index) as string;
+			return await nooviChatApiRequest.call(this, 'POST', `/noovi_connect/${inboxId}/set_profile_status`, {
+				status,
+			});
+		}
+
+		case 'checkNumber': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const phone = this.getNodeParameter('phone', index) as string;
+			return await nooviChatApiRequest.call(this, 'GET', `/noovi_connect/${inboxId}/check_number`, {}, {
+				phone,
+			});
+		}
+
+		case 'getLabels': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			return await nooviChatApiRequest.call(this, 'GET', `/noovi_connect/${inboxId}/labels`);
+		}
+
+		case 'getLabelChats': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const labelId = this.getNodeParameter('labelId', index) as string;
+			return await nooviChatApiRequest.call(this, 'GET', `/noovi_connect/${inboxId}/label_chats`, {}, {
+				label_id: labelId,
+			});
+		}
+
+		case 'getGroupPicture': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const groupJid = this.getNodeParameter('groupJid', index) as string;
+			return await nooviChatApiRequest.call(this, 'GET', `/noovi_connect/${inboxId}/group_picture`, {}, {
+				group_jid: groupJid,
+			});
+		}
+
+		case 'getGroupInfoFromLink': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const link = this.getNodeParameter('groupLink', index) as string;
+			return await nooviChatApiRequest.call(this, 'GET', `/noovi_connect/${inboxId}/group_info_from_link`, {}, {
+				link,
+			});
+		}
+
+		case 'joinGroupWithLink': {
+			const inboxId = this.getNodeParameter('inboxId', index) as string;
+			const link = this.getNodeParameter('groupLink', index) as string;
+			return await nooviChatApiRequest.call(this, 'POST', `/noovi_connect/${inboxId}/join_group_with_link`, {
+				link,
+			});
+		}
+
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}

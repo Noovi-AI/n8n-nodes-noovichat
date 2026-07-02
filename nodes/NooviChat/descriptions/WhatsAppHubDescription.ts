@@ -8,6 +8,7 @@ const GROUP_JID_OPERATIONS = [
 	'promoteParticipants',
 	'demoteParticipants',
 	'getInviteLink',
+	'getGroupPicture',
 	'setGroupName',
 	'setGroupTopic',
 	'setGroupPhoto',
@@ -40,6 +41,14 @@ const INBOX_OPERATIONS = [
 	'sendPoll',
 	'sendLocation',
 	'unfollowNewsletter',
+	'getProfile',
+	'setProfileStatus',
+	'checkNumber',
+	'getLabels',
+	'getLabelChats',
+	'getGroupPicture',
+	'getGroupInfoFromLink',
+	'joinGroupWithLink',
 ];
 
 export const WhatsAppHubOperations: INodeProperties[] = [
@@ -153,6 +162,46 @@ export const WhatsAppHubOperations: INodeProperties[] = [
 				name: 'Unfollow Newsletter',
 				value: 'unfollowNewsletter',
 				action: 'Unfollow a WhatsApp newsletter/channel',
+			},
+			{
+				name: 'Get Profile',
+				value: 'getProfile',
+				action: 'Get the connected account profile',
+			},
+			{
+				name: 'Set Profile Status',
+				value: 'setProfileStatus',
+				action: 'Update the connected account status/about text',
+			},
+			{
+				name: 'Check Number',
+				value: 'checkNumber',
+				action: 'Check whether a number has WhatsApp',
+			},
+			{
+				name: 'List Labels',
+				value: 'getLabels',
+				action: 'List WhatsApp Business labels',
+			},
+			{
+				name: 'Chats by Label',
+				value: 'getLabelChats',
+				action: 'List chats tagged with a WhatsApp Business label',
+			},
+			{
+				name: 'Get Group Picture',
+				value: 'getGroupPicture',
+				action: 'Get the picture URL of a WhatsApp group',
+			},
+			{
+				name: 'Group Info From Link',
+				value: 'getGroupInfoFromLink',
+				action: 'Preview a WhatsApp group from an invite link',
+			},
+			{
+				name: 'Join Group by Link',
+				value: 'joinGroupWithLink',
+				action: 'Join a WhatsApp group from an invite link',
 			},
 		],
 		default: 'getSessions',
@@ -336,7 +385,7 @@ export const WhatsAppHubFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['whatsAppHub'],
-				operation: ['sendPoll', 'sendLocation'],
+				operation: ['sendPoll', 'sendLocation', 'checkNumber'],
 			},
 		},
 		default: '',
@@ -450,5 +499,59 @@ export const WhatsAppHubFields: INodeProperties[] = [
 		},
 		default: '',
 		description: 'JID of the WhatsApp newsletter/channel to unfollow (e.g. 1203630XXXXXXXXX@newsletter)',
+	},
+
+	// ------------------------------------------------------------------
+	// setProfileStatus field
+	// ------------------------------------------------------------------
+	{
+		displayName: 'Status',
+		name: 'profileStatus',
+		type: 'string',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['whatsAppHub'],
+				operation: ['setProfileStatus'],
+			},
+		},
+		default: '',
+		description: 'New status/about text for the connected WhatsApp account',
+	},
+
+	// ------------------------------------------------------------------
+	// getLabelChats field
+	// ------------------------------------------------------------------
+	{
+		displayName: 'Label ID',
+		name: 'labelId',
+		type: 'string',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['whatsAppHub'],
+				operation: ['getLabelChats'],
+			},
+		},
+		default: '',
+		description: 'ID of the WhatsApp Business label (from List Labels)',
+	},
+
+	// ------------------------------------------------------------------
+	// group invite link field (getGroupInfoFromLink / joinGroupWithLink)
+	// ------------------------------------------------------------------
+	{
+		displayName: 'Group Invite Link',
+		name: 'groupLink',
+		type: 'string',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['whatsAppHub'],
+				operation: ['getGroupInfoFromLink', 'joinGroupWithLink'],
+			},
+		},
+		default: '',
+		description: 'WhatsApp group invite link (https://chat.whatsapp.com/...)',
 	},
 ];
