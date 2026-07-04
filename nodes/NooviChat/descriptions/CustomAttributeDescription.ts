@@ -119,9 +119,10 @@ export const CustomAttributeFields: INodeProperties[] = [
 		options: [
 			{ name: 'Contact', value: 'contact_attribute' },
 			{ name: 'Conversation', value: 'conversation_attribute' },
+			{ name: 'Pipeline Card', value: 'pipeline_card_attribute' },
 		],
 		default: 'contact_attribute',
-		description: 'Where this attribute will be used',
+		description: 'Where this attribute will be used. Pipeline Card values persist in the pipeline card custom_attributes.',
 	},
 
 	// Get Many options

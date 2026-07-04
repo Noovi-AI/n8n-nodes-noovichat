@@ -40,6 +40,10 @@ export const CardOperations: INodeProperties[] = [
 			{ name: 'Bulk Delete', value: 'bulkDelete', action: 'Bulk delete cards' },
 			{ name: 'Get Lead Score', value: 'getLeadScore', action: 'Get card lead score' },
 			{ name: 'Recalculate Lead Score', value: 'recalculateLeadScore', action: 'Recalculate lead score' },
+			{ name: 'Add Contact', value: 'addContact', action: 'Link an additional contact to a card' },
+			{ name: 'Remove Contact', value: 'removeContact', action: 'Unlink an additional contact from a card' },
+			{ name: 'Add Conversation', value: 'addConversation', action: 'Link an additional conversation to a card' },
+			{ name: 'Remove Conversation', value: 'removeConversation', action: 'Unlink an additional conversation from a card' },
 			{ name: 'Export (CSV)', value: 'export', action: 'Export cards to CSV' },
 			{ name: 'Get Import Template (CSV)', value: 'getImportTemplate', action: 'Get the CSV import template' },
 		],
@@ -56,12 +60,75 @@ export const CardFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['card'],
-				operation: ['get', 'update', 'delete', 'moveToStage', 'markWon', 'markLost', 'reopen', 'getTimeline', 'getLeadScore', 'recalculateLeadScore'],
+				operation: ['get', 'update', 'delete', 'moveToStage', 'markWon', 'markLost', 'reopen', 'getTimeline', 'getLeadScore', 'recalculateLeadScore', 'addContact', 'removeContact', 'addConversation', 'removeConversation'],
 			},
 		},
 		default: '',
 		placeholder: 'e.g., abc-123',
 		description: 'ID of the card',
+	},
+
+	// Additional contacts / conversations (non-primary links).
+	// Backend: POST/DELETE /pipeline/cards/:card_id/contacts and .../conversations.
+	// The primary contact_id / conversation_display_id stay untouched; these are
+	// additive join records surfaced on the card as additional_contacts /
+	// additional_conversations (each carrying its own join-record `id`).
+	{
+		displayName: 'Contact ID',
+		name: 'additionalContactId',
+		type: 'number',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['card'],
+				operation: ['addContact'],
+			},
+		},
+		default: 0,
+		description: 'ID of the contact to link as an additional (non-primary) contact',
+	},
+	{
+		displayName: 'Role',
+		name: 'contactRole',
+		type: 'string',
+		displayOptions: {
+			show: {
+				resource: ['card'],
+				operation: ['addContact'],
+			},
+		},
+		default: '',
+		placeholder: 'e.g., decisor, influenciador',
+		description: 'Optional free-form role label for the linked contact',
+	},
+	{
+		displayName: 'Conversation Display ID',
+		name: 'additionalConversationDisplayId',
+		type: 'number',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['card'],
+				operation: ['addConversation'],
+			},
+		},
+		default: 0,
+		description: 'Display ID of the conversation to link (the short public number visible in the URL)',
+	},
+	{
+		displayName: 'Link ID',
+		name: 'linkId',
+		type: 'string',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['card'],
+				operation: ['removeContact', 'removeConversation'],
+			},
+		},
+		default: '',
+		placeholder: 'e.g., 42',
+		description: 'ID of the join record to remove. This is the `id` field inside the card\'s additional_contacts / additional_conversations array — NOT the contact or conversation ID itself.',
 	},
 
 	// Create card fields

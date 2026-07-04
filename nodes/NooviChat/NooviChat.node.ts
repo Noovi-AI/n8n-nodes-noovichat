@@ -1036,6 +1036,36 @@ async function handleCardOperation(this: IExecuteFunctions, operation: string, i
 			return await nooviChatApiRequest.call(this, 'GET', `/pipeline_cards/${cardId}`);
 		case 'recalculateLeadScore':
 			return await nooviChatApiRequest.call(this, 'POST', `/pipeline_cards/${cardId}/recalculate_score`);
+		case 'addContact': {
+			// POST /pipeline/cards/:card_id/contacts — links an ADDITIONAL (non-primary)
+			// contact. The card's primary contact_id is untouched. Returns 201 with the
+			// join record (including the `id` used by removeContact). 422 if already linked.
+			const contactId = this.getNodeParameter('additionalContactId', index) as number;
+			const role = this.getNodeParameter('contactRole', index, '') as string;
+			const body: any = { contact_id: contactId };
+			if (role) body.role = role;
+			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/cards/${cardId}/contacts`, body);
+		}
+		case 'removeContact': {
+			// DELETE /pipeline/cards/:card_id/contacts/:id — unlinks an additional contact.
+			// :id is the join-record id (additional_contacts[].id), NOT the contact id.
+			const linkId = this.getNodeParameter('linkId', index) as string;
+			return await nooviChatApiRequest.call(this, 'DELETE', `/pipeline/cards/${cardId}/contacts/${linkId}`);
+		}
+		case 'addConversation': {
+			// POST /pipeline/cards/:card_id/conversations — links an ADDITIONAL (non-primary)
+			// conversation. The card's primary conversation_display_id is untouched.
+			const conversationDisplayId = this.getNodeParameter('additionalConversationDisplayId', index) as number;
+			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/cards/${cardId}/conversations`, {
+				conversation_display_id: conversationDisplayId,
+			});
+		}
+		case 'removeConversation': {
+			// DELETE /pipeline/cards/:card_id/conversations/:id — unlinks an additional
+			// conversation. :id is the join-record id (additional_conversations[].id).
+			const linkId = this.getNodeParameter('linkId', index) as string;
+			return await nooviChatApiRequest.call(this, 'DELETE', `/pipeline/cards/${cardId}/conversations/${linkId}`);
+		}
 		case 'export': {
 			// GET /pipeline/cards/export → text/csv. Honors the same filters as getAll
 			// (card_exports_controller#index via PipelineCardFilterable). Returns the raw

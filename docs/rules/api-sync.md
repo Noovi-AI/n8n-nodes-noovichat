@@ -67,6 +67,48 @@ grep -r "endpoint_path" "$(git rev-parse --show-toplevel)/nodes/"
 
 ## Mudanças na API (histórico de incidents)
 
+### 2026-07-03 — Pipeline card: contatos/conversas adicionais + custom fields (v0.19.0)
+
+**Feature backend (Chatwoot v4.15.1.12, FR1 + FR2)**:
+
+- **FR2 — múltiplos contatos/conversas por card.** Novos endpoints aditivos sob
+  o namespace `pipeline`:
+  - `POST   /api/v1/accounts/{id}/pipeline/cards/{card_id}/contacts` — body
+    `{ contact_id, role? }` → 201 `{ data: { id, contact_id, name, email, phone_number, avatar_url, role } }`
+  - `DELETE /api/v1/accounts/{id}/pipeline/cards/{card_id}/contacts/{id}` → 204
+  - `POST   /api/v1/accounts/{id}/pipeline/cards/{card_id}/conversations` — body
+    `{ conversation_display_id }` → 201 `{ data: { id, conversation_display_id } }`
+  - `DELETE /api/v1/accounts/{id}/pipeline/cards/{card_id}/conversations/{id}` → 204
+  - O `:id` do DELETE é o **id do registro de vínculo** (join record), NÃO o
+    contact/conversation id. Erros: duplicado/primário/inválido → 422; não
+    encontrado → 404 (nunca 500).
+  - Campos ADITIVOS no resource `pipeline_card` (via `as_json`):
+    `additional_contacts[]` e `additional_conversations[]`. O contato/conversa
+    **primário** (`contact_id` / `conversation_display_id`) permanece inalterado
+    e é de-duplicado FORA desses arrays.
+- **FR1 — custom fields no card.** `POST/GET /custom_attribute_definitions`
+  agora aceita/retorna o `attribute_model` `pipeline_card_attribute` (enum id 3),
+  junto de conversation(0)/contact(1)/company(2). Valores persistem no
+  `custom_attributes` (JSONB) do card.
+
+**Mudança no n8n node (v0.19.0)**:
+
+- Resource `Card` ganhou 4 operações novas — **Add Contact**, **Remove Contact**,
+  **Add Conversation**, **Remove Conversation** — mapeando exatamente para os 4
+  endpoints acima (`descriptions/CardDescription.ts` + `handleCardOperation` em
+  `NooviChat.node.ts`). O DELETE recebe o **Link ID** (id do join record vindo de
+  `additional_contacts[].id` / `additional_conversations[].id`).
+- Os campos de response `additional_contacts` / `additional_conversations` fluem
+  automaticamente nas operações `Get` / `Get Many` do card (o node repassa o JSON
+  cru da API; não há schema de output declarado a atualizar).
+- Resource `Custom Attribute`: opção **Pipeline Card** (`pipeline_card_attribute`)
+  adicionada ao campo `Model` (`descriptions/CustomAttributeDescription.ts`).
+- Testes de regressão de rota/params adicionados em `test/NooviChat.node.test.ts`.
+
+**NÃO faz parte do contrato de API** (não propagado ao node): o fix de disparo de
+follow-up/sequence do cliente, o hardening de idempotência da migração e o fix de
+ordering de deploy — são notas de engenharia, não mudanças de API para o cliente.
+
 ### 2026-06-01 — Follow-up send window (`send_window`)
 
 **Feature backend**: follow-up automations e pipeline follow-up rules ganharam

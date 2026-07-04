@@ -296,6 +296,76 @@ describe('NooviChat Node — execute', () => {
 		);
 	});
 
+	it('should call POST /pipeline/cards/:id/contacts on card.addContact', async () => {
+		const ctx = buildContext('card', 'addContact', {
+			cardId: '7',
+			additionalContactId: 55,
+			contactRole: 'decisor',
+		});
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'POST',
+				uri: expect.stringContaining('/pipeline/cards/7/contacts'),
+				body: expect.objectContaining({ contact_id: 55, role: 'decisor' }),
+			}),
+		);
+	});
+
+	it('should call DELETE /pipeline/cards/:id/contacts/:linkId on card.removeContact', async () => {
+		const ctx = buildContext('card', 'removeContact', { cardId: '7', linkId: '42' });
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'DELETE',
+				uri: expect.stringContaining('/pipeline/cards/7/contacts/42'),
+			}),
+		);
+	});
+
+	it('should call POST /pipeline/cards/:id/conversations on card.addConversation', async () => {
+		const ctx = buildContext('card', 'addConversation', {
+			cardId: '7',
+			additionalConversationDisplayId: 108,
+		});
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'POST',
+				uri: expect.stringContaining('/pipeline/cards/7/conversations'),
+				body: expect.objectContaining({ conversation_display_id: 108 }),
+			}),
+		);
+	});
+
+	it('should call DELETE /pipeline/cards/:id/conversations/:linkId on card.removeConversation', async () => {
+		const ctx = buildContext('card', 'removeConversation', { cardId: '7', linkId: '99' });
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'DELETE',
+				uri: expect.stringContaining('/pipeline/cards/7/conversations/99'),
+			}),
+		);
+	});
+
+	it('should send attribute_model pipeline_card_attribute on customAttribute.create', async () => {
+		const ctx = buildContext('customAttribute', 'create', {
+			attributeName: 'deal_source',
+			displayName: 'Deal Source',
+			attributeType: 'text',
+			model: 'pipeline_card_attribute',
+		});
+		await node.execute.call(ctx);
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'POST',
+				uri: expect.stringContaining('/custom_attribute_definitions'),
+				body: expect.objectContaining({ attribute_model: 'pipeline_card_attribute' }),
+			}),
+		);
+	});
+
 	it('should call move_to_stage individually for each card on bulkMove', async () => {
 		const ctx = buildContext('card', 'bulkMove', {
 			'cardIds.values': [{ id: '1' }, { id: '2' }],
