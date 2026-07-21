@@ -13,6 +13,8 @@ export const ProfessionalOperations: INodeProperties[] = [
 				resource: ['professional'],
 			},
 		},
+		description:
+			'NooviChat responses use JSON int64 IDs. JavaScript/n8n cannot preserve integer precision above 9007199254740991; use a trusted decimal string source when a later request needs a larger ID.',
 		options: [
 			{ name: 'Create', value: 'create', action: 'Create a professional' },
 			{ name: 'Get', value: 'get', action: 'Get a professional' },
@@ -40,7 +42,8 @@ export const ProfessionalFields: INodeProperties[] = [
 		},
 		default: '',
 		placeholder: 'e.g., 5',
-		description: 'ID of the professional',
+		description:
+			'Positive professional ID up to 9223372036854775807. It is entered as text to preserve 64-bit precision.',
 	},
 
 	// --- Create ---
@@ -75,11 +78,11 @@ export const ProfessionalFields: INodeProperties[] = [
 			{
 				displayName: 'Agent ID',
 				name: 'agentId',
-				type: 'number',
-				default: 0,
-				typeOptions: { minValue: 0 },
+				type: 'string',
+				default: '',
+				placeholder: 'e.g., 17',
 				description:
-					'ID of the agent to link. Use 0 to create without an agent. NooviChat returns HTTP 422 if the agent does not belong to the authenticated account.',
+					'Positive 64-bit agent ID to link. Leave empty or use 0 to create without an agent. NooviChat returns HTTP 422 if it is outside the authenticated account.',
 			},
 			{
 				displayName: 'Specialty',
@@ -117,7 +120,7 @@ export const ProfessionalFields: INodeProperties[] = [
 				displayName: 'Color',
 				name: 'color',
 				type: 'color',
-				default: '#6366f1',
+				default: '#3B82F6',
 				description: 'Color used to identify this professional in the calendar',
 			},
 			{
@@ -134,15 +137,39 @@ export const ProfessionalFields: INodeProperties[] = [
 				type: 'json',
 				default: '[]',
 				description:
-					'Complete replacement array of service IDs, for example [3, 7]. NooviChat returns HTTP 422 if any ID does not belong to the authenticated account. An empty array creates the professional without services.',
+					'Complete array of positive 64-bit service IDs, for example ["3", "7"]. The node rejects malformed IDs; NooviChat returns HTTP 422 when a valid ID is outside the authenticated account. An empty array creates the professional without services; null is converted to omission.',
 			},
 			{
 				displayName: 'Working Hours (JSON)',
 				name: 'workingHours',
 				type: 'json',
 				default: '{}',
-				description: 'Working hours per day as JSON. Example: {"monday":{"start":"08:00","end":"18:00"},"tuesday":{"start":"08:00","end":"18:00"}}',
-				hint: 'Use day names in lowercase as keys. Each value must have "start" and "end" in HH:MM format.',
+				description:
+					'Working-hour arrays keyed by mon, tue, wed, thu, fri, sat, or sun. Example: {"mon":[{"start":"08:00","end":"12:00"},{"start":"14:00","end":"18:00"}]}. An empty object is accepted for backward compatibility.',
+				hint:
+					'Every day value must be an array. Each window needs zero-padded HH:MM start/end values, with start earlier than end.',
+			},
+			{
+				displayName: 'Active',
+				name: 'active',
+				type: 'boolean',
+				default: true,
+				description: 'Whether the professional is active and returned by the scheduling list',
+			},
+			{
+				displayName: 'Custom Attributes (JSON)',
+				name: 'customAttributes',
+				type: 'json',
+				default: '{}',
+				description: 'Custom professional attributes as a JSON object',
+			},
+			{
+				displayName: 'Avatar Signed Blob ID',
+				name: 'avatar',
+				type: 'string',
+				default: '',
+				description:
+					'Optional Active Storage signed blob ID for an image up to 5 MB. Leave empty to create without an avatar.',
 			},
 		],
 	},
@@ -164,11 +191,11 @@ export const ProfessionalFields: INodeProperties[] = [
 			{
 				displayName: 'Agent ID',
 				name: 'agentId',
-				type: 'number',
-				default: 0,
-				typeOptions: { minValue: 0 },
+				type: 'string',
+				default: '',
+				placeholder: 'e.g., 17',
 				description:
-					'ID of the agent to link. Use 0 to clear the current link. NooviChat returns HTTP 422 if the agent does not belong to the authenticated account.',
+					'Positive 64-bit agent ID to link. Leave empty or use 0 to clear the current link. NooviChat returns HTTP 422 if it is outside the authenticated account.',
 			},
 			{
 				displayName: 'Name',
@@ -209,7 +236,7 @@ export const ProfessionalFields: INodeProperties[] = [
 				displayName: 'Color',
 				name: 'color',
 				type: 'color',
-				default: '#6366f1',
+				default: '#3B82F6',
 				description: 'Color used to identify this professional in the calendar',
 			},
 			{
@@ -226,14 +253,37 @@ export const ProfessionalFields: INodeProperties[] = [
 				type: 'json',
 				default: '[]',
 				description:
-					'Complete replacement array of service IDs, for example [3, 7]. NooviChat returns HTTP 422 if any ID does not belong to the authenticated account. An empty array clears all service links.',
+					'Complete replacement array of positive 64-bit service IDs, for example ["3", "7"]. An empty array clears all links; null is converted to omission and preserves existing links. The node rejects malformed IDs; NooviChat returns HTTP 422 for services outside the authenticated account.',
 			},
 			{
 				displayName: 'Working Hours (JSON)',
 				name: 'workingHours',
 				type: 'json',
 				default: '{}',
-				description: 'Working hours per day as JSON. Example: {"monday":{"start":"08:00","end":"18:00"}}',
+				description:
+					'Working-hour arrays keyed by mon, tue, wed, thu, fri, sat, or sun. Example: {"mon":[{"start":"08:00","end":"18:00"}]}. An empty object remains accepted for backward compatibility.',
+			},
+			{
+				displayName: 'Active',
+				name: 'active',
+				type: 'boolean',
+				default: true,
+				description: 'Whether the professional is active and returned by the scheduling list',
+			},
+			{
+				displayName: 'Custom Attributes (JSON)',
+				name: 'customAttributes',
+				type: 'json',
+				default: '{}',
+				description: 'Replacement custom professional attributes as a JSON object',
+			},
+			{
+				displayName: 'Avatar Signed Blob ID',
+				name: 'avatar',
+				type: 'string',
+				default: '',
+				description:
+					'Active Storage signed blob ID for an image up to 5 MB. Leave empty to remove the current avatar.',
 			},
 		],
 	},
@@ -252,7 +302,8 @@ export const ProfessionalFields: INodeProperties[] = [
 		},
 		default: '',
 		placeholder: 'e.g., 5',
-		description: 'ID of the professional to check availability for',
+		description:
+			'Positive professional ID up to 9223372036854775807, entered as text to preserve 64-bit precision.',
 	},
 	{
 		displayName: 'Date',
@@ -272,17 +323,16 @@ export const ProfessionalFields: INodeProperties[] = [
 	{
 		displayName: 'Service ID',
 		name: 'serviceId',
-		type: 'number',
+		type: 'string',
 		displayOptions: {
 			show: {
 				resource: ['professional'],
 				operation: ['availability'],
 			},
 		},
-		default: 0,
-		typeOptions: { minValue: 1 },
+		default: '',
 		description:
-			'Optional service used to determine slot duration. It must belong to the authenticated account; otherwise NooviChat returns HTTP 404.',
+			'Optional positive 64-bit service ID used to determine slot duration. It must be offered by this professional in the authenticated account; otherwise NooviChat returns HTTP 404.',
 	},
 	{
 		displayName: 'Duration (Minutes)',
@@ -295,8 +345,8 @@ export const ProfessionalFields: INodeProperties[] = [
 			},
 		},
 		default: 0,
-		typeOptions: { minValue: 1, maxValue: MAX_INT32 },
+		typeOptions: { minValue: 0, maxValue: MAX_INT32 },
 		description:
-			'Optional slot duration from 1 to 2147483647 minutes. When omitted, NooviChat uses 60 minutes. A selected service duration takes precedence.',
+			'Optional slot duration from 1 to 2147483647 minutes. Use 0 to omit it and use 60 minutes. A selected service effective duration takes precedence.',
 	},
 ];

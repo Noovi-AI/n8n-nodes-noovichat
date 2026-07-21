@@ -1615,12 +1615,19 @@ async function handleWhatsappTemplateOperation(
 // Appointment handlers
 async function handleAppointmentOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
 	const appointmentId = this.getNodeParameter('appointmentId', index, '') as string;
+	const appointmentPathId = encodeURIComponent(String(appointmentId));
+	const hasField = (fields: Record<string, any>, name: string) =>
+		Object.prototype.hasOwnProperty.call(fields, name);
+	const hasOptionalId = (value: unknown) =>
+		value !== undefined && value !== null && value !== '' && value !== 0 && value !== '0';
+	const nullableId = (value: unknown) =>
+		value === null || value === '' || value === 0 || value === '0' ? null : value;
 
 	switch (operation) {
 		case 'create': {
-			const contactId = this.getNodeParameter('contactId', index) as number;
-			const professionalId = this.getNodeParameter('professionalId', index) as number;
-			const serviceId = this.getNodeParameter('serviceId', index) as number;
+			const contactId = this.getNodeParameter('contactId', index) as string;
+			const professionalId = this.getNodeParameter('professionalId', index) as string;
+			const serviceId = this.getNodeParameter('serviceId', index) as string;
 			const scheduledAt = this.getNodeParameter('scheduledAt', index) as string;
 			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
 			const body: any = {
@@ -1631,23 +1638,58 @@ async function handleAppointmentOperation(this: IExecuteFunctions, operation: st
 					scheduled_at: scheduledAt,
 				},
 			};
-			if (additionalFields.endsAt) body.appointment.ends_at = additionalFields.endsAt;
-			if (additionalFields.notes) body.appointment.notes = additionalFields.notes;
-			if (additionalFields.partnerId) body.appointment.partner_id = additionalFields.partnerId;
-			if (additionalFields.conversationDisplayId) body.appointment.conversation_display_id = additionalFields.conversationDisplayId;
+			if (hasField(additionalFields, 'endsAt')) {
+				body.appointment.ends_at = additionalFields.endsAt || null;
+			}
+			if (hasField(additionalFields, 'notes')) body.appointment.notes = additionalFields.notes;
+			if (hasField(additionalFields, 'partnerId')) {
+				body.appointment.partner_id = nullableId(additionalFields.partnerId);
+			}
+			if (hasField(additionalFields, 'conversationDisplayId')) {
+				body.appointment.conversation_display_id = nullableId(
+					additionalFields.conversationDisplayId,
+				);
+			}
+			if (hasField(additionalFields, 'pipelineCardId')) {
+				body.appointment.pipeline_card_id = nullableId(additionalFields.pipelineCardId);
+			}
+			if (hasField(additionalFields, 'customAttributes')) {
+				body.appointment.custom_attributes = parseJsonValue(additionalFields.customAttributes);
+			}
 			return await nooviChatApiRequest.call(this, 'POST', '/appointments', body);
 		}
 		case 'get':
-			return await nooviChatApiRequest.call(this, 'GET', `/appointments/${appointmentId}`);
+			return await nooviChatApiRequest.call(this, 'GET', `/appointments/${appointmentPathId}`);
 		case 'list': {
 			const filters = this.getNodeParameter('filters', index, {}) as any;
 			const qs: any = {};
 			if (filters.from) qs.from = filters.from;
 			if (filters.to) qs.to = filters.to;
-			if (filters.professionalId) qs.professional_id = filters.professionalId;
-			if (filters.status) qs.status = filters.status;
-			if (filters.page) qs.page = filters.page;
-			if (filters.pipeline_card_id) qs.pipeline_card_id = filters.pipeline_card_id;
+			if (hasOptionalId(filters.professionalId)) {
+				qs.professional_id = filters.professionalId;
+			}
+			if (hasOptionalId(filters.serviceId)) {
+				qs.service_id = filters.serviceId;
+			}
+			if (hasOptionalId(filters.partnerId)) {
+				qs.partner_id = filters.partnerId;
+			}
+			if (Array.isArray(filters.status) && filters.status.length > 0) {
+				qs.status = filters.status.join(',');
+			} else if (filters.status) {
+				// Preserve workflows created before Status became a multi-select field.
+				qs.status = filters.status;
+			}
+			if (hasField(filters, 'page') && filters.page !== '') qs.page = filters.page;
+			if (hasOptionalId(filters.pipeline_card_id)) {
+				qs.pipeline_card_id = filters.pipeline_card_id;
+			}
+			if (hasOptionalId(filters.contactId)) {
+				qs.contact_id = filters.contactId;
+			}
+			if (hasOptionalId(filters.conversationDisplayId)) {
+				qs.conversation_display_id = filters.conversationDisplayId;
+			}
 			return await nooviChatApiRequest.call(this, 'GET', '/appointments', {}, qs);
 		}
 		case 'update': {
@@ -1656,42 +1698,50 @@ async function handleAppointmentOperation(this: IExecuteFunctions, operation: st
 			const updateFields = this.getNodeParameter('updateFields', index, {}) as any;
 			const body: any = { appointment: {} };
 			if (updateFields.scheduledAt) body.appointment.scheduled_at = updateFields.scheduledAt;
-			if (updateFields.notes) body.appointment.notes = updateFields.notes;
-			if (updateFields.partnerId) body.appointment.partner_id = updateFields.partnerId;
-			if (updateFields.customAttributes) {
+			if (hasField(updateFields, 'notes')) body.appointment.notes = updateFields.notes;
+			if (hasField(updateFields, 'partnerId')) {
+				body.appointment.partner_id = nullableId(updateFields.partnerId);
+			}
+			if (hasField(updateFields, 'customAttributes')) {
 				body.appointment.custom_attributes = parseJsonValue(updateFields.customAttributes);
 			}
-			return await nooviChatApiRequest.call(this, 'PATCH', `/appointments/${appointmentId}`, body);
+			return await nooviChatApiRequest.call(this, 'PATCH', `/appointments/${appointmentPathId}`, body);
 		}
 		case 'cancel': {
 			const reason = this.getNodeParameter('cancellationReason', index, '') as string;
 			const qs: any = {};
 			if (reason) qs.reason = reason;
-			return await nooviChatApiRequest.call(this, 'DELETE', `/appointments/${appointmentId}`, {}, qs);
+			return await nooviChatApiRequest.call(this, 'DELETE', `/appointments/${appointmentPathId}`, {}, qs);
 		}
 		case 'confirm':
-			return await nooviChatApiRequest.call(this, 'POST', `/appointments/${appointmentId}/confirm`);
+			return await nooviChatApiRequest.call(this, 'POST', `/appointments/${appointmentPathId}/confirm`);
 		case 'complete':
-			return await nooviChatApiRequest.call(this, 'POST', `/appointments/${appointmentId}/complete`);
+			return await nooviChatApiRequest.call(this, 'POST', `/appointments/${appointmentPathId}/complete`);
 		case 'noShow':
-			return await nooviChatApiRequest.call(this, 'POST', `/appointments/${appointmentId}/no_show`);
+			return await nooviChatApiRequest.call(this, 'POST', `/appointments/${appointmentPathId}/no_show`);
 		case 'availability': {
-			const professionalId = this.getNodeParameter('professionalId', index) as number;
-			const serviceId = this.getNodeParameter('serviceId', index) as number;
+			const professionalId = this.getNodeParameter('professionalId', index) as string;
+			const serviceId = this.getNodeParameter('serviceId', index, '') as string;
 			const date = this.getNodeParameter('date', index) as string;
-			return await nooviChatApiRequest.call(this, 'GET', '/appointments/availability', {}, {
-				professional_id: professionalId,
-				service_id: serviceId,
-				date,
-			});
+			const durationMinutes = this.getNodeParameter('durationMinutes', index, 0) as number;
+			const qs: any = { professional_id: professionalId, date };
+			if (hasOptionalId(serviceId)) qs.service_id = serviceId;
+			if (durationMinutes) qs.duration_minutes = durationMinutes;
+			return await nooviChatApiRequest.call(
+				this,
+				'GET',
+				'/appointments/availability',
+				{},
+				qs,
+			);
 		}
 		case 'getContactHistory': {
-			const contactId = this.getNodeParameter('contact_id', index) as number;
+			const contactId = this.getNodeParameter('contact_id', index) as string;
 			const page = this.getNodeParameter('page', index, 1) as number;
 			return await nooviChatApiRequest.call(
 				this,
 				'GET',
-				`/contacts/${contactId}/appointment_history`,
+				`/contacts/${encodeURIComponent(String(contactId))}/appointment_history`,
 				undefined,
 				{ page },
 			);
@@ -1704,13 +1754,65 @@ async function handleAppointmentOperation(this: IExecuteFunctions, operation: st
 // Professional handlers
 async function handleProfessionalOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
 	const professionalId = this.getNodeParameter('professionalId', index, '') as string;
+	const professionalPathId = encodeURIComponent(String(professionalId));
+	const hasField = (fields: Record<string, any>, name: string) =>
+		Object.prototype.hasOwnProperty.call(fields, name);
+	const hasOptionalId = (value: unknown) =>
+		value !== undefined && value !== null && value !== '' && value !== 0 && value !== '0';
+	const assignTextFields = (target: Record<string, any>, fields: Record<string, any>) => {
+		const mappings: Array<[string, string]> = [
+			['specialty', 'specialty'],
+			['registry', 'registry'],
+			['email', 'email'],
+			['phone', 'phone'],
+			['color', 'color'],
+		];
+		for (const [source, destination] of mappings) {
+			if (hasField(fields, source)) target[destination] = fields[source];
+		}
+	};
+	const parseServiceIds = (value: unknown) => {
+		const parsed = parseJsonValue(value);
+		if (parsed === null) return null;
+		const maxDatabaseId = '9223372036854775807';
+		const validDatabaseId = (id: unknown) => {
+			if (typeof id === 'number') return Number.isSafeInteger(id) && id > 0;
+			if (typeof id !== 'string' || !/^[1-9]\d{0,18}$/.test(id)) return false;
+			return id.length < maxDatabaseId.length || id <= maxDatabaseId;
+		};
+		if (!Array.isArray(parsed) || parsed.some((id) => !validDatabaseId(id))) {
+			throw new NodeOperationError(
+				this.getNode(),
+				'Service IDs must be an array of positive decimal IDs up to 9223372036854775807. Use [] to clear links or null to preserve them.',
+				{ itemIndex: index },
+			);
+		}
+		return parsed;
+	};
 	const assignLinkFields = (target: Record<string, any>, fields: Record<string, any>) => {
-		if (Object.prototype.hasOwnProperty.call(fields, 'agentId')) {
-			target.agent_id = Number(fields.agentId) === 0 ? null : fields.agentId;
+		if (hasField(fields, 'agentId')) {
+			target.agent_id =
+				fields.agentId === '' || fields.agentId === 0 || fields.agentId === '0'
+					? null
+					: fields.agentId;
 		}
-		if (Object.prototype.hasOwnProperty.call(fields, 'serviceIds')) {
-			target.service_ids = parseJsonValue(fields.serviceIds);
+		if (hasField(fields, 'serviceIds')) {
+			const serviceIds = parseServiceIds(fields.serviceIds);
+			if (serviceIds !== null) target.service_ids = serviceIds;
 		}
+	};
+	const assignSharedFields = (target: Record<string, any>, fields: Record<string, any>) => {
+		assignTextFields(target, fields);
+		if (hasField(fields, 'bufferMinutes')) target.buffer_minutes = fields.bufferMinutes;
+		if (hasField(fields, 'workingHours')) {
+			target.working_hours = parseJsonValue(fields.workingHours);
+		}
+		if (hasField(fields, 'active')) target.active = fields.active;
+		if (hasField(fields, 'customAttributes')) {
+			target.custom_attributes = parseJsonValue(fields.customAttributes);
+		}
+		if (hasField(fields, 'avatar')) target.avatar = fields.avatar === '' ? null : fields.avatar;
+		assignLinkFields(target, fields);
 	};
 
 	switch (operation) {
@@ -1718,50 +1820,38 @@ async function handleProfessionalOperation(this: IExecuteFunctions, operation: s
 			const name = this.getNodeParameter('name', index) as string;
 			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
 			const body: any = { professional: { name } };
-			if (additionalFields.specialty) body.professional.specialty = additionalFields.specialty;
-			if (additionalFields.registry) body.professional.registry = additionalFields.registry;
-			if (additionalFields.email) body.professional.email = additionalFields.email;
-			if (additionalFields.phone) body.professional.phone = additionalFields.phone;
-			if (additionalFields.color) body.professional.color = additionalFields.color;
-			if (Object.prototype.hasOwnProperty.call(additionalFields, 'bufferMinutes')) {
-				body.professional.buffer_minutes = additionalFields.bufferMinutes;
-			}
-			if (additionalFields.workingHours) body.professional.working_hours = parseJsonValue(additionalFields.workingHours);
-			assignLinkFields(body.professional, additionalFields);
+			assignSharedFields(body.professional, additionalFields);
 			return await nooviChatApiRequest.call(this, 'POST', '/professionals', body);
 		}
 		case 'get':
-			return await nooviChatApiRequest.call(this, 'GET', `/professionals/${professionalId}`);
+			return await nooviChatApiRequest.call(this, 'GET', `/professionals/${professionalPathId}`);
 		case 'list':
 			return await nooviChatApiRequest.call(this, 'GET', '/professionals');
 		case 'update': {
 			const updateFields = this.getNodeParameter('updateFields', index, {}) as any;
 			const body: any = { professional: {} };
-			if (updateFields.name) body.professional.name = updateFields.name;
-			if (updateFields.specialty) body.professional.specialty = updateFields.specialty;
-			if (updateFields.registry) body.professional.registry = updateFields.registry;
-			if (updateFields.email) body.professional.email = updateFields.email;
-			if (updateFields.phone) body.professional.phone = updateFields.phone;
-			if (updateFields.color) body.professional.color = updateFields.color;
-			if (Object.prototype.hasOwnProperty.call(updateFields, 'bufferMinutes')) {
-				body.professional.buffer_minutes = updateFields.bufferMinutes;
-			}
-			if (updateFields.workingHours) body.professional.working_hours = parseJsonValue(updateFields.workingHours);
-			assignLinkFields(body.professional, updateFields);
-			return await nooviChatApiRequest.call(this, 'PATCH', `/professionals/${professionalId}`, body);
+			if (hasField(updateFields, 'name')) body.professional.name = updateFields.name;
+			assignSharedFields(body.professional, updateFields);
+			return await nooviChatApiRequest.call(this, 'PATCH', `/professionals/${professionalPathId}`, body);
 		}
 		case 'delete':
-			return await nooviChatApiRequest.call(this, 'DELETE', `/professionals/${professionalId}`);
+			return await nooviChatApiRequest.call(this, 'DELETE', `/professionals/${professionalPathId}`);
 		case 'availability': {
 			const avProfessionalId = this.getNodeParameter('professionalId', index) as string;
 			const date = this.getNodeParameter('date', index, '') as string;
-			const serviceId = this.getNodeParameter('serviceId', index, 0) as number;
+			const serviceId = this.getNodeParameter('serviceId', index, '') as string;
 			const durationMinutes = this.getNodeParameter('durationMinutes', index, 0) as number;
 			const qs: any = {};
 			if (date) qs.date = date;
-			if (serviceId) qs.service_id = serviceId;
+			if (hasOptionalId(serviceId)) qs.service_id = serviceId;
 			if (durationMinutes) qs.duration_minutes = durationMinutes;
-			return await nooviChatApiRequest.call(this, 'GET', `/professionals/${avProfessionalId}/availability`, {}, qs);
+			return await nooviChatApiRequest.call(
+				this,
+				'GET',
+				`/professionals/${encodeURIComponent(String(avProfessionalId))}/availability`,
+				{},
+				qs,
+			);
 		}
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });

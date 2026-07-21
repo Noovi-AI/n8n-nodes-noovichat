@@ -183,11 +183,55 @@ em `errors.url`. Sem mudança no código do node — apenas surface o erro.
 
 ## Contratos de appointments e services
 
+- Somente create/update de appointment enviam o envelope
+  `{ "appointment": { ... } }`; operações GET/DELETE/actions não enviam esse
+  body. Os IDs bigint de entrada são exibidos como texto no editor n8n para
+  preservar a string decimal; o Rails aceita esse formato e valida o intervalo
+  de 1 a 9223372036854775807. O wire contract de resposta permanece OpenAPI
+  `integer/int64` por compatibilidade: JavaScript/n8n arredonda números acima de
+  `Number.MAX_SAFE_INTEGER` (9007199254740991), então um ID de resposta nessa
+  faixa não deve ser reutilizado em outra operação sem uma fonte decimal textual
+  confiável. O `conversation_display_id` é int32 (máximo 2147483647).
+- `POST /appointments` expõe exatamente os campos aceitos pelo controller:
+  `contact_id`, `professional_id`, `service_id`, `scheduled_at`, `ends_at`,
+  `notes`, `partner_id`, `conversation_display_id`, `pipeline_card_id` e
+  `custom_attributes`. `ends_at`, `notes` e os IDs opcionais nullable preservam
+  `null`; `custom_attributes`, quando informado, deve ser um objeto. O node não
+  inventa defaults de vínculo.
 - `PATCH /appointments/:id` envia somente `scheduled_at`, `notes`,
   `partner_id` e `custom_attributes`. `ends_at` é recalculado pelo backend com
-  base na duração do serviço.
+  base na duração efetiva do serviço. Uma string vazia/null em `notes` e um
+  `partner_id` vazio/zero permitem limpar esses valores; o objeto de
+  `custom_attributes` enviado substitui o valor persistido.
+- `GET /appointments` aceita no node os filtros `from`, `to`,
+  `professional_id`, `service_id`, `partner_id`, `status`, `contact_id`,
+  `pipeline_card_id`, `conversation_display_id` e `page`. O status multi-select
+  vira a string CSV exata esperada pelo Rails. A página contém 50 registros e a
+  resposta é repassada sem alteração como `{ data, meta }`.
+- `GET /appointments/availability` exige `professional_id` e `date` como string
+  estrita `YYYY-MM-DD`. `service_id` e `duration_minutes` são opcionais; a
+  duração deve estar entre 1 e 2147483647, usa 60 quando omitida e a duração
+  efetiva do serviço prevalece quando ele é informado. Mesmo com serviço, um
+  `duration_minutes` enviado continua sendo validado pelo backend.
 - `DELETE /appointments/:id` envia a razão opcional em `?reason=`. A resposta
   `204 No Content` é normalizada pelo node para `{ "success": true }`.
+- `GET /appointments` repassa a projeção summary allowlisted do backend: ela não
+  contém `notes`, `custom_attributes`, `account_id`, IDs de auditoria nem dados
+  do Google Calendar. Get, create, update, confirm, complete e no-show repassam
+  a projeção detail allowlisted, que acrescenta `public_id`, `notes`,
+  `custom_attributes`, `cancelled_at`, `created_at` e `updated_at`. Em ambas,
+  `contact` sempre contém `id`, `name` e `avatar_url`; `email` e `phone_number`
+  aparecem apenas para admin ou custom role com `appointment_manage`. O node
+  repassa o envelope recebido sem fabricar campos ausentes. As projeções de
+  associações soft-deleted, como um serviço arquivado em um appointment
+  histórico, podem chegar como `null` e são preservadas assim.
+- **Get Contact History** encaminha `page` e recebe 50 registros por página. O
+  envelope inclui `meta.total`, `meta.current_page`, `meta.total_pages` e
+  `meta.per_page`; a visibilidade segue o mesmo `policy_scope` de appointments.
+- Esta sincronização corrige somente as operações que o resource Appointment já
+  oferecia. As rotas `available_professionals`, `metrics`, `bulk_action`, export
+  CSV e `sync_to_google` continuam fora do node; adicioná-las é expansão de
+  produto para um próximo minor, não correção deste contrato.
 - Reminder templates de serviços são exclusivos de WhatsApp. O node expõe e
   envia somente `send_via: "whatsapp"` e rejeita valores legados de outros
   canais antes do HTTP. Informar a coleção no update — inclusive uma lista
@@ -196,16 +240,41 @@ em `errors.url`. Sem mudança no código do node — apenas surface o erro.
 ## Contrato de professionals
 
 - `POST/PATCH /professionals` recebem `agent_id` e `service_ids` dentro do
-  envelope `professional`. O node não remove IDs por conta própria: envia a
-  lista completa para a validação tenant-scoped do backend, que responde 422
-  quando um agente ou serviço não pertence à conta autenticada. No update,
-  `agent_id: null` limpa o agente e `service_ids: []` limpa todos os serviços.
+  envelope `professional`. IDs bigint também usam campos de texto/strings JSON
+  nos inputs para preservar precisão. Respostas continuam usando JSON
+  `integer/int64` e estão sujeitas ao mesmo limite seguro do JavaScript descrito
+  acima. O node envia a lista completa para a validação
+  tenant-scoped do backend, que responde 422 quando um agente ou serviço é
+  inválido ou não pertence à conta autenticada. No update, `agent_id: null`
+  limpa o agente, `service_ids: []` limpa todos os serviços e
+  um input `service_ids: null` é convertido pelo node em omissão para preservar
+  os vínculos (o backend strict aceita a chave explícita somente como Array).
+- Create/update também encaminham `active`, `custom_attributes`, avatar por
+  signed blob ID, `buffer_minutes` (int32), e os campos textuais nullable. Uma
+  string vazia e `null` são preservados como valores distintos nos campos
+  textuais; `false`, `0`, `{}` e listas vazias também nunca são descartados por
+  truthiness. `service_ids` é validado pelo node antes da chamada: `[null]`,
+  `[""]`, IDs inseguros como number ou fora do bigint são rejeitados, enquanto
+  `[]` continua sendo a limpeza explícita.
+- `working_hours` é um objeto com chaves `mon`, `tue`, `wed`, `thu`, `fri`,
+  `sat` ou `sun`; cada valor é um array de janelas
+  `{ "start": "HH:MM", "end": "HH:MM" }`, com horários zero-padded e início
+  anterior ao fim. `{}` permanece aceito por compatibilidade: conflito trata
+  como irrestrito, mas a listagem de disponibilidade não gera slots até haver
+  janelas configuradas.
 - `GET /professionals/:id/availability` aceita `date` opcional como string
   estrita `YYYY-MM-DD`. Omitir `date` faz o backend usar a data atual no fuso de
   agendamento da conta (`reporting_timezone`, depois timezone do onboarding e,
-  por fim, o padrão NooviChat). `service_id` é tenant-scoped e retorna 404 se
-  apontar para outra conta. `duration_minutes` aceita inteiros de 1 a
-  2147483647; a duração do serviço prevalece quando ambos são enviados.
+  por fim, o padrão NooviChat). `service_id` deve ser oferecido pelo profissional
+  nesta conta e retorna 404 caso contrário. `duration_minutes` aceita inteiros
+  de 1 a 2147483647; a duração efetiva do vínculo professional-service (override
+  quando configurado, senão a duração base) prevalece quando ambos são enviados.
+- List/show retornam sempre a projeção segura de agendamento (`id`, `account_id`,
+  `name`, `specialty`, `color`, `buffer_minutes`, `working_hours`, `active`,
+  `service_ids`, `avatar_url`). `agent_id`, registry/email/phone e demais campos
+  de gestão aparecem somente para admin ou custom role com
+  `appointment_manage`. O node repassa a projeção recebida e não fabrica campos
+  ausentes.
 
 ## Publicar atualização após sync
 

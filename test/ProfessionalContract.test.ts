@@ -1,5 +1,8 @@
 import { NooviChat } from '../nodes/NooviChat/NooviChat.node';
-import { ProfessionalFields } from '../nodes/NooviChat/descriptions/ProfessionalDescription';
+import {
+	ProfessionalFields,
+	ProfessionalOperations,
+} from '../nodes/NooviChat/descriptions/ProfessionalDescription';
 
 const MAX_INT32 = 2_147_483_647;
 
@@ -51,6 +54,11 @@ function buildContext(
 }
 
 describe('Professional contract — description', () => {
+	it('warns about the JavaScript precision limit of int64 response IDs', () => {
+		expect(ProfessionalOperations[0].description).toContain('9007199254740991');
+		expect(ProfessionalOperations[0].description).toContain('responses use JSON int64 IDs');
+	});
+
 	it.each(['create', 'update'] as const)(
 		'exposes tenant-validated agent and service IDs for %s',
 		(operation) => {
@@ -60,8 +68,8 @@ describe('Professional contract — description', () => {
 
 			expect(agentId).toEqual(
 				expect.objectContaining({
-					type: 'number',
-					typeOptions: { minValue: 0 },
+					type: 'string',
+					default: '',
 				}),
 			);
 			expect(agentId?.description).toContain('HTTP 422');
@@ -74,6 +82,7 @@ describe('Professional contract — description', () => {
 			);
 			expect(serviceIds?.description).toContain('HTTP 422');
 			expect(serviceIds?.description).toContain('authenticated account');
+			expect(serviceIds?.description).toContain('null is converted to omission');
 		},
 	);
 
@@ -91,12 +100,57 @@ describe('Professional contract — description', () => {
 		expect(date).not.toHaveProperty('required');
 		expect(date?.description).toContain('YYYY-MM-DD');
 		expect(date?.description).toContain('account scheduling timezone');
-		expect(serviceId?.typeOptions).toEqual({ minValue: 1 });
+		expect(serviceId).toEqual(expect.objectContaining({ type: 'string', default: '' }));
 		expect(serviceId?.description).toContain('authenticated account');
 		expect(serviceId?.description).toContain('HTTP 404');
-		expect(durationMinutes?.typeOptions).toEqual({ minValue: 1, maxValue: MAX_INT32 });
-		expect(durationMinutes?.description).toContain('service duration takes precedence');
+		expect(durationMinutes?.typeOptions).toEqual({ minValue: 0, maxValue: MAX_INT32 });
+		expect(durationMinutes?.description).toContain('service effective duration takes precedence');
 	});
+
+	it.each(['create', 'update'] as const)(
+		'exposes the real working-hours shape and all mutable professional fields for %s',
+		(operation) => {
+			const options = collectionOptions(operation);
+			const names = options.map((field) => field.name);
+			const workingHours = options.find((field) => field.name === 'workingHours');
+
+			expect(names).toEqual(
+				operation === 'create'
+					? [
+							'agentId',
+							'specialty',
+							'registry',
+							'email',
+							'phone',
+							'color',
+							'bufferMinutes',
+							'serviceIds',
+							'workingHours',
+							'active',
+							'customAttributes',
+							'avatar',
+						]
+					: [
+							'agentId',
+							'name',
+							'specialty',
+							'registry',
+							'email',
+							'phone',
+							'color',
+							'bufferMinutes',
+							'serviceIds',
+							'workingHours',
+							'active',
+							'customAttributes',
+							'avatar',
+						],
+			);
+			expect(workingHours?.description).toContain('{"mon":[{"start":"08:00"');
+			expect(workingHours?.description).toContain('empty object');
+			expect(workingHours?.description).not.toContain('monday');
+		},
+	);
 });
 
 describe('Professional contract — requests', () => {
@@ -176,8 +230,122 @@ describe('Professional contract — requests', () => {
 		});
 	});
 
-	it('omits the availability query when no optional input is provided', async () => {
-		const ctx = buildContext('availability', { professionalId: '7' });
+	it('preserves nullable and empty text distinctly, false, empty objects, and avatar removal', async () => {
+		const ctx = buildContext('update', {
+			professionalId: '9',
+			updateFields: {
+				agentId: '',
+				specialty: '',
+				registry: null,
+				email: '',
+				phone: null,
+				color: '',
+				active: false,
+				workingHours: '{}',
+				customAttributes: { source: 'n8n' },
+				avatar: '',
+				serviceIds: null,
+			},
+		});
+
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest.mock.calls[0][0].body).toEqual({
+			professional: {
+				agent_id: null,
+				specialty: '',
+				registry: null,
+				email: '',
+				phone: null,
+				color: '',
+				active: false,
+				working_hours: {},
+				custom_attributes: { source: 'n8n' },
+				avatar: null,
+			},
+		});
+	});
+
+	it('converts null service IDs to omission so update preserves existing links', async () => {
+		const ctx = buildContext('update', {
+			professionalId: '9',
+			updateFields: { serviceIds: null },
+		});
+
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest.mock.calls[0][0].body).toEqual({ professional: {} });
+		expect(ctx._mockRequest.mock.calls[0][0].body.professional).not.toHaveProperty(
+			'service_ids',
+		);
+	});
+
+	it.each([
+		'[null]',
+		'[""]',
+		'[0]',
+		'["9223372036854775808"]',
+		'[9007199254740992]',
+		'{"id":"3"}',
+	])('rejects malformed or precision-unsafe service IDs before HTTP: %s', async (serviceIds) => {
+		const ctx = buildContext('update', {
+			professionalId: '9',
+			updateFields: { serviceIds },
+		});
+
+		await expect(node.execute.call(ctx)).rejects.toThrow(
+			'Service IDs must be an array of positive decimal IDs up to 9223372036854775807',
+		);
+		expect(ctx._mockRequest).not.toHaveBeenCalled();
+	});
+
+	it('passes the role-aware scheduling projection through without inventing manager fields', async () => {
+		const schedulingProjection = {
+			data: {
+				id: 9,
+				account_id: 1,
+				name: 'Dra. Silva',
+				specialty: null,
+				color: null,
+				buffer_minutes: 0,
+				working_hours: {},
+				active: true,
+				service_ids: [],
+				avatar_url: null,
+			},
+		};
+		const ctx = buildContext('get', { professionalId: '9' }, schedulingProjection);
+
+		const [result] = await node.execute.call(ctx);
+
+		expect(result[0].json).toEqual(schedulingProjection);
+		expect(result[0].json.data).not.toHaveProperty('agent_id');
+		expect(result[0].json.data).not.toHaveProperty('email');
+	});
+
+	it.each([
+		['get', 'GET', '/professionals/9'],
+		['list', 'GET', '/professionals'],
+		['delete', 'DELETE', '/professionals/9'],
+	] as const)('uses the exact %s route contract', async (operation, method, path) => {
+		const ctx = buildContext(operation, { professionalId: '9' });
+
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest.mock.calls[0][0]).toEqual(
+			expect.objectContaining({
+				method,
+				uri: `https://chat.example.com/api/v1/accounts/1${path}`,
+			}),
+		);
+	});
+
+	it('omits the availability query for legacy numeric zero defaults', async () => {
+		const ctx = buildContext('availability', {
+			professionalId: '7',
+			serviceId: 0,
+			durationMinutes: 0,
+		});
 
 		await node.execute.call(ctx);
 
