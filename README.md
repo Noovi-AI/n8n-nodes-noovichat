@@ -37,7 +37,7 @@ n8n community node for **[NooviChat](https://noovichat.com)** — an integration
 | Resource | Operations |
 |----------|------------|
 | **Conversation** | Create, Get, Get Many, Update, Delete, Assign, Toggle Status, Add Label, Filter |
-| **Message** | Send (text / template / attachment), Get Many, Delete |
+| **Message** | Send (text / template / attachment, optional idempotency key), Get Many, Delete |
 | **Contact** | Create, Get, Get Many, Update, Delete, Search, Filter, Merge, Get Conversations |
 | **Inbox** | Create, Get, Get Many, Update, Delete, Get Agents, Update Agents |
 | **Agent** | Create, Get Many, Update, Delete |
@@ -46,6 +46,14 @@ n8n community node for **[NooviChat](https://noovichat.com)** — an integration
 | **Canned Response** | Create, Get Many, Delete |
 | **Custom Attribute** | Create, Get Many, Update, Delete |
 | **Webhook** | Create, Get Many, Update, Delete |
+
+For retry-safe message sends, set **Idempotency Key** to a stable value with
+1-128 visible ASCII characters and no spaces. Reuse that same key when retrying
+the message in the same account and conversation: NooviChat returns the original
+message instead of sending a duplicate. Invalid keys return HTTP 422. Leaving the
+field empty preserves the regular non-idempotent send behavior. A server that is
+still completing the staged rollout returns HTTP 503 for keyed sends; retry only
+after its administrator activates message idempotency.
 
 ### ⭐ Exclusive NooviChat Features
 

@@ -132,6 +132,7 @@ export async function nooviChatApiRequest(
 	body: IDataObject = {},
 	qs: IDataObject = {},
 	itemIndex = 0,
+	requestHeaders: IDataObject = {},
 ): Promise<any> {
 	const { uri, apiAccessToken } = await resolveRequestTarget.call(this, endpoint, itemIndex);
 
@@ -139,6 +140,7 @@ export async function nooviChatApiRequest(
 		method,
 		uri,
 		headers: {
+			...requestHeaders,
 			api_access_token: apiAccessToken,
 			'Content-Type': 'application/json',
 		},

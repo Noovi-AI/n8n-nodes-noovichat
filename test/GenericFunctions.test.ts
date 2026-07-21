@@ -66,6 +66,28 @@ describe('nooviChatApiRequest', () => {
 		);
 	});
 
+	it('should merge operation-specific headers without replacing authentication headers', async () => {
+		await nooviChatApiRequest.call(
+			createContext(),
+			'POST',
+			'/conversations/1/messages',
+			{ content: 'Hello' },
+			{},
+			0,
+			{ 'Idempotency-Key': 'workflow-42:message-7' },
+		);
+
+		expect(mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				headers: {
+					'Idempotency-Key': 'workflow-42:message-7',
+					api_access_token: 'test-token-123',
+					'Content-Type': 'application/json',
+				},
+			}),
+		);
+	});
+
 	it('should omit body when empty', async () => {
 		await nooviChatApiRequest.call(createContext(), 'GET', '/conversations');
 

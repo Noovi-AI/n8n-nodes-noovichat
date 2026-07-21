@@ -56,6 +56,24 @@ describe('NooviChat Node — description', () => {
 		expect(allPropertyNames).toContain('operation');
 	});
 
+	it('should expose the optional message idempotency key only for message.send', () => {
+		const messageAdditionalFields = node.description.properties.find(
+			(p) =>
+				p.name === 'additionalFields' &&
+				((p.displayOptions?.show?.resource as string[] | undefined) || []).includes('message') &&
+				((p.displayOptions?.show?.operation as string[] | undefined) || []).includes('send'),
+		);
+		const idempotencyKey = (
+			(messageAdditionalFields?.options as Array<{ name: string; type: string; description?: string }> | undefined) || []
+		).find((option) => option.name === 'idempotencyKey');
+
+		expect(idempotencyKey?.type).toBe('string');
+		expect(idempotencyKey?.description).toContain('1-128 visible ASCII characters');
+		expect(idempotencyKey?.description).toContain('same account and conversation');
+		expect(idempotencyKey?.description).toContain('HTTP 422');
+		expect(idempotencyKey?.description).toContain('HTTP 503');
+	});
+
 	it('should expose only the mutable appointment fields and WhatsApp reminders', () => {
 		const appointmentUpdateFields = node.description.properties.find(
 			(p) =>
@@ -290,6 +308,46 @@ describe('NooviChat Node — execute', () => {
 		expect(ctx._mockRequest).toHaveBeenCalledWith(
 			expect.objectContaining({ method: 'POST', uri: expect.stringContaining('/messages') }),
 		);
+		expect(ctx._mockRequest.mock.calls[0][0].headers).not.toHaveProperty('Idempotency-Key');
+	});
+
+	it('should omit the idempotency header when message.send receives an explicit empty key', async () => {
+		const ctx = buildContext('message', 'send', {
+			conversationId: '10',
+			content: 'Hello without a key',
+			messageType: 'outgoing',
+			private: false,
+			additionalFields: { idempotencyKey: '' },
+		});
+
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest.mock.calls[0][0].headers).not.toHaveProperty('Idempotency-Key');
+	});
+
+	it('should send the exact Idempotency-Key header on message.send', async () => {
+		const ctx = buildContext('message', 'send', {
+			conversationId: '10',
+			content: 'Hello once',
+			messageType: 'outgoing',
+			private: false,
+			additionalFields: { idempotencyKey: 'workflow-42:message-7' },
+		});
+
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'POST',
+				uri: expect.stringContaining('/conversations/10/messages'),
+				headers: expect.objectContaining({
+					'Idempotency-Key': 'workflow-42:message-7',
+				}),
+			}),
+		);
+		const requestBody = ctx._mockRequest.mock.calls[0][0].body;
+		expect(requestBody).not.toHaveProperty('idempotency_key');
+		expect(requestBody).not.toHaveProperty('client_idempotency_key_digest');
 	});
 
 	it('should call DELETE /messages/:id on message.delete', async () => {

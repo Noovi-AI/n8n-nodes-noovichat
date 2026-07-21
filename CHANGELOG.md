@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **Message → Send idempotency key**: the optional `Idempotency Key` field
+  sends the exact `Idempotency-Key` header to
+  `POST /conversations/:id/messages`. A retry that reuses the same 1-128
+  character visible-ASCII key in the same account and conversation returns the
+  original message instead of dispatching a duplicate. Keys containing spaces,
+  non-visible/non-ASCII characters, or exceeding 128 characters receive HTTP
+  422 from NooviChat. During a staged server rollout, keyed writes receive HTTP
+  503 until the administrator activates them. Leaving the field empty sends no
+  idempotency header.
+
 ## 0.18.0 (2026-07-02)
 
 ### Added

@@ -70,6 +70,28 @@ grep -r "endpoint_path" "$(git rev-parse --show-toplevel)/nodes/"
 
 ## Mudanças na API (histórico de incidents)
 
+### 2026-07-21 — Envio idempotente de mensagens
+
+`POST /conversations/:id/messages` agora aceita o header opcional
+`Idempotency-Key`. O resource **Message**, operação **Send**, expõe o campo
+opcional `idempotencyKey` em **Additional Fields** e o encaminha exatamente
+nesse header; o digest interno `client_idempotency_key_digest` nunca faz parte
+do contrato do cliente.
+
+- A chave deve ser uma string de 1 a 128 caracteres ASCII visíveis (`!` a `~`),
+  sem espaços. Uma chave inválida recebe HTTP 422 do backend.
+- Repetir a mesma chave na mesma conta e conversa retorna a mensagem original,
+  sem disparar outra entrega. Um retry deve, portanto, reutilizar a chave da
+  primeira tentativa.
+- Durante ativação/rollback do rollout, ou quando o backend não consegue
+  confirmar o gate, uma chave válida recebe HTTP 503 e nenhuma mensagem é
+  criada. O workflow deve aguardar a ativação pelo administrador antes de
+  tentar novamente; uma chave malformada continua recebendo HTTP 422.
+- Omitir o campo mantém o comportamento anterior, sem enviar o header.
+- `nooviChatApiRequest` aceita headers adicionais por chamada e preserva os
+  headers compartilhados de autenticação e JSON. Nenhuma outra operação passa
+  headers extras automaticamente.
+
 ### 2026-07-03 — Pipeline card: contatos/conversas adicionais + custom fields (v0.19.0)
 
 **Feature backend (Chatwoot v4.15.1.12, FR1 + FR2)**:

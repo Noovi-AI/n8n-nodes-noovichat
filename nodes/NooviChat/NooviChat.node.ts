@@ -1,4 +1,5 @@
 import {
+	IDataObject,
 	IExecuteFunctions,
 	INodeExecutionData,
 	INodeType,
@@ -388,7 +389,19 @@ async function handleMessageOperation(this: IExecuteFunctions, operation: string
 			if (additionalFields.attachment) {
 				body.attachments = [{ url: additionalFields.attachment }];
 			}
-			return await nooviChatApiRequest.call(this, 'POST', `/conversations/${conversationId}/messages`, body);
+			const requestHeaders: IDataObject = {};
+			if (additionalFields.idempotencyKey !== undefined && additionalFields.idempotencyKey !== '') {
+				requestHeaders['Idempotency-Key'] = additionalFields.idempotencyKey;
+			}
+			return await nooviChatApiRequest.call(
+				this,
+				'POST',
+				`/conversations/${conversationId}/messages`,
+				body,
+				{},
+				index,
+				requestHeaders,
+			);
 		}
 		case 'getAll': {
 			const returnAll = this.getNodeParameter('returnAll', index, false) as boolean;

@@ -144,6 +144,15 @@ export const MessageFields: INodeProperties[] = [
 		default: {},
 		options: [
 			{
+				displayName: 'Idempotency Key',
+				name: 'idempotencyKey',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g., order-123:message-1',
+				description:
+					'Optional key with 1-128 visible ASCII characters and no spaces. Reuse the same key when retrying this message in the same account and conversation to return the original message instead of sending a duplicate. Invalid keys return HTTP 422; keyed writes return HTTP 503 until a staged server rollout is activated.',
+			},
+			{
 				displayName: 'Template Name',
 				name: 'templateName',
 				type: 'string',

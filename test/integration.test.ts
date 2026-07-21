@@ -266,6 +266,69 @@ describe('Message send — additional fields', () => {
 				}),
 			}),
 		);
+		expect(ctx._mockRequest.mock.calls[0][0].headers).not.toHaveProperty('Idempotency-Key');
+	});
+
+	it('message.send — sends an exact idempotency header and keeps it out of the body', async () => {
+		const ctx = buildContext('message', 'send', {
+			conversationId: '20',
+			content: 'Hello exactly once!',
+			messageType: 'outgoing',
+			private: false,
+			additionalFields: { idempotencyKey: 'n8n-execution-44:item-2' },
+		});
+
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'POST',
+				uri: expect.stringContaining('/conversations/20/messages'),
+				headers: expect.objectContaining({
+					'Idempotency-Key': 'n8n-execution-44:item-2',
+				}),
+			}),
+		);
+		const requestBody = ctx._mockRequest.mock.calls[0][0].body;
+		expect(requestBody).not.toHaveProperty('idempotency_key');
+		expect(requestBody).not.toHaveProperty('client_idempotency_key_digest');
+	});
+
+	it('message.send — surfaces HTTP 422 for an invalid idempotency key', async () => {
+		const ctx = buildContext('message', 'send', {
+			conversationId: '20',
+			content: 'Invalid retry key',
+			messageType: 'outgoing',
+			private: false,
+			additionalFields: { idempotencyKey: 'invalid key' },
+		});
+		ctx._mockRequest.mockRejectedValueOnce({
+			statusCode: 422,
+			message: 'Idempotency-Key must be 1-128 visible ASCII characters without spaces',
+		});
+
+		await expect(node.execute.call(ctx)).rejects.toThrow(
+			'NooviChat API Error (HTTP 422) [POST /conversations/20/messages]',
+		);
+		expect(ctx._mockRequest.mock.calls[0][0].headers['Idempotency-Key']).toBe('invalid key');
+	});
+
+	it('message.send — surfaces HTTP 503 while keyed writes await rollout activation', async () => {
+		const ctx = buildContext('message', 'send', {
+			conversationId: '20',
+			content: 'Retry after activation',
+			messageType: 'outgoing',
+			private: false,
+			additionalFields: { idempotencyKey: 'n8n-execution-45:item-1' },
+		});
+		ctx._mockRequest.mockRejectedValueOnce({
+			statusCode: 503,
+			message: 'Idempotency-Key is temporarily unavailable',
+		});
+
+		await expect(node.execute.call(ctx)).rejects.toThrow(
+			'NooviChat API Error (HTTP 503) [POST /conversations/20/messages]',
+		);
 	});
 
 	it('message.send — includes template when templateName provided', async () => {
