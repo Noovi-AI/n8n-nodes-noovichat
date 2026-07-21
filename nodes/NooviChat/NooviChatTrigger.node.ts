@@ -63,42 +63,21 @@ export class NooviChatTrigger implements INodeType {
 				default: 'message_created',
 				options: [
 					// Conversation events
-					{ name: 'Conversation Created', value: 'conversation_created', description: 'A new conversation was created' },
 					{ name: 'Conversation Status Changed', value: 'conversation_status_changed', description: 'Conversation status changed to open, resolved, or pending' },
-					{ name: 'Conversation Typing Off', value: 'conversation_typing_off', description: 'Contact stopped typing' },
-					{ name: 'Conversation Typing On', value: 'conversation_typing_on', description: 'Contact is currently typing' },
 					{ name: 'Conversation Updated', value: 'conversation_updated', description: 'Conversation data was updated' },
-					// Message events
-					{ name: 'Message Created', value: 'message_created', description: 'A new message was received or sent' },
-					{ name: 'Message Updated', value: 'message_updated', description: 'An existing message was updated' },
+					{ name: 'Conversation Created', value: 'conversation_created', description: 'A new conversation was created' },
 					// Contact events
 					{ name: 'Contact Created', value: 'contact_created', description: 'A new contact was created' },
 					{ name: 'Contact Updated', value: 'contact_updated', description: 'Contact information was updated' },
-					// Widget events
+					// Message events
+					{ name: 'Message Created', value: 'message_created', description: 'A new message was received or sent' },
+					{ name: 'Message Updated', value: 'message_updated', description: 'An existing message was updated' },
+					// Widget and inbox events
 					{ name: 'Webwidget Triggered', value: 'webwidget_triggered', description: 'Website widget was triggered by a visitor' },
-					// NooviChat exclusive — Pipeline/Card events
-					{ name: 'Card Created', value: 'pipeline_card_created', description: 'A new card was created in the pipeline' },
-					{ name: 'Card Lost', value: 'pipeline_card_lost', description: 'Card was marked as lost' },
-					{ name: 'Card Stage Changed', value: 'pipeline_card_stage_changed', description: 'Card was moved to a different stage' },
-					{ name: 'Card Updated', value: 'pipeline_card_updated', description: 'Card information was updated' },
-					{ name: 'Card Won', value: 'pipeline_card_won', description: 'Card was marked as won' },
-					// NooviChat exclusive — Follow-up events
-					{ name: 'Follow-up Due', value: 'follow_up_due', description: 'A follow-up task is due now' },
-					{ name: 'Follow-up Overdue', value: 'follow_up_overdue', description: 'A follow-up task is overdue' },
-					// NooviChat exclusive — Follow-up lifecycle events (Chatwoot fase-11)
-					{ name: 'Follow-up Scheduled', value: 'follow_up_scheduled', description: 'A follow-up was scheduled' },
-					{ name: 'Follow-up Sent', value: 'follow_up_sent', description: 'A follow-up message was sent' },
-					{ name: 'Follow-up Failed', value: 'follow_up_failed', description: 'A follow-up failed to send' },
-					{ name: 'Follow-up Cancelled', value: 'follow_up_cancelled', description: 'A follow-up was cancelled' },
-					{ name: 'Broadcast Follow-up Sent', value: 'broadcast_follow_up_sent', description: 'A broadcast follow-up was sent to a non-replier' },
-					{ name: 'Broadcast Started', value: 'broadcast_started', description: 'A broadcast started sending (entered running state)' },
-					{ name: 'Broadcast Completed', value: 'broadcast_completed', description: 'A broadcast finished sending all contacts' },
-					// NooviChat exclusive — Activity events
-					{ name: 'Activity Due', value: 'activity_due', description: 'An activity is due now' },
-					// NooviChat exclusive — SLA events
-					{ name: 'SLA Breach', value: 'sla_breach', description: 'An SLA policy was breached' },
-					// NooviChat exclusive — WAHA events
-					{ name: 'WAHA Status Changed', value: 'waha_status_changed', description: 'WAHA session status changed' },
+					{ name: 'Inbox Created', value: 'inbox_created', description: 'A new inbox was created' },
+					{ name: 'Inbox Updated', value: 'inbox_updated', description: 'Inbox information was updated' },
+					{ name: 'Conversation Typing On', value: 'conversation_typing_on', description: 'Contact is currently typing' },
+					{ name: 'Conversation Typing Off', value: 'conversation_typing_off', description: 'Contact stopped typing' },
 					// NooviChat exclusive — Appointment events (Fase 7 Atendimentos)
 					{ name: 'Appointment Created', value: 'appointment.created', description: 'A new appointment was created' },
 					{ name: 'Appointment Updated', value: 'appointment.updated', description: 'An appointment was updated or rescheduled' },
@@ -116,38 +95,16 @@ export class NooviChatTrigger implements INodeType {
 					// NooviChat exclusive — Service events
 					{ name: 'Service Created', value: 'service.created', description: 'A new service was created' },
 					{ name: 'Service Updated', value: 'service.updated', description: 'A service record was updated' },
+					// NooviChat exclusive — Follow-up lifecycle events (Chatwoot fase-11)
+					{ name: 'Follow-up Scheduled', value: 'follow_up_scheduled', description: 'A follow-up was scheduled' },
+					{ name: 'Follow-up Sent', value: 'follow_up_sent', description: 'A follow-up message was sent' },
+					{ name: 'Follow-up Failed', value: 'follow_up_failed', description: 'A follow-up failed to send' },
+					{ name: 'Follow-up Cancelled', value: 'follow_up_cancelled', description: 'A follow-up was cancelled' },
+					{ name: 'Broadcast Follow-up Sent', value: 'broadcast_follow_up_sent', description: 'A broadcast follow-up was sent to a non-replier' },
+					{ name: 'Broadcast Started', value: 'broadcast_started', description: 'A broadcast started sending (entered running state)' },
+					{ name: 'Broadcast Completed', value: 'broadcast_completed', description: 'A broadcast finished sending all contacts' },
 				],
 				description: 'Event type to listen for',
-			},
-			{
-				displayName: 'Filters',
-				name: 'filters',
-				type: 'collection',
-				placeholder: 'Add Filter',
-				default: {},
-				options: [
-					{
-						displayName: 'Inbox ID',
-						name: 'inboxId',
-						type: 'string',
-						default: '',
-						description: 'Filter events by inbox ID. Leave empty to receive events from all inboxes.',
-					},
-					{
-						displayName: 'Team ID',
-						name: 'teamId',
-						type: 'string',
-						default: '',
-						description: 'Filter events by team ID. Leave empty to receive events from all teams.',
-					},
-					{
-						displayName: 'Pipeline ID',
-						name: 'pipelineId',
-						type: 'string',
-						default: '',
-						description: 'Filter card events by pipeline ID. Leave empty to receive events from all pipelines.',
-					},
-				],
 			},
 		],
 	};
@@ -164,8 +121,11 @@ export class NooviChatTrigger implements INodeType {
 				const webhookUrl = this.getNodeWebhookUrl('default') as string;
 
 				try {
-					const webhooks = await nooviChatApiRequest.call(this, 'GET', '/webhooks');
-					const webhookList = Array.isArray(webhooks) ? webhooks : (webhooks?.payload || []);
+					const response = await nooviChatApiRequest.call(this, 'GET', '/webhooks');
+					const webhookList = response?.payload?.webhooks;
+					if (!Array.isArray(webhookList)) {
+						return false;
+					}
 
 					const exists = webhookList.some(
 						(w: IDataObject) => w.id === webhookData.webhookId && w.url === webhookUrl,
@@ -188,18 +148,21 @@ export class NooviChatTrigger implements INodeType {
 				const event = this.getNodeParameter('event') as string;
 
 				const response = await nooviChatApiRequest.call(this, 'POST', '/webhooks', {
-					url: webhookUrl,
-					subscriptions: [event],
+					webhook: {
+						url: webhookUrl,
+						subscriptions: [event],
+					},
 				});
+				const createdWebhook = response?.payload?.webhook;
 
-				if (!response?.id) {
+				if (!createdWebhook?.id) {
 					throw new NodeOperationError(
 						this.getNode(),
 						'Failed to register webhook in NooviChat: response is missing the webhook ID',
 					);
 				}
 
-				webhookData.webhookId = response.id;
+				webhookData.webhookId = createdWebhook.id;
 				return true;
 			},
 
@@ -223,7 +186,6 @@ export class NooviChatTrigger implements INodeType {
 	async webhook(this: IWebhookFunctions): Promise<IWebhookResponseData> {
 		const body = this.getBodyData() as IDataObject;
 		const event = this.getNodeParameter('event') as string;
-		const filters = this.getNodeParameter('filters', {}) as IDataObject;
 
 		// Validate webhook signature if secret is configured.
 		//
@@ -294,17 +256,7 @@ export class NooviChatTrigger implements INodeType {
 			return { workflowData: [[]] };
 		}
 
-		// Apply optional filters
 		const data = (body.data || body) as IDataObject;
-		if (filters.inboxId && data.inbox_id !== undefined && String(data.inbox_id) !== String(filters.inboxId)) {
-			return { workflowData: [[]] };
-		}
-		if (filters.teamId && data.team_id !== undefined && String(data.team_id) !== String(filters.teamId)) {
-			return { workflowData: [[]] };
-		}
-		if (filters.pipelineId && data.pipeline_id !== undefined && String(data.pipeline_id) !== String(filters.pipelineId)) {
-			return { workflowData: [[]] };
-		}
 
 		const returnData: INodeExecutionData[] = [
 			{

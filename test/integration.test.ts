@@ -700,7 +700,15 @@ describe('Webhook auto-registration / removal (Trigger)', () => {
 	});
 
 	it('create — registers webhook and stores id in staticData', async () => {
-		mockApiRequest.mockResolvedValue({ id: 200 });
+		mockApiRequest.mockResolvedValue({
+			payload: {
+				webhook: {
+					id: 200,
+					url: 'https://n8n.example.com/webhook/integration-test',
+					subscriptions: ['contact_created'],
+				},
+			},
+		});
 
 		const result = await trigger.webhookMethods!.default.create.call(buildHookCtx('contact_created'));
 
@@ -709,9 +717,12 @@ describe('Webhook auto-registration / removal (Trigger)', () => {
 		expect(mockApiRequest).toHaveBeenCalledWith(
 			expect.objectContaining({
 				method: 'POST',
-				body: expect.objectContaining({
-					subscriptions: ['contact_created'],
-				}),
+				body: {
+					webhook: {
+						url: 'https://n8n.example.com/webhook/integration-test',
+						subscriptions: ['contact_created'],
+					},
+				},
 			}),
 		);
 	});
@@ -734,7 +745,7 @@ describe('Webhook auto-registration / removal (Trigger)', () => {
 
 	it('full lifecycle — create then delete cleans up properly', async () => {
 		// Step 1: create
-		mockApiRequest.mockResolvedValue({ id: 300 });
+		mockApiRequest.mockResolvedValue({ payload: { webhook: { id: 300 } } });
 		await trigger.webhookMethods!.default.create.call(buildHookCtx());
 		expect(mockStaticData.webhookId).toBe(300);
 
@@ -747,9 +758,13 @@ describe('Webhook auto-registration / removal (Trigger)', () => {
 
 	it('checkExists — returns true when webhook id matches API list', async () => {
 		mockStaticData.webhookId = 300;
-		mockApiRequest.mockResolvedValue([
-			{ id: 300, url: 'https://n8n.example.com/webhook/integration-test' },
-		]);
+		mockApiRequest.mockResolvedValue({
+			payload: {
+				webhooks: [
+					{ id: 300, url: 'https://n8n.example.com/webhook/integration-test' },
+				],
+			},
+		});
 
 		const result = await trigger.webhookMethods!.default.checkExists.call(buildHookCtx());
 
@@ -758,9 +773,9 @@ describe('Webhook auto-registration / removal (Trigger)', () => {
 
 	it('checkExists — clears stale id when not found in API list', async () => {
 		mockStaticData.webhookId = 999;
-		mockApiRequest.mockResolvedValue([
-			{ id: 1, url: 'https://other.url' },
-		]);
+		mockApiRequest.mockResolvedValue({
+			payload: { webhooks: [{ id: 1, url: 'https://other.url' }] },
+		});
 
 		const result = await trigger.webhookMethods!.default.checkExists.call(buildHookCtx());
 

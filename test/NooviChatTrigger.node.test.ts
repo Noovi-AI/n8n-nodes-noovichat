@@ -47,29 +47,49 @@ describe('NooviChatTrigger — description', () => {
 		);
 	});
 
-	it('should list representative base and NooviChat events', () => {
+	it('should expose exactly the events accepted by account webhooks', () => {
 		const eventProperty = trigger.description.properties.find((p) => p.name === 'event');
 		expect(eventProperty).toBeDefined();
 
 		const eventValues = (eventProperty!.options as any[]).map((o) => o.value);
-		const expectedEvents = [
-			'conversation_created', 'conversation_status_changed', 'conversation_updated',
-			'conversation_typing_on', 'conversation_typing_off',
-			'message_created', 'message_updated',
-			'contact_created', 'contact_updated',
+		expect(eventValues).toEqual([
+			'conversation_status_changed',
+			'conversation_updated',
+			'conversation_created',
+			'contact_created',
+			'contact_updated',
+			'message_created',
+			'message_updated',
 			'webwidget_triggered',
-			'pipeline_card_created', 'pipeline_card_updated', 'pipeline_card_stage_changed',
-			'pipeline_card_won', 'pipeline_card_lost',
-			'follow_up_due', 'follow_up_overdue',
-			'follow_up_scheduled', 'follow_up_sent', 'follow_up_failed',
-			'broadcast_started', 'broadcast_completed',
-			'activity_due', 'sla_breach', 'waha_status_changed',
-			'appointment.created', 'appointment.updated', 'reminder.sent',
-		];
+			'inbox_created',
+			'inbox_updated',
+			'conversation_typing_on',
+			'conversation_typing_off',
+			'appointment.created',
+			'appointment.updated',
+			'appointment.confirmed',
+			'appointment.completed',
+			'appointment.cancelled',
+			'appointment.no_show',
+			'appointment.rescheduled',
+			'reminder.sent',
+			'reminder.failed',
+			'professional.created',
+			'professional.updated',
+			'service.created',
+			'service.updated',
+			'follow_up_scheduled',
+			'follow_up_sent',
+			'follow_up_failed',
+			'follow_up_cancelled',
+			'broadcast_follow_up_sent',
+			'broadcast_started',
+			'broadcast_completed',
+		]);
+	});
 
-		for (const event of expectedEvents) {
-			expect(eventValues).toContain(event);
-		}
+	it('should not expose client-side filters unsupported by webhook registration', () => {
+		expect(trigger.description.properties.find((p) => p.name === 'filters')).toBeUndefined();
 	});
 
 	it('should expose webhookMethods with default.create, delete, checkExists', () => {
@@ -120,9 +140,13 @@ describe('NooviChatTrigger — webhookMethods', () => {
 
 		it('should return true when webhook exists in API', async () => {
 			mockStaticData.webhookId = 42;
-			mockApiRequest.mockResolvedValue([
-				{ id: 42, url: 'https://n8n.example.com/webhook/test-uuid' },
-			]);
+			mockApiRequest.mockResolvedValue({
+				payload: {
+					webhooks: [
+						{ id: 42, url: 'https://n8n.example.com/webhook/test-uuid' },
+					],
+				},
+			});
 
 			const ctx = buildHookContext();
 			const result = await trigger.webhookMethods!.default.checkExists.call(ctx);
@@ -131,9 +155,9 @@ describe('NooviChatTrigger — webhookMethods', () => {
 
 		it('should return false and clear webhookId when webhook not found', async () => {
 			mockStaticData.webhookId = 99;
-			mockApiRequest.mockResolvedValue([
-				{ id: 1, url: 'https://other.url' },
-			]);
+			mockApiRequest.mockResolvedValue({
+				payload: { webhooks: [{ id: 1, url: 'https://other.url' }] },
+			});
 
 			const ctx = buildHookContext();
 			const result = await trigger.webhookMethods!.default.checkExists.call(ctx);
@@ -153,7 +177,15 @@ describe('NooviChatTrigger — webhookMethods', () => {
 
 	describe('create', () => {
 		it('should call POST /webhooks and store webhookId', async () => {
-			mockApiRequest.mockResolvedValue({ id: 55 });
+			mockApiRequest.mockResolvedValue({
+				payload: {
+					webhook: {
+						id: 55,
+						url: 'https://n8n.example.com/webhook/test-uuid',
+						subscriptions: ['message_created'],
+					},
+				},
+			});
 
 			const ctx = buildHookContext({ event: 'message_created' });
 			const result = await trigger.webhookMethods!.default.create.call(ctx);
@@ -164,16 +196,18 @@ describe('NooviChatTrigger — webhookMethods', () => {
 				expect.objectContaining({
 					method: 'POST',
 					uri: expect.stringContaining('/webhooks'),
-					body: expect.objectContaining({
-						url: 'https://n8n.example.com/webhook/test-uuid',
-						subscriptions: ['message_created'],
-					}),
+					body: {
+						webhook: {
+							url: 'https://n8n.example.com/webhook/test-uuid',
+							subscriptions: ['message_created'],
+						},
+					},
 				}),
 			);
 		});
 
 		it('should throw when API returns no id', async () => {
-			mockApiRequest.mockResolvedValue({});
+			mockApiRequest.mockResolvedValue({ payload: { webhook: {} } });
 
 			const ctx = buildHookContext();
 			await expect(
@@ -224,7 +258,6 @@ describe('NooviChatTrigger — webhook()', () => {
 	const buildWebhookContext = (
 		body: Record<string, any>,
 		event = 'message_created',
-		filters: Record<string, any> = {},
 		headers: Record<string, any> = {},
 		webhookCredentials?: Record<string, any>,
 	) => ({
@@ -232,7 +265,6 @@ describe('NooviChatTrigger — webhook()', () => {
 		getHeaderData: () => headers,
 		getNodeParameter: (name: string, _fallback?: any) => {
 			if (name === 'event') return event;
-			if (name === 'filters') return filters;
 			return undefined;
 		},
 		getCredentials: jest.fn().mockImplementation((credName: string) => {
@@ -249,59 +281,17 @@ describe('NooviChatTrigger — webhook()', () => {
 	});
 
 	it('should return workflow data for matching event', async () => {
-		const ctx = buildWebhookContext({ event: 'message_created', data: { id: 1 } }, 'message_created');
+		const body = { event: 'message_created', id: 1, account: { id: 1 }, inbox: { id: 2 } };
+		const ctx = buildWebhookContext(body, 'message_created');
 		const result = await trigger.webhook.call(ctx);
 
 		expect(result.workflowData![0]).toHaveLength(1);
 		expect(result.workflowData![0][0].json.event).toBe('message_created');
+		expect(result.workflowData![0][0].json.data).toEqual(body);
 	});
 
 	it('should return empty workflowData for non-matching event', async () => {
 		const ctx = buildWebhookContext({ event: 'contact_created' }, 'message_created');
-		const result = await trigger.webhook.call(ctx);
-
-		expect(result.workflowData![0]).toHaveLength(0);
-	});
-
-	it('should filter by inboxId when provided', async () => {
-		const ctx = buildWebhookContext(
-			{ event: 'message_created', data: { inbox_id: 5 } },
-			'message_created',
-			{ inboxId: '10' },
-		);
-		const result = await trigger.webhook.call(ctx);
-
-		expect(result.workflowData![0]).toHaveLength(0);
-	});
-
-	it('should pass through when inboxId matches', async () => {
-		const ctx = buildWebhookContext(
-			{ event: 'message_created', data: { inbox_id: 10 } },
-			'message_created',
-			{ inboxId: '10' },
-		);
-		const result = await trigger.webhook.call(ctx);
-
-		expect(result.workflowData![0]).toHaveLength(1);
-	});
-
-	it('should filter by teamId when provided', async () => {
-		const ctx = buildWebhookContext(
-			{ event: 'conversation_created', data: { team_id: 3 } },
-			'conversation_created',
-			{ teamId: '99' },
-		);
-		const result = await trigger.webhook.call(ctx);
-
-		expect(result.workflowData![0]).toHaveLength(0);
-	});
-
-	it('should filter by pipelineId for deal events', async () => {
-		const ctx = buildWebhookContext(
-			{ event: 'pipeline_card_created', data: { pipeline_id: 2 } },
-			'pipeline_card_created',
-			{ pipelineId: '5' },
-		);
 		const result = await trigger.webhook.call(ctx);
 
 		expect(result.workflowData![0]).toHaveLength(0);
@@ -322,7 +312,6 @@ describe('NooviChatTrigger — webhook()', () => {
 		const ctx = buildWebhookContext(
 			{ event: 'message_created', data: { id: 1 } },
 			'message_created',
-			{},
 			{ 'x-hub-signature': 'sha256=ignored-old-header' }, // old header now ignored
 			{ webhookSecret: 'my-secret' },
 		);
@@ -335,7 +324,6 @@ describe('NooviChatTrigger — webhook()', () => {
 		const ctx = buildWebhookContext(
 			{ event: 'message_created', data: { id: 1 } },
 			'message_created',
-			{},
 			{ 'x-chatwoot-signature': 'sha256=abc' },
 			{ webhookSecret: 'my-secret' },
 		);
@@ -348,7 +336,6 @@ describe('NooviChatTrigger — webhook()', () => {
 		const ctx = buildWebhookContext(
 			{ event: 'message_created', data: { id: 1 } },
 			'message_created',
-			{},
 			{
 				'x-chatwoot-signature': 'sha256=deadbeef00000000000000000000000000000000000000000000000000000000',
 				'x-chatwoot-timestamp': '1700000000',
@@ -375,7 +362,6 @@ describe('NooviChatTrigger — webhook()', () => {
 		const ctx = buildWebhookContext(
 			body,
 			'message_created',
-			{},
 			{
 				'x-chatwoot-signature': validSig,
 				'x-chatwoot-timestamp': timestamp,
@@ -391,8 +377,6 @@ describe('NooviChatTrigger — webhook()', () => {
 		const ctx = buildWebhookContext(
 			{ event: 'message_created', data: { id: 1 } },
 			'message_created',
-			{},
-			{},
 		);
 		const result = await trigger.webhook.call(ctx);
 

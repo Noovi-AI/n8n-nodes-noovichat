@@ -99,15 +99,15 @@ Manage WhatsApp sessions directly from your n8n workflows. Monitor connection st
 
 ### Trigger Node
 
-Automatically registers and removes webhooks via the NooviChat API when you activate/deactivate a workflow. Supports base Chatwoot events plus NooviChat pipeline, follow-up, broadcast, appointment, SLA and WAHA events.
+Automatically registers and removes account webhooks via the NooviChat API when you activate/deactivate a workflow.
 
 **Standard events (Chatwoot compatible):**
-`conversation_created`, `conversation_status_changed`, `conversation_updated`, `conversation_typing_on`, `conversation_typing_off`, `message_created`, `message_updated`, `contact_created`, `contact_updated`, `webwidget_triggered`
+`conversation_status_changed`, `conversation_updated`, `conversation_created`, `contact_created`, `contact_updated`, `message_created`, `message_updated`, `webwidget_triggered`, `inbox_created`, `inbox_updated`, `conversation_typing_on`, `conversation_typing_off`
 
 **⭐ Exclusive NooviChat events:**
-`pipeline_card_created`, `pipeline_card_updated`, `pipeline_card_stage_changed`, `pipeline_card_won`, `pipeline_card_lost`, `follow_up_due`, `follow_up_overdue`, `activity_due`, `sla_breach`, `waha_status_changed`
+`appointment.created`, `appointment.updated`, `appointment.confirmed`, `appointment.completed`, `appointment.cancelled`, `appointment.no_show`, `appointment.rescheduled`, `reminder.sent`, `reminder.failed`, `professional.created`, `professional.updated`, `service.created`, `service.updated`, `follow_up_scheduled`, `follow_up_sent`, `follow_up_failed`, `follow_up_cancelled`, `broadcast_follow_up_sent`, `broadcast_started`, `broadcast_completed`
 
-Optional filters by Inbox ID, Team ID, and Pipeline ID. Optional webhook signature validation via shared secret.
+Pipeline-card webhooks use the dedicated pipeline-webhook API and are not account-webhook events. Optional webhook signature validation is available via shared secret.
 
 ---
 
