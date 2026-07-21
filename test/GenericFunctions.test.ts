@@ -133,6 +133,18 @@ describe('nooviChatApiRequest', () => {
 			}),
 		);
 	});
+
+	it('should normalize a response without a body to an explicit success result', async () => {
+		mockRequest.mockResolvedValue(undefined);
+
+		const response = await nooviChatApiRequest.call(
+			createContext(),
+			'DELETE',
+			'/appointments/42',
+		);
+
+		expect(response).toEqual({ success: true });
+	});
 });
 
 describe('nooviChatApiRequestAllItems', () => {

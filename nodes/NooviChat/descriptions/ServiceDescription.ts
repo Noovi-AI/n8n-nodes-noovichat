@@ -211,7 +211,7 @@ export const ServiceFields: INodeProperties[] = [
 		},
 		default: {},
 		description:
-			'Reminder templates for this service. On update, this REPLACES all existing reminders for the service.',
+			'Reminder templates for this service. When supplied on update, this replaces all existing reminders for the service.',
 		options: [
 			{
 				name: 'templates',
@@ -254,7 +254,7 @@ export const ServiceFields: INodeProperties[] = [
 						placeholder:
 							'e.g., Olá {{paciente}}, lembrete: sua consulta com {{profissional}} é amanhã às {{hora}}.',
 						description:
-							'Message body with Liquid template variables. Available: {{paciente}}, {{profissional}}, {{servico}}, {{data}}, {{hora}}, {{duracao}}, {{valor}}, {{empresa}}',
+							'Message body with supported placeholders: {{paciente}}, {{cliente}}, {{profissional}}, {{servico}}, {{data}}, {{hora}}, {{duracao}}, {{empresa}}',
 						typeOptions: { rows: 4 },
 					},
 					{
@@ -263,11 +263,9 @@ export const ServiceFields: INodeProperties[] = [
 						type: 'options',
 						options: [
 							{ name: 'WhatsApp', value: 'whatsapp' },
-							{ name: 'Email', value: 'email' },
-							{ name: 'SMS', value: 'sms' },
 						],
 						default: 'whatsapp',
-						description: 'Channel through which the reminder will be sent',
+						description: 'Appointment reminders are delivered only through WhatsApp',
 					},
 					{
 						displayName: 'Active',

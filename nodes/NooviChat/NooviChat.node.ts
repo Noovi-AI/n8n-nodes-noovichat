@@ -1651,14 +1651,11 @@ async function handleAppointmentOperation(this: IExecuteFunctions, operation: st
 			return await nooviChatApiRequest.call(this, 'GET', '/appointments', {}, qs);
 		}
 		case 'update': {
-			// Backend (appointments_controller.rb:287-291) update_params permits only:
-			//   scheduled_at, ends_at, notes, partner_id, custom_attributes
-			// professional_id and service_id are deliberately excluded from update
-			// — to change them, cancel the appointment and create a new one.
+			// The API permits only scheduled_at, notes, partner_id, and custom_attributes.
+			// It recalculates ends_at from the service duration when rescheduling.
 			const updateFields = this.getNodeParameter('updateFields', index, {}) as any;
 			const body: any = { appointment: {} };
 			if (updateFields.scheduledAt) body.appointment.scheduled_at = updateFields.scheduledAt;
-			if (updateFields.endsAt) body.appointment.ends_at = updateFields.endsAt;
 			if (updateFields.notes) body.appointment.notes = updateFields.notes;
 			if (updateFields.partnerId) body.appointment.partner_id = updateFields.partnerId;
 			if (updateFields.customAttributes) {
@@ -1668,9 +1665,9 @@ async function handleAppointmentOperation(this: IExecuteFunctions, operation: st
 		}
 		case 'cancel': {
 			const reason = this.getNodeParameter('cancellationReason', index, '') as string;
-			const body: any = {};
-			if (reason) body.reason = reason;
-			return await nooviChatApiRequest.call(this, 'DELETE', `/appointments/${appointmentId}`, body);
+			const qs: any = {};
+			if (reason) qs.reason = reason;
+			return await nooviChatApiRequest.call(this, 'DELETE', `/appointments/${appointmentId}`, {}, qs);
 		}
 		case 'confirm':
 			return await nooviChatApiRequest.call(this, 'POST', `/appointments/${appointmentId}/confirm`);
@@ -1758,19 +1755,28 @@ async function handleProfessionalOperation(this: IExecuteFunctions, operation: s
 async function handleServiceOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
 	const serviceId = this.getNodeParameter('serviceId', index, '') as string;
 
-	// Reminder templates live nested in the service payload (top-level alongside `service:`).
-	// Backend (services_controller.rb#sync_reminder_templates, 79-125) replaces the entire
-	// set on every PATCH/POST. To preserve existing reminders, callers must include them.
+	// Reminder templates live at the payload root alongside `service:`. Supplying the
+	// collection replaces the existing set; omitting it preserves the current templates.
 	const buildReminderTemplates = () => {
-		const raw = this.getNodeParameter('reminderTemplates.templates', index, []) as Array<any>;
-		if (!Array.isArray(raw) || raw.length === 0) return null;
+		const collection = this.getNodeParameter('reminderTemplates', index, {}) as any;
+		if (!collection || !Object.prototype.hasOwnProperty.call(collection, 'templates')) return null;
+		const raw = collection.templates;
+		if (!Array.isArray(raw)) return null;
 		return raw.map((r) => {
+			const sendVia = r.sendVia || 'whatsapp';
+			if (sendVia !== 'whatsapp') {
+				throw new NodeOperationError(
+					this.getNode(),
+					`Service reminders support only WhatsApp; received "${sendVia}".`,
+					{ itemIndex: index },
+				);
+			}
 			const t: any = {
 				days_before: r.daysBefore ?? 0,
 				hours_before: r.hoursBefore ?? 0,
 				minutes_before: r.minutesBefore ?? 0,
 				body_template: r.bodyTemplate || '',
-				send_via: r.sendVia || 'whatsapp',
+				send_via: sendVia,
 				active: r.active !== undefined ? r.active : true,
 			};
 			if (r.label) t.label = r.label;
@@ -1790,7 +1796,7 @@ async function handleServiceOperation(this: IExecuteFunctions, operation: string
 			if (additionalFields.color) body.service.color = additionalFields.color;
 			if (additionalFields.onlineAvailable !== undefined) body.service.online_available = additionalFields.onlineAvailable;
 			const reminderTemplates = buildReminderTemplates();
-			if (reminderTemplates) body.reminder_templates = reminderTemplates;
+			if (reminderTemplates !== null) body.reminder_templates = reminderTemplates;
 			return await nooviChatApiRequest.call(this, 'POST', '/services', body);
 		}
 		case 'get':
@@ -1808,7 +1814,7 @@ async function handleServiceOperation(this: IExecuteFunctions, operation: string
 			if (updateFields.color) body.service.color = updateFields.color;
 			if (updateFields.onlineAvailable !== undefined) body.service.online_available = updateFields.onlineAvailable;
 			const reminderTemplates = buildReminderTemplates();
-			if (reminderTemplates) body.reminder_templates = reminderTemplates;
+			if (reminderTemplates !== null) body.reminder_templates = reminderTemplates;
 			return await nooviChatApiRequest.call(this, 'PATCH', `/services/${serviceId}`, body);
 		}
 		case 'delete':

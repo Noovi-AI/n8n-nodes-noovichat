@@ -168,19 +168,9 @@ export const AppointmentFields: INodeProperties[] = [
 				default: '',
 				description: 'New date and time for the appointment',
 			},
-			{
-				displayName: 'Ends At',
-				name: 'endsAt',
-				type: 'dateTime',
-				default: '',
-				description: 'New end time for the appointment',
-			},
-			// `professionalId` and `serviceId` are intentionally NOT exposed here.
-			// Backend (appointments_controller.rb:287-291) restricts `update_params`
-			// to only [scheduled_at, ends_at, notes, partner_id, custom_attributes]
-			// — sending professional_id/service_id was silently dropped in
-			// 0.8.x, giving the false impression a "change professional"
-			// workflow worked. To change them, cancel and create a new appointment.
+			// `endsAt`, `professionalId`, and `serviceId` are intentionally not exposed.
+			// The API only updates scheduled_at, notes, partner_id, and custom_attributes;
+			// it recalculates ends_at from the service duration when rescheduling.
 			{
 				displayName: 'Notes',
 				name: 'notes',

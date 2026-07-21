@@ -55,6 +55,40 @@ describe('NooviChat Node — description', () => {
 		expect(allPropertyNames).toContain('resource');
 		expect(allPropertyNames).toContain('operation');
 	});
+
+	it('should expose only the mutable appointment fields and WhatsApp reminders', () => {
+		const appointmentUpdateFields = node.description.properties.find(
+			(p) =>
+				p.name === 'updateFields' &&
+				((p.displayOptions?.show?.resource as string[] | undefined) || []).includes('appointment'),
+		);
+		const appointmentFieldNames = (
+			(appointmentUpdateFields?.options as Array<{ name: string }> | undefined) || []
+		).map((option) => option.name);
+
+		expect(appointmentFieldNames).toEqual([
+			'scheduledAt',
+			'notes',
+			'customAttributes',
+			'partnerId',
+		]);
+
+		const reminderTemplates = node.description.properties.find(
+			(p) =>
+				p.name === 'reminderTemplates' &&
+				((p.displayOptions?.show?.resource as string[] | undefined) || []).includes('service'),
+		);
+		const templatesOption = (
+			(reminderTemplates?.options as Array<{ name: string; values?: Array<any> }> | undefined) || []
+		).find((option) => option.name === 'templates');
+		const sendVia = templatesOption?.values?.find((value) => value.name === 'sendVia');
+		const bodyTemplate = templatesOption?.values?.find((value) => value.name === 'bodyTemplate');
+
+		expect(sendVia?.options).toEqual([{ name: 'WhatsApp', value: 'whatsapp' }]);
+		expect(bodyTemplate?.description).toContain('{{cliente}}');
+		expect(bodyTemplate?.description).not.toContain('Liquid');
+		expect(bodyTemplate?.description).not.toContain('{{valor}}');
+	});
 });
 
 describe('NooviChat Node — execute', () => {
@@ -621,7 +655,7 @@ describe('NooviChat Node — execute', () => {
 
 	// --- v0.8.3: Service reminders nested in service body (no standalone routes) ---
 
-	it('should send reminder_templates nested in service.create body', async () => {
+	it('should send reminder_templates through WhatsApp', async () => {
 		const ctx = buildContext('service', 'create', {
 			name: 'Consulta Inicial',
 			durationMinutes: 60,
@@ -645,6 +679,25 @@ describe('NooviChat Node — execute', () => {
 			send_via: 'whatsapp',
 			label: '1 dia antes',
 		});
+		expect(call.body.reminder_templates[1].send_via).toBe('whatsapp');
+	});
+
+	it('should reject legacy reminder channels before sending an API request', async () => {
+		const ctx = buildContext('service', 'create', {
+			name: 'Consulta Inicial',
+			durationMinutes: 60,
+			additionalFields: {},
+			reminderTemplates: {
+				templates: [
+					{ daysBefore: 1, bodyTemplate: 'Lembrete D-1', sendVia: 'email' },
+				],
+			},
+		});
+
+		await expect(node.execute.call(ctx)).rejects.toThrow(
+			'Service reminders support only WhatsApp',
+		);
+		expect(ctx._mockRequest).not.toHaveBeenCalled();
 	});
 
 	it('should omit reminder_templates when service.update has none', async () => {
@@ -659,16 +712,33 @@ describe('NooviChat Node — execute', () => {
 		expect(call.body).not.toHaveProperty('reminder_templates');
 	});
 
-	// --- v0.8.4: Appointment.update does not send professional_id/service_id ---
+	it('should send an explicit empty reminder list to clear service reminders', async () => {
+		const ctx = buildContext('service', 'update', {
+			serviceId: '5',
+			updateFields: { name: 'Renamed' },
+			reminderTemplates: { templates: [] },
+		});
 
-	it('should not send professional_id/service_id on appointment.update (backend rejects silently)', async () => {
+		await node.execute.call(ctx);
+
+		const call = ctx._mockRequest.mock.calls[0][0];
+		expect(call.body).toEqual({
+			service: { name: 'Renamed' },
+			reminder_templates: [],
+		});
+	});
+
+	// --- Appointment update/cancel contract ---
+
+	it('should send only the four mutable fields on appointment.update', async () => {
 		const ctx = buildContext('appointment', 'update', {
 			appointmentId: '15',
 			updateFields: {
 				scheduledAt: '2026-06-10T14:00:00Z',
+				endsAt: '2026-06-10T20:00:00Z',
 				notes: 'New note',
-				// professionalId/serviceId no longer in UI; if anyone tries via expression,
-				// the handler ignores them.
+				professionalId: 99,
+				serviceId: 88,
 			},
 		});
 		await node.execute.call(ctx);
@@ -679,8 +749,26 @@ describe('NooviChat Node — execute', () => {
 			scheduled_at: '2026-06-10T14:00:00Z',
 			notes: 'New note',
 		});
+		expect(call.body.appointment).not.toHaveProperty('ends_at');
 		expect(call.body.appointment).not.toHaveProperty('professional_id');
 		expect(call.body.appointment).not.toHaveProperty('service_id');
+	});
+
+	it('should send cancellation reason in query and normalize a 204 response', async () => {
+		const ctx = buildContext('appointment', 'cancel', {
+			appointmentId: '15',
+			cancellationReason: 'Patient requested via WhatsApp',
+		});
+		ctx._mockRequest.mockResolvedValueOnce(undefined);
+
+		const [result] = await node.execute.call(ctx);
+		const call = ctx._mockRequest.mock.calls[0][0];
+
+		expect(call.method).toBe('DELETE');
+		expect(call.uri).toContain('/appointments/15');
+		expect(call.body).toBeUndefined();
+		expect(call.qs).toEqual({ reason: 'Patient requested via WhatsApp' });
+		expect(result[0].json).toEqual({ success: true });
 	});
 
 	it('should accept custom_attributes JSON on appointment.update', async () => {

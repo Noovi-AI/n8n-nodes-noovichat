@@ -155,7 +155,8 @@ export async function nooviChatApiRequest(
 	}
 
 	try {
-		return await this.helpers.request(options);
+		const response = await this.helpers.request(options);
+		return response === undefined ? { success: true } : response;
 	} catch (error: any) {
 		const statusCode: number | undefined = error?.statusCode ?? error?.response?.statusCode;
 		const context = `${method} ${endpoint}`;

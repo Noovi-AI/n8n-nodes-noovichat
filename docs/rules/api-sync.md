@@ -63,6 +63,8 @@ grep -r "endpoint_path" "$(git rev-parse --show-toplevel)/nodes/"
 /waha/*                      → WahaDescription.ts
 /webhooks                    → WebhookDescription.ts (trigger)
 /whatsapp_templates          → WhatsappTemplateDescription.ts (NooviChat custom — Meta Cloud CRUD)
+/appointments                → AppointmentDescription.ts
+/services                    → ServiceDescription.ts
 ```
 
 ## Mudanças na API (histórico de incidents)
@@ -177,6 +179,18 @@ sem retry automático.
 192.168.x, 127.x, ::1, 169.254.x AWS metadata). Cliente que tentar
 criar webhook apontando para endereço interno → HTTP 422 com erro claro
 em `errors.url`. Sem mudança no código do node — apenas surface o erro.
+
+## Contratos de appointments e services
+
+- `PATCH /appointments/:id` envia somente `scheduled_at`, `notes`,
+  `partner_id` e `custom_attributes`. `ends_at` é recalculado pelo backend com
+  base na duração do serviço.
+- `DELETE /appointments/:id` envia a razão opcional em `?reason=`. A resposta
+  `204 No Content` é normalizada pelo node para `{ "success": true }`.
+- Reminder templates de serviços são exclusivos de WhatsApp. O node expõe e
+  envia somente `send_via: "whatsapp"` e rejeita valores legados de outros
+  canais antes do HTTP. Informar a coleção no update — inclusive uma lista
+  vazia — substitui a lista existente; omiti-la preserva os templates atuais.
 
 ## Publicar atualização após sync
 
