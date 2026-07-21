@@ -1704,6 +1704,14 @@ async function handleAppointmentOperation(this: IExecuteFunctions, operation: st
 // Professional handlers
 async function handleProfessionalOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
 	const professionalId = this.getNodeParameter('professionalId', index, '') as string;
+	const assignLinkFields = (target: Record<string, any>, fields: Record<string, any>) => {
+		if (Object.prototype.hasOwnProperty.call(fields, 'agentId')) {
+			target.agent_id = Number(fields.agentId) === 0 ? null : fields.agentId;
+		}
+		if (Object.prototype.hasOwnProperty.call(fields, 'serviceIds')) {
+			target.service_ids = parseJsonValue(fields.serviceIds);
+		}
+	};
 
 	switch (operation) {
 		case 'create': {
@@ -1715,8 +1723,11 @@ async function handleProfessionalOperation(this: IExecuteFunctions, operation: s
 			if (additionalFields.email) body.professional.email = additionalFields.email;
 			if (additionalFields.phone) body.professional.phone = additionalFields.phone;
 			if (additionalFields.color) body.professional.color = additionalFields.color;
-			if (additionalFields.bufferMinutes) body.professional.buffer_minutes = additionalFields.bufferMinutes;
+			if (Object.prototype.hasOwnProperty.call(additionalFields, 'bufferMinutes')) {
+				body.professional.buffer_minutes = additionalFields.bufferMinutes;
+			}
 			if (additionalFields.workingHours) body.professional.working_hours = parseJsonValue(additionalFields.workingHours);
+			assignLinkFields(body.professional, additionalFields);
 			return await nooviChatApiRequest.call(this, 'POST', '/professionals', body);
 		}
 		case 'get':
@@ -1732,18 +1743,24 @@ async function handleProfessionalOperation(this: IExecuteFunctions, operation: s
 			if (updateFields.email) body.professional.email = updateFields.email;
 			if (updateFields.phone) body.professional.phone = updateFields.phone;
 			if (updateFields.color) body.professional.color = updateFields.color;
-			if (updateFields.bufferMinutes) body.professional.buffer_minutes = updateFields.bufferMinutes;
+			if (Object.prototype.hasOwnProperty.call(updateFields, 'bufferMinutes')) {
+				body.professional.buffer_minutes = updateFields.bufferMinutes;
+			}
 			if (updateFields.workingHours) body.professional.working_hours = parseJsonValue(updateFields.workingHours);
+			assignLinkFields(body.professional, updateFields);
 			return await nooviChatApiRequest.call(this, 'PATCH', `/professionals/${professionalId}`, body);
 		}
 		case 'delete':
 			return await nooviChatApiRequest.call(this, 'DELETE', `/professionals/${professionalId}`);
 		case 'availability': {
 			const avProfessionalId = this.getNodeParameter('professionalId', index) as string;
-			const date = this.getNodeParameter('date', index) as string;
+			const date = this.getNodeParameter('date', index, '') as string;
 			const serviceId = this.getNodeParameter('serviceId', index, 0) as number;
-			const qs: any = { date };
+			const durationMinutes = this.getNodeParameter('durationMinutes', index, 0) as number;
+			const qs: any = {};
+			if (date) qs.date = date;
 			if (serviceId) qs.service_id = serviceId;
+			if (durationMinutes) qs.duration_minutes = durationMinutes;
 			return await nooviChatApiRequest.call(this, 'GET', `/professionals/${avProfessionalId}/availability`, {}, qs);
 		}
 		default:

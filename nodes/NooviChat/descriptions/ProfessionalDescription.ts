@@ -1,5 +1,7 @@
 import { INodeProperties } from 'n8n-workflow';
 
+const MAX_INT32 = 2_147_483_647;
+
 export const ProfessionalOperations: INodeProperties[] = [
 	{
 		displayName: 'Operation',
@@ -71,6 +73,15 @@ export const ProfessionalFields: INodeProperties[] = [
 		default: {},
 		options: [
 			{
+				displayName: 'Agent ID',
+				name: 'agentId',
+				type: 'number',
+				default: 0,
+				typeOptions: { minValue: 0 },
+				description:
+					'ID of the agent to link. Use 0 to create without an agent. NooviChat returns HTTP 422 if the agent does not belong to the authenticated account.',
+			},
+			{
 				displayName: 'Specialty',
 				name: 'specialty',
 				type: 'string',
@@ -114,8 +125,16 @@ export const ProfessionalFields: INodeProperties[] = [
 				name: 'bufferMinutes',
 				type: 'number',
 				default: 0,
-				typeOptions: { minValue: 0 },
+				typeOptions: { minValue: 0, maxValue: MAX_INT32 },
 				description: 'Minimum gap in minutes between consecutive appointments',
+			},
+			{
+				displayName: 'Service IDs (JSON)',
+				name: 'serviceIds',
+				type: 'json',
+				default: '[]',
+				description:
+					'Complete replacement array of service IDs, for example [3, 7]. NooviChat returns HTTP 422 if any ID does not belong to the authenticated account. An empty array creates the professional without services.',
 			},
 			{
 				displayName: 'Working Hours (JSON)',
@@ -142,6 +161,15 @@ export const ProfessionalFields: INodeProperties[] = [
 		},
 		default: {},
 		options: [
+			{
+				displayName: 'Agent ID',
+				name: 'agentId',
+				type: 'number',
+				default: 0,
+				typeOptions: { minValue: 0 },
+				description:
+					'ID of the agent to link. Use 0 to clear the current link. NooviChat returns HTTP 422 if the agent does not belong to the authenticated account.',
+			},
 			{
 				displayName: 'Name',
 				name: 'name',
@@ -189,8 +217,16 @@ export const ProfessionalFields: INodeProperties[] = [
 				name: 'bufferMinutes',
 				type: 'number',
 				default: 0,
-				typeOptions: { minValue: 0 },
+				typeOptions: { minValue: 0, maxValue: MAX_INT32 },
 				description: 'Minimum gap in minutes between consecutive appointments',
+			},
+			{
+				displayName: 'Service IDs (JSON)',
+				name: 'serviceIds',
+				type: 'json',
+				default: '[]',
+				description:
+					'Complete replacement array of service IDs, for example [3, 7]. NooviChat returns HTTP 422 if any ID does not belong to the authenticated account. An empty array clears all service links.',
 			},
 			{
 				displayName: 'Working Hours (JSON)',
@@ -221,8 +257,7 @@ export const ProfessionalFields: INodeProperties[] = [
 	{
 		displayName: 'Date',
 		name: 'date',
-		type: 'dateTime',
-		required: true,
+		type: 'string',
 		displayOptions: {
 			show: {
 				resource: ['professional'],
@@ -230,7 +265,9 @@ export const ProfessionalFields: INodeProperties[] = [
 			},
 		},
 		default: '',
-		description: 'Date to check available slots (YYYY-MM-DD)',
+		placeholder: 'e.g., 2026-06-15',
+		description:
+			'Strict calendar date in YYYY-MM-DD format. When omitted, NooviChat uses the current date in the account scheduling timezone (reporting timezone, then onboarding timezone, then the NooviChat default).',
 	},
 	{
 		displayName: 'Service ID',
@@ -243,6 +280,23 @@ export const ProfessionalFields: INodeProperties[] = [
 			},
 		},
 		default: 0,
-		description: 'Optional: ID of the service (used to determine slot duration)',
+		typeOptions: { minValue: 1 },
+		description:
+			'Optional service used to determine slot duration. It must belong to the authenticated account; otherwise NooviChat returns HTTP 404.',
+	},
+	{
+		displayName: 'Duration (Minutes)',
+		name: 'durationMinutes',
+		type: 'number',
+		displayOptions: {
+			show: {
+				resource: ['professional'],
+				operation: ['availability'],
+			},
+		},
+		default: 0,
+		typeOptions: { minValue: 1, maxValue: MAX_INT32 },
+		description:
+			'Optional slot duration from 1 to 2147483647 minutes. When omitted, NooviChat uses 60 minutes. A selected service duration takes precedence.',
 	},
 ];

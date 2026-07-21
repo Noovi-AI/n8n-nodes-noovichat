@@ -64,6 +64,7 @@ grep -r "endpoint_path" "$(git rev-parse --show-toplevel)/nodes/"
 /webhooks                    → WebhookDescription.ts (trigger)
 /whatsapp_templates          → WhatsappTemplateDescription.ts (NooviChat custom — Meta Cloud CRUD)
 /appointments                → AppointmentDescription.ts
+/professionals               → ProfessionalDescription.ts
 /services                    → ServiceDescription.ts
 ```
 
@@ -191,6 +192,20 @@ em `errors.url`. Sem mudança no código do node — apenas surface o erro.
   envia somente `send_via: "whatsapp"` e rejeita valores legados de outros
   canais antes do HTTP. Informar a coleção no update — inclusive uma lista
   vazia — substitui a lista existente; omiti-la preserva os templates atuais.
+
+## Contrato de professionals
+
+- `POST/PATCH /professionals` recebem `agent_id` e `service_ids` dentro do
+  envelope `professional`. O node não remove IDs por conta própria: envia a
+  lista completa para a validação tenant-scoped do backend, que responde 422
+  quando um agente ou serviço não pertence à conta autenticada. No update,
+  `agent_id: null` limpa o agente e `service_ids: []` limpa todos os serviços.
+- `GET /professionals/:id/availability` aceita `date` opcional como string
+  estrita `YYYY-MM-DD`. Omitir `date` faz o backend usar a data atual no fuso de
+  agendamento da conta (`reporting_timezone`, depois timezone do onboarding e,
+  por fim, o padrão NooviChat). `service_id` é tenant-scoped e retorna 404 se
+  apontar para outra conta. `duration_minutes` aceita inteiros de 1 a
+  2147483647; a duração do serviço prevalece quando ambos são enviados.
 
 ## Publicar atualização após sync
 
