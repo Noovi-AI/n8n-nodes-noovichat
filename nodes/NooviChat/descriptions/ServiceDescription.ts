@@ -211,7 +211,7 @@ export const ServiceFields: INodeProperties[] = [
 		},
 		default: {},
 		description:
-			'Reminder templates for this service. When supplied on update, this replaces all existing reminders for the service.',
+			'Reminder templates for this service. When supplied on update, this replaces all existing reminders for the service. At least one offset component must be positive, and daysBefore * 1440 + hoursBefore * 60 + minutesBefore must not exceed the signed 32-bit maximum of 2147483647 minutes.',
 		options: [
 			{
 				name: 'templates',
@@ -223,28 +223,31 @@ export const ServiceFields: INodeProperties[] = [
 						type: 'string',
 						default: '',
 						placeholder: 'e.g., 1 dia antes',
-						description: 'Human-readable label for this reminder',
+						description: 'Optional human-readable label for this reminder. Leave blank to omit it; API responses may return null.',
 					},
 					{
 						displayName: 'Days Before',
 						name: 'daysBefore',
 						type: 'number',
 						default: 0,
-						typeOptions: { minValue: 0 },
+						typeOptions: { minValue: 0, maxValue: 1491308 },
+						description: 'Whole days before the appointment, from 0 to 1491308',
 					},
 					{
 						displayName: 'Hours Before',
 						name: 'hoursBefore',
 						type: 'number',
 						default: 0,
-						typeOptions: { minValue: 0 },
+						typeOptions: { minValue: 0, maxValue: 35791394 },
+						description: 'Whole hours before the appointment, from 0 to 35791394',
 					},
 					{
 						displayName: 'Minutes Before',
 						name: 'minutesBefore',
 						type: 'number',
 						default: 0,
-						typeOptions: { minValue: 0 },
+						typeOptions: { minValue: 0, maxValue: 2147483647 },
+						description: 'Whole minutes before the appointment, from 0 to 2147483647',
 					},
 					{
 						displayName: 'Message Template',
@@ -254,8 +257,8 @@ export const ServiceFields: INodeProperties[] = [
 						placeholder:
 							'e.g., Olá {{paciente}}, lembrete: sua consulta com {{profissional}} é amanhã às {{hora}}.',
 						description:
-							'Message body with supported placeholders: {{paciente}}, {{cliente}}, {{profissional}}, {{servico}}, {{data}}, {{hora}}, {{duracao}}, {{empresa}}',
-						typeOptions: { rows: 4 },
+							'Message body with 1-4096 characters. Supported placeholders: {{paciente}}, {{cliente}}, {{profissional}}, {{servico}}, {{data}}, {{hora}}, {{duracao}}, {{valor}}, {{empresa}}.',
+						typeOptions: { rows: 4, maxLength: 4096 },
 					},
 					{
 						displayName: 'Send Via',

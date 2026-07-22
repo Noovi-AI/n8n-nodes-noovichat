@@ -150,7 +150,7 @@ export const MessageFields: INodeProperties[] = [
 				default: '',
 				placeholder: 'e.g., order-123:message-1',
 				description:
-					'Optional key with 1-128 visible ASCII characters and no spaces. Reuse the same key when retrying this message in the same account and conversation to return the original message instead of sending a duplicate. Invalid keys return HTTP 422; keyed writes return HTTP 503 until a staged server rollout is activated.',
+					'Optional key with 1-128 visible ASCII characters and no spaces. Reuse the same key for every retry in the same account and conversation. The key deduplicates creation of the local Message record only; it does not guarantee exactly-once delivery by the channel provider or webhooks. HTTP 503 can be returned after the Message is committed and queued, so reuse the same key to recover the original local Message. Invalid keys return HTTP 422.',
 			},
 			{
 				displayName: 'Template Name',

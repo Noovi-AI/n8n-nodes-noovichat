@@ -70,6 +70,11 @@ describe('NooviChat Node — description', () => {
 		expect(idempotencyKey?.type).toBe('string');
 		expect(idempotencyKey?.description).toContain('1-128 visible ASCII characters');
 		expect(idempotencyKey?.description).toContain('same account and conversation');
+		expect(idempotencyKey?.description).toContain('local Message record only');
+		expect(idempotencyKey?.description).toContain('does not guarantee exactly-once');
+		expect(idempotencyKey?.description).toContain('channel provider or webhooks');
+		expect(idempotencyKey?.description).toContain('after the Message is committed and queued');
+		expect(idempotencyKey?.description).toContain('reuse the same key');
 		expect(idempotencyKey?.description).toContain('HTTP 422');
 		expect(idempotencyKey?.description).toContain('HTTP 503');
 	});
@@ -100,12 +105,23 @@ describe('NooviChat Node — description', () => {
 			(reminderTemplates?.options as Array<{ name: string; values?: Array<any> }> | undefined) || []
 		).find((option) => option.name === 'templates');
 		const sendVia = templatesOption?.values?.find((value) => value.name === 'sendVia');
+		const label = templatesOption?.values?.find((value) => value.name === 'label');
+		const daysBefore = templatesOption?.values?.find((value) => value.name === 'daysBefore');
+		const hoursBefore = templatesOption?.values?.find((value) => value.name === 'hoursBefore');
+		const minutesBefore = templatesOption?.values?.find((value) => value.name === 'minutesBefore');
 		const bodyTemplate = templatesOption?.values?.find((value) => value.name === 'bodyTemplate');
 
 		expect(sendVia?.options).toEqual([{ name: 'WhatsApp', value: 'whatsapp' }]);
+		expect(label?.description).toContain('may return null');
+		expect(daysBefore?.typeOptions).toMatchObject({ minValue: 0, maxValue: 1491308 });
+		expect(hoursBefore?.typeOptions).toMatchObject({ minValue: 0, maxValue: 35791394 });
+		expect(minutesBefore?.typeOptions).toMatchObject({ minValue: 0, maxValue: 2147483647 });
+		expect(reminderTemplates?.description).toContain('signed 32-bit maximum of 2147483647 minutes');
+		expect(bodyTemplate?.typeOptions).toMatchObject({ rows: 4, maxLength: 4096 });
+		expect(bodyTemplate?.description).toContain('1-4096 characters');
 		expect(bodyTemplate?.description).toContain('{{cliente}}');
+		expect(bodyTemplate?.description).toContain('{{valor}}');
 		expect(bodyTemplate?.description).not.toContain('Liquid');
-		expect(bodyTemplate?.description).not.toContain('{{valor}}');
 	});
 });
 
