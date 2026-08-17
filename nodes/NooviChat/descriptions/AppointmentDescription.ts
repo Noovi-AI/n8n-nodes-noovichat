@@ -26,13 +26,68 @@ export const AppointmentOperations: INodeProperties[] = [
 			{ name: 'Complete', value: 'complete', action: 'Mark appointment as completed' },
 			{ name: 'No Show', value: 'noShow', action: 'Mark appointment as no-show' },
 			{ name: 'Get Availability', value: 'availability', action: 'Get available slots for a professional' },
+			{
+				name: 'Get Availability Range',
+				value: 'availabilityRange',
+				action: 'Get available slots for a professional over a range of days',
+			},
 			{ name: 'Get Contact History', value: 'getContactHistory', action: 'Get appointment history for a contact' },
+			{ name: 'Get Clients', value: 'listClients', action: 'Get many clients with appointments' },
 		],
 		default: 'list',
 	},
 ];
 
 export const AppointmentFields: INodeProperties[] = [
+	// --- Get Clients: directory of everyone with an appointment ---
+	{
+		displayName: 'Search',
+		name: 'clientsQuery',
+		type: 'string',
+		displayOptions: {
+			show: {
+				resource: ['appointment'],
+				operation: ['listClients'],
+			},
+		},
+		default: '',
+		description:
+			'Case-insensitive search over the client name, email and phone. Leave empty to list everyone. % and _ are matched literally.',
+	},
+	{
+		displayName: 'Sort',
+		name: 'clientsSort',
+		type: 'options',
+		displayOptions: {
+			show: {
+				resource: ['appointment'],
+				operation: ['listClients'],
+			},
+		},
+		options: [
+			{ name: 'Seen Most Recently', value: 'recent' },
+			{ name: 'Coming Up Next', value: 'upcoming' },
+			{ name: 'Most Appointments', value: 'frequency' },
+			{ name: 'Name', value: 'name' },
+		],
+		default: 'recent',
+		description:
+			'Ordering. In date-based orders, clients without that date sort last.',
+	},
+	{
+		displayName: 'Page',
+		name: 'clientsPage',
+		type: 'number',
+		typeOptions: { minValue: 1 },
+		displayOptions: {
+			show: {
+				resource: ['appointment'],
+				operation: ['listClients'],
+			},
+		},
+		default: 1,
+		description: 'Page number. 30 clients per page.',
+	},
 	// --- Shared: Appointment ID ---
 	{
 		displayName: 'Appointment ID',
@@ -353,7 +408,7 @@ export const AppointmentFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['appointment'],
-				operation: ['availability'],
+				operation: ['availability', 'availabilityRange'],
 			},
 		},
 		default: '',
@@ -367,7 +422,7 @@ export const AppointmentFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['appointment'],
-				operation: ['availability'],
+				operation: ['availability', 'availabilityRange'],
 			},
 		},
 		default: '',
@@ -390,13 +445,44 @@ export const AppointmentFields: INodeProperties[] = [
 		description: 'Strict calendar date in YYYY-MM-DD format',
 	},
 	{
+		displayName: 'From',
+		name: 'from',
+		type: 'string',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['appointment'],
+				operation: ['availabilityRange'],
+			},
+		},
+		default: '',
+		placeholder: 'e.g., 2026-08-03',
+		description: 'First day of the range in YYYY-MM-DD format, inclusive',
+	},
+	{
+		displayName: 'To',
+		name: 'to',
+		type: 'string',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['appointment'],
+				operation: ['availabilityRange'],
+			},
+		},
+		default: '',
+		placeholder: 'e.g., 2026-08-09',
+		description:
+			'Last day of the range in YYYY-MM-DD format, inclusive. Must not precede From, and the range must span at most 42 days.',
+	},
+	{
 		displayName: 'Duration (Minutes)',
 		name: 'durationMinutes',
 		type: 'number',
 		displayOptions: {
 			show: {
 				resource: ['appointment'],
-				operation: ['availability'],
+				operation: ['availability', 'availabilityRange'],
 			},
 		},
 		default: 0,

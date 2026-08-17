@@ -77,6 +77,7 @@ describe('Card CRUD — field mapping', () => {
 			additionalFields: {
 				contactId: '42',
 				value: 9500,
+				currency: 'usd',
 				expectedCloseDate: '2026-06-30',
 				assigneeId: '7',
 			},
@@ -93,10 +94,26 @@ describe('Card CRUD — field mapping', () => {
 					title: 'Big Deal',
 					contact_id: '42',
 					expected_revenue: 9500,
+					currency: 'USD',
 					deadline: '2026-06-30',
 					owner_id: '7',
 				}),
 			}),
+		);
+	});
+
+	it('card.create — preserves zero revenue and maps assignee 0 to an unassigned card', async () => {
+		const ctx = buildContext('card', 'create', {
+			title: 'Zero-value Deal',
+			pipelineId: '3',
+			stageId: '3_lead',
+			additionalFields: { value: 0, assigneeId: 0 },
+		});
+
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest.mock.calls[0][0].body).toEqual(
+			expect.objectContaining({ expected_revenue: 0, owner_id: null }),
 		);
 	});
 
@@ -118,6 +135,7 @@ describe('Card CRUD — field mapping', () => {
 			additionalFields: {
 				title: 'Updated Deal',
 				value: 15000,
+				currency: 'EUR',
 				assigneeId: '9',
 			},
 		});
@@ -130,6 +148,7 @@ describe('Card CRUD — field mapping', () => {
 				body: expect.objectContaining({
 					title: 'Updated Deal',
 					expected_revenue: 15000,
+					currency: 'EUR',
 					owner_id: '9',
 				}),
 			}),
@@ -146,6 +165,43 @@ describe('Card CRUD — field mapping', () => {
 		const callBody = ctx._mockRequest.mock.calls[0][0].body;
 		expect(callBody).not.toHaveProperty('value');
 		expect(callBody).toHaveProperty('expected_revenue', 5000);
+	});
+
+	it('card.update — preserves zero revenue and clears the assignee with assigneeId 0', async () => {
+		const ctx = buildContext('card', 'update', {
+			cardId: 'card-55',
+			additionalFields: { value: 0, assigneeId: 0 },
+		});
+
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest.mock.calls[0][0].body).toEqual({
+			expected_revenue: 0,
+			owner_id: null,
+		});
+	});
+
+	it('card.update — omits revenue and assignee when their collection fields are absent', async () => {
+		const ctx = buildContext('card', 'update', {
+			cardId: 'card-55',
+			additionalFields: { title: 'Title only' },
+		});
+
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest.mock.calls[0][0].body).toEqual({ title: 'Title only' });
+	});
+
+	it('card.update — rejects malformed currency before calling the API', async () => {
+		const ctx = buildContext('card', 'update', {
+			cardId: 'card-55',
+			additionalFields: { currency: 'US' },
+		});
+
+		await expect(node.execute.call(ctx)).rejects.toThrow(
+			'Card currency must contain exactly three letters',
+		);
+		expect(ctx._mockRequest).not.toHaveBeenCalled();
 	});
 
 	it('card.delete — calls DELETE /pipeline_cards/:id', async () => {
@@ -216,6 +272,18 @@ describe('Card CRUD — field mapping', () => {
 				uri: expect.stringContaining('/pipeline_cards/c1'),
 			}),
 		);
+	});
+
+	it('card.bulkUpdate — rejects raw status transitions and points to dedicated operations', async () => {
+		const ctx = buildContext('card', 'bulkUpdate', {
+			'cardIds.values': [{ id: 'c1' }],
+			updateFields: { title: 'Bulk title', status: 'won' },
+		});
+
+		await expect(node.execute.call(ctx)).rejects.toThrow(
+			'Use Mark Won, Mark Lost, or Reopen',
+		);
+		expect(ctx._mockRequest).not.toHaveBeenCalled();
 	});
 
 	it('card.bulkDelete — calls DELETE for each card individually', async () => {

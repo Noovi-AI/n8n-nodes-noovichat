@@ -4,6 +4,19 @@
 
 ### Added
 
+- **Appointment → Get Availability Range**: answers availability for every day
+  between `From` and `To` inclusive in a single call to
+  `GET /appointments/availability_range`, instead of one call per day — a week
+  was seven requests and a month forty-two. The rules are the same as
+  `Get Availability` because the server applies the same service day by day:
+  working hours, buffer, service duration, existing appointments (cancelled and
+  no-show do not occupy) and start times already in the past. The response
+  carries one entry per day in ascending order; days the professional does not
+  work come back with an empty `slots` array rather than being omitted, so a
+  closed agenda cannot be mistaken for a truncated answer. `To` must not
+  precede `From` and the range must span at most 42 days; `Service ID` and
+  `Duration (Minutes)` behave exactly as on `Get Availability`.
+
 - **Message → Send idempotency key**: the optional `Idempotency Key` field
   sends the exact `Idempotency-Key` header to
   `POST /conversations/:id/messages`. A retry that reuses the same 1-128
@@ -13,6 +26,35 @@
   422 from NooviChat. During a staged server rollout, keyed writes receive HTTP
   503 until the administrator activates them. Leaving the field empty sends no
   idempotency header.
+
+### Changed
+
+- **Card → deal transitions are server-enforced**: NooviChat's 2026-08 audit
+  closed the generic write path into and out of a won/lost stage. A `PATCH`
+  (or `POST`) on `pipeline_cards` that sets `pipeline_stage` to a won/lost
+  stage — or moves a closed card out of one — now answers HTTP 422
+  (`pipeline_stage: requires_deal_transition` / `requires_reopen`), because
+  that shortcut skipped the closing value and the opportunity ledger entry.
+  Two node fields document it: the **Pipeline Stage** description (Create
+  refuses to open a card straight into a terminal stage) and the **Update
+  Fields** hint on **Bulk Update** (free-form JSON carrying `pipeline_stage`).
+  No operation changed behaviour: **Move to Stage** and **Bulk Move** post to
+  `move_to_stage`, which closes the deal itself and is unaffected; **Mark Won**,
+  **Mark Lost** and **Reopen** remain the supported transitions.
+- **Card → Recalculate Lead Score returns more fields**: the response of
+  `POST /pipeline_cards/:id/recalculate_score` gained `id`,
+  `lead_score_category`, `updated_at` (the card's) and `card_updated_at`. The
+  addition is backward compatible — existing expressions reading `lead_score`,
+  `qualification_score`, `lead_score_factors` or `lead_score_updated_at` keep
+  working. Note that on the other recalculation route
+  (`POST /pipeline/cards/:id/lead_scores/recalculate`, not exposed by this
+  node) `updated_at` keeps its legacy meaning of "when the score was
+  calculated"; `card_updated_at` is the field that means the same thing on
+  both. Do not use `updated_at`/`card_updated_at` to detect that the score
+  changed: recalculating writes the score columns directly and leaves the
+  card's own timestamp untouched, so both come back **older** than
+  `lead_score_updated_at`. Compare `lead_score_updated_at` (or `lead_score`
+  itself) instead.
 
 ## 0.18.0 (2026-07-02)
 

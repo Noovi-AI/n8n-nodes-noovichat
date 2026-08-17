@@ -79,6 +79,40 @@ describe('NooviChat Node — description', () => {
 		expect(idempotencyKey?.description).toContain('HTTP 503');
 	});
 
+	it('should expose the current card financial fields, filters, and limit contract', () => {
+		const cardLimit = node.description.properties.find(
+			(p) =>
+				p.name === 'limit' &&
+				((p.displayOptions?.show?.resource as string[] | undefined) || []).includes('card'),
+		);
+		expect(cardLimit?.typeOptions?.maxValue).toBe(500);
+
+		const cardCollections = node.description.properties.filter(
+			(p) =>
+				['additionalFields', 'filters'].includes(p.name) &&
+				((p.displayOptions?.show?.resource as string[] | undefined) || []).includes('card'),
+		);
+		const optionNames = cardCollections.flatMap((property) =>
+			((property.options as Array<{ name: string }> | undefined) || []).map((option) => option.name),
+		);
+		expect(optionNames).toContain('currency');
+		expect(optionNames).toEqual(
+			expect.arrayContaining([
+				'agentId',
+				'dateEnd',
+				'dateStart',
+				'excludeId',
+				'priority',
+				'search',
+				'slaExceeded',
+				'stages',
+				'status',
+				'valueMax',
+				'valueMin',
+			]),
+		);
+	});
+
 	it('should expose only the mutable appointment fields and WhatsApp reminders', () => {
 		const appointmentUpdateFields = node.description.properties.find(
 			(p) =>
@@ -224,6 +258,35 @@ describe('NooviChat Node — execute', () => {
 				uri: expect.stringContaining('/pipeline_cards'),
 			}),
 		);
+	});
+
+	it('should follow card cursors for Return All without repeating records', async () => {
+		const ctx = buildContext('card', 'getAll', {
+			returnAll: true,
+			filters: { search: 'Acme renewal' },
+		});
+		ctx._mockRequest
+			.mockResolvedValueOnce({
+				data: [{ id: 1 }, { id: 2 }],
+				meta: { has_more: true, next_cursor: 'next-page' },
+			})
+			.mockResolvedValueOnce({
+				data: [{ id: 2 }, { id: 3 }],
+				meta: { has_more: false, next_cursor: null },
+			});
+
+		const [result] = await node.execute.call(ctx);
+
+		expect(result.map((item: any) => item.json.id)).toEqual([1, 2, 3]);
+		expect(ctx._mockRequest.mock.calls[0][0].qs).toEqual({
+			search: 'Acme renewal',
+			limit: 500,
+		});
+		expect(ctx._mockRequest.mock.calls[1][0].qs).toEqual({
+			search: 'Acme renewal',
+			limit: 500,
+			cursor: 'next-page',
+		});
 	});
 
 	it('should call GET /follow-ups on followUp.getAll (account-wide)', async () => {
@@ -699,9 +762,9 @@ describe('NooviChat Node — execute', () => {
 		expect(call.qs).toEqual({ date_from: '2026-05-01', date_to: '2026-05-31' });
 	});
 
-	// --- v0.8.3: Card.getAll drops unsupported assigneeId/status filters; per_page → limit ---
+	// --- Card.getAll: current server-side filter contract; per_page → limit ---
 
-	it('should drop unsupported filters and use limit (not per_page) on card.getAll', async () => {
+	it('should map every supported server-side filter and use limit on card.getAll', async () => {
 		const ctx = buildContext('card', 'getAll', {
 			returnAll: false,
 			limit: 50,
@@ -710,6 +773,18 @@ describe('NooviChat Node — execute', () => {
 				stageId: 'qualified',
 				contactId: 17,
 				conversationDisplayId: 42,
+				excludeId: 91,
+				search: 'Acme renewal',
+				labels: 'vip, urgent',
+				priority: ['high', 'urgent'],
+				valueMin: 0,
+				valueMax: 25000,
+				agentId: 'unassigned',
+				dateStart: '2026-07-01',
+				dateEnd: '2026-07-31',
+				status: 'closed',
+				slaExceeded: true,
+				stages: 'qualified, proposal',
 			},
 		});
 		await node.execute.call(ctx);
@@ -720,11 +795,61 @@ describe('NooviChat Node — execute', () => {
 			pipeline_stage: 'qualified',
 			contact_id: 17,
 			conversation_display_id: 42,
+			exclude_id: 91,
+			search: 'Acme renewal',
+			'labels[]': ['vip', 'urgent'],
+			'priority[]': ['high', 'urgent'],
+			value_min: 0,
+			value_max: 25000,
+			agent_id: 'unassigned',
+			date_start: '2026-07-01',
+			date_end: '2026-07-31',
+			status: 'closed',
+			sla_exceeded: true,
+			'stages[]': ['qualified', 'proposal'],
 			limit: 50,
 		});
 		expect(call.qs).not.toHaveProperty('per_page');
 		expect(call.qs).not.toHaveProperty('assignee_id');
-		expect(call.qs).not.toHaveProperty('status');
+		expect(call.qsStringifyOptions).toEqual({ arrayFormat: 'repeat' });
+	});
+
+	it('should clamp card.getAll limit expressions to the backend maximum', async () => {
+		const ctx = buildContext('card', 'getAll', {
+			returnAll: false,
+			limit: 999,
+			filters: {},
+		});
+
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest.mock.calls[0][0].qs).toEqual({ limit: 500 });
+	});
+
+	it('should send the shared server-side filters on card.export', async () => {
+		const ctx = buildContext('card', 'export', {
+			filters: {
+				pipelineId: '3',
+				search: 'Acme renewal',
+				priority: ['urgent'],
+				valueMin: 0,
+				stages: 'qualified,proposal',
+			},
+		});
+
+		await node.execute.call(ctx);
+
+		const call = ctx._mockRequest.mock.calls[0][0];
+		expect(call.uri).toContain('/pipeline/cards/export');
+		expect(call.qs).toEqual({
+			pipeline_id: '3',
+			search: 'Acme renewal',
+			'priority[]': ['urgent'],
+			value_min: 0,
+			'stages[]': ['qualified', 'proposal'],
+		});
+		expect(call.qsStringifyOptions).toEqual({ arrayFormat: 'repeat' });
+		expect(call.json).toBe(false);
 	});
 
 	// --- v0.8.3: Service reminders nested in service body (no standalone routes) ---

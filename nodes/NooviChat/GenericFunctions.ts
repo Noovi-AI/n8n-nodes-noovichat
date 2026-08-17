@@ -41,6 +41,11 @@ function effectivePageSize(endpoint: string): number {
 // 400 pages × 25 = 10,000 records maximum before bailing out.
 const MAX_PAGES = 400;
 
+// Pipeline-card keyset pagination is intentionally separate from the generic
+// page/per_page helper. The legacy `/pipeline_cards` endpoint accepts
+// limit/offset/cursor and clamps each request to 500 records.
+const MAX_CURSOR_PAGE_SIZE = 500;
+
 // Maximum number of automatic retries on HTTP 429 responses.
 const MAX_RETRIES = 3;
 // Exponential backoff delays (ms) for retries when no Retry-After header is present.
@@ -148,6 +153,9 @@ export async function nooviChatApiRequest(
 		qs,
 		json: true,
 	};
+	if (hasExplicitArrayQuery(qs)) {
+		options.qsStringifyOptions = { arrayFormat: 'repeat' };
+	}
 
 	if (Object.keys(body).length === 0) {
 		delete options.body;
@@ -194,6 +202,9 @@ export async function nooviChatApiRequestRaw(
 		qs,
 		json: false, // keep the CSV body as a plain string
 	};
+	if (hasExplicitArrayQuery(qs)) {
+		options.qsStringifyOptions = { arrayFormat: 'repeat' };
+	}
 
 	if (Object.keys(qs).length === 0) {
 		delete options.qs;
@@ -210,6 +221,10 @@ export async function nooviChatApiRequestRaw(
 			`NooviChat API Error${detail} [${context}]: ${error.message || 'Unknown error'}`,
 		);
 	}
+}
+
+function hasExplicitArrayQuery(qs: IDataObject): boolean {
+	return Object.entries(qs).some(([key, value]) => key.endsWith('[]') && Array.isArray(value));
 }
 
 /**
@@ -321,6 +336,84 @@ export async function nooviChatApiRequestAllItems(
 		}
 
 		page++;
+	}
+
+	return returnData;
+}
+
+/**
+ * Collect every page from a keyset-paginated endpoint.
+ *
+ * Expected response shape:
+ *   { data: [...], meta: { has_more: boolean, next_cursor: string | null } }
+ *
+ * The cursor is treated as opaque, repeated cursors fail explicitly, and
+ * record IDs are de-duplicated defensively because live pipeline data may move
+ * while a long-running n8n workflow is reading it.
+ */
+export async function nooviChatApiRequestAllCursorItems(
+	this: NooviChatContext,
+	method: IHttpRequestMethods,
+	endpoint: string,
+	body: IDataObject = {},
+	qs: IDataObject = {},
+	pageSize = MAX_CURSOR_PAGE_SIZE,
+): Promise<any[]> {
+	const returnData: any[] = [];
+	const seenCursors = new Set<string>();
+	const seenItemIds = new Set<string>();
+	const limit = Number.isFinite(pageSize)
+		? Math.trunc(pageSize || MAX_CURSOR_PAGE_SIZE)
+		: MAX_CURSOR_PAGE_SIZE;
+	const effectiveLimit = Math.min(Math.max(limit, 1), MAX_CURSOR_PAGE_SIZE);
+	let cursor: string | undefined;
+
+	for (let page = 1; page <= MAX_PAGES; page++) {
+		const currentQs: IDataObject = { ...qs, limit: effectiveLimit };
+		if (cursor) currentQs.cursor = cursor;
+
+		const response = await withRateLimitRetry(() =>
+			nooviChatApiRequest.call(this, method, endpoint, body, currentQs),
+		);
+		const items = extractItems(response);
+		if (!Array.isArray(items) || items.length === 0) break;
+
+		for (const item of items) {
+			const itemId = item && typeof item === 'object' ? item.id : undefined;
+			if (itemId === undefined || itemId === null) {
+				returnData.push(item);
+				continue;
+			}
+
+			const key = String(itemId);
+			if (seenItemIds.has(key)) continue;
+			seenItemIds.add(key);
+			returnData.push(item);
+		}
+
+		const meta = response?.meta ?? response?.data?.meta;
+		if (meta?.has_more !== true) break;
+
+		const nextCursor = meta?.next_cursor;
+		if (typeof nextCursor !== 'string' || nextCursor.trim() === '') {
+			throw new Error(
+				`Cursor pagination for ${endpoint} returned has_more=true without next_cursor.`,
+			);
+		}
+		if (seenCursors.has(nextCursor)) {
+			throw new Error(`Cursor pagination for ${endpoint} returned a repeated cursor.`);
+		}
+
+		seenCursors.add(nextCursor);
+		cursor = nextCursor;
+
+		if (page === MAX_PAGES) {
+			returnData.push({
+				_truncated: true,
+				_truncated_reason: `Cursor pagination capped at MAX_PAGES=${MAX_PAGES} (${returnData.length} unique records collected). Use server-side filters to narrow scope.`,
+				_truncated_endpoint: endpoint,
+			} as any);
+		}
 	}
 
 	return returnData;

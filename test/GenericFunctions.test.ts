@@ -1,4 +1,11 @@
-import { nooviChatApiRequest, nooviChatApiRequestAllItems, formatExecutionData, parseJsonValue } from '../nodes/NooviChat/GenericFunctions';
+import {
+	formatExecutionData,
+	nooviChatApiRequest,
+	nooviChatApiRequestAllCursorItems,
+	nooviChatApiRequestAllItems,
+	nooviChatApiRequestRaw,
+	parseJsonValue,
+} from '../nodes/NooviChat/GenericFunctions';
 
 const mockRequest = jest.fn();
 const mockGetCredentials = jest.fn().mockResolvedValue({
@@ -123,6 +130,22 @@ describe('nooviChatApiRequest', () => {
 		);
 	});
 
+	it('should serialize explicit Rails array keys as repeated bracket parameters', async () => {
+		const qs = {
+			'labels[]': ['vip', 'urgent'],
+			'priority[]': ['high', 'urgent'],
+		};
+
+		await nooviChatApiRequest.call(createContext(), 'GET', '/pipeline_cards', {}, qs);
+
+		expect(mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				qs,
+				qsStringifyOptions: { arrayFormat: 'repeat' },
+			}),
+		);
+	});
+
 	it('should throw error with method and endpoint context on API failure', async () => {
 		const failRequest = jest.fn().mockRejectedValue(new Error('Unauthorized'));
 		const ctx = createContext(failRequest);
@@ -166,6 +189,36 @@ describe('nooviChatApiRequest', () => {
 		);
 
 		expect(response).toEqual({ success: true });
+	});
+});
+
+describe('nooviChatApiRequestRaw', () => {
+	beforeEach(() => {
+		jest.clearAllMocks();
+		mockRequest.mockResolvedValue('id,title\n1,Deal');
+	});
+
+	it('should preserve repeated Rails array filters for CSV exports', async () => {
+		const qs = {
+			'priority[]': ['high', 'urgent'],
+			'stages[]': ['lead', 'qualified'],
+		};
+
+		const response = await nooviChatApiRequestRaw.call(
+			createContext(),
+			'GET',
+			'/pipeline/cards/export',
+			qs,
+		);
+
+		expect(response).toBe('id,title\n1,Deal');
+		expect(mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				json: false,
+				qs,
+				qsStringifyOptions: { arrayFormat: 'repeat' },
+			}),
+		);
 	});
 });
 
@@ -338,6 +391,67 @@ describe('nooviChatApiRequestAllItems', () => {
 		expect(last._truncated_reason).toContain('MAX_PAGES=400');
 		expect(last._truncated_endpoint).toBe('/conversations');
 	}, 30000);
+});
+
+describe('nooviChatApiRequestAllCursorItems', () => {
+	beforeEach(() => {
+		jest.clearAllMocks();
+	});
+
+	it('follows next_cursor, keeps filters, caps limit at 500, and de-duplicates IDs', async () => {
+		mockRequest
+			.mockResolvedValueOnce({
+				data: [{ id: 1 }, { id: 2 }],
+				meta: { has_more: true, next_cursor: 'cursor-page-2' },
+			})
+			.mockResolvedValueOnce({
+				data: [{ id: 2 }, { id: 3 }],
+				meta: { has_more: false, next_cursor: null },
+			});
+
+		const result = await nooviChatApiRequestAllCursorItems.call(
+			createContext(),
+			'GET',
+			'/pipeline_cards',
+			{},
+			{ search: 'Acme renewal' },
+			999,
+		);
+
+		expect(result).toEqual([{ id: 1 }, { id: 2 }, { id: 3 }]);
+		expect(mockRequest.mock.calls[0][0].qs).toEqual({
+			search: 'Acme renewal',
+			limit: 500,
+		});
+		expect(mockRequest.mock.calls[1][0].qs).toEqual({
+			search: 'Acme renewal',
+			limit: 500,
+			cursor: 'cursor-page-2',
+		});
+		expect(mockRequest.mock.calls[0][0].qs).not.toHaveProperty('page');
+		expect(mockRequest.mock.calls[0][0].qs).not.toHaveProperty('per_page');
+	});
+
+	it('fails explicitly when has_more is true but the cursor repeats', async () => {
+		mockRequest
+			.mockResolvedValueOnce({
+				data: [{ id: 1 }],
+				meta: { has_more: true, next_cursor: 'same-cursor' },
+			})
+			.mockResolvedValueOnce({
+				data: [{ id: 1 }],
+				meta: { has_more: true, next_cursor: 'same-cursor' },
+			});
+
+		await expect(
+			nooviChatApiRequestAllCursorItems.call(
+				createContext(),
+				'GET',
+				'/pipeline_cards',
+			),
+		).rejects.toThrow('returned a repeated cursor');
+		expect(mockRequest).toHaveBeenCalledTimes(2);
+	});
 });
 
 describe('parseJsonValue', () => {

@@ -297,6 +297,40 @@ describe('Appointment contract — requests and responses', () => {
 		});
 	});
 
+	it('sends the range endpoint its own from/to and omits the single date', async () => {
+		const ctx = buildContext('availabilityRange', {
+			professionalId: '3',
+			serviceId: '7',
+			from: '2026-08-03',
+			to: '2026-08-09',
+			durationMinutes: 0,
+		});
+
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest.mock.calls[0][0].uri).toContain(
+			'/appointments/availability_range',
+		);
+		expect(ctx._mockRequest.mock.calls[0][0].qs).toEqual({
+			professional_id: '3',
+			from: '2026-08-03',
+			to: '2026-08-09',
+			service_id: '7',
+		});
+	});
+
+	it('offers from/to only on the range operation', () => {
+		const from = operationField('from', 'availabilityRange');
+		const to = operationField('to', 'availabilityRange');
+
+		expect(from?.required).toBe(true);
+		expect(to?.required).toBe(true);
+		// O dia único não pode oferecer o intervalo, nem o contrário: são
+		// endpoints distintos e misturar os campos manda parâmetro inválido.
+		expect(operationField('from', 'availability')).toBeUndefined();
+		expect(operationField('date', 'availabilityRange')).toBeUndefined();
+	});
+
 	it('sends service and int32 duration together so the backend can validate both', async () => {
 		const ctx = buildContext('availability', {
 			professionalId: '3',

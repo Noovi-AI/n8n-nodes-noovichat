@@ -23,6 +23,21 @@ export const PartnerOperations: INodeProperties[] = [
 ];
 
 export const PartnerFields: INodeProperties[] = [
+	// --- Get Many: include deactivated partners ---
+	{
+		displayName: 'Include Inactive',
+		name: 'includeInactive',
+		type: 'boolean',
+		displayOptions: {
+			show: {
+				resource: ['partner'],
+				operation: ['list'],
+			},
+		},
+		default: false,
+		description:
+			'Whether to include partners whose active flag is false. Off by default, matching the API; without it a deactivated partner cannot be listed at all, not even to reactivate it.',
+	},
 	// --- Shared: Partner ID ---
 	{
 		displayName: 'Partner ID',
@@ -59,21 +74,16 @@ export const PartnerFields: INodeProperties[] = [
 	{
 		displayName: 'Kind',
 		name: 'kind',
-		type: 'options',
+		type: 'string',
 		displayOptions: {
 			show: {
 				resource: ['partner'],
 				operation: ['create'],
 			},
 		},
-		options: [
-			{ name: 'Convênio', value: 'convenio', description: 'Health convenio (Brazilian HMO)' },
-			{ name: 'Seguro', value: 'seguro', description: 'Health insurance' },
-			{ name: 'Plano', value: 'plano', description: 'Health plan' },
-			{ name: 'Outros', value: 'outros', description: 'Other type of partner' },
-		],
 		default: 'convenio',
-		description: 'Type of partner',
+		description:
+			'Type of partner, up to 40 characters. Not a closed set: an account names its own types. The canonical values the NooviChat dashboard translates are convenio (Brazilian HMO), seguro (insurance), plano (health plan) and outros (legacy catch-all); anything else is stored and displayed as written.',
 	},
 	{
 		displayName: 'Additional Fields',
@@ -122,15 +132,10 @@ export const PartnerFields: INodeProperties[] = [
 			{
 				displayName: 'Kind',
 				name: 'kind',
-				type: 'options',
-				options: [
-					{ name: 'Convênio', value: 'convenio' },
-					{ name: 'Seguro', value: 'seguro' },
-					{ name: 'Plano', value: 'plano' },
-					{ name: 'Outros', value: 'outros' },
-				],
+				type: 'string',
 				default: 'convenio',
-				description: 'Type of partner',
+				description:
+					'Type of partner, up to 40 characters. Not a closed set: an account names its own types. convenio, seguro, plano and outros are the canonical values the dashboard translates.',
 			},
 			{
 				displayName: 'Settings (JSON)',

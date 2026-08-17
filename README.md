@@ -67,6 +67,20 @@ Full CRM pipeline management directly from n8n. Create pipelines, manage stages,
 | **Pipeline** | Create, Get, Get Many, Update, Delete · Stage CRUD · Stage Reorder · Analytics: dashboard, win rate, conversion rate, velocity, team performance, lost reasons |
 | **Card** | Create, Get, Get Many, Update, Delete · Move to Stage · Mark Won / Lost / Reopen · Get Timeline · **Bulk Update · Bulk Move · Bulk Delete** |
 
+> ⚠️ **Closing a deal is never a side effect of a generic write.** Won and lost
+> stages stay out of reach of the plain create/update path: **Create** refuses
+> to open a card straight into one, and a `pipeline_stage` sent through **Bulk
+> Update**'s free-form JSON is refused with HTTP 422 whether it enters a
+> won/lost stage or takes a closed card out of one. That shortcut used to leave
+> the deal closed without its closing value or its entry in the opportunity
+> ledger, so the closing now has to be explicit: **Mark Won**, **Mark Lost** and
+> **Reopen**.
+>
+> **Nothing here changed for the operations you already use to move cards.**
+> **Move to Stage** and **Bulk Move** are unaffected and still accept a won/lost
+> destination — they post to the dedicated move endpoint, which recognises the
+> target stage and performs the whole closing itself.
+
 #### 📅 Follow-ups & Activities
 Never miss a follow-up again. Schedule tasks, track activities and automate reminders tied to cards and conversations.
 

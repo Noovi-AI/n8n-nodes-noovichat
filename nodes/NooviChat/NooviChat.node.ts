@@ -7,7 +7,14 @@ import {
 	NodeOperationError,
 } from 'n8n-workflow';
 
-import { nooviChatApiRequest, nooviChatApiRequestAllItems, nooviChatApiRequestRaw, formatExecutionData, parseJsonValue } from './GenericFunctions';
+import {
+	formatExecutionData,
+	nooviChatApiRequest,
+	nooviChatApiRequestAllCursorItems,
+	nooviChatApiRequestAllItems,
+	nooviChatApiRequestRaw,
+	parseJsonValue,
+} from './GenericFunctions';
 
 // Import all descriptions
 import { ConversationOperations, ConversationFields } from './descriptions/ConversationDescription';
@@ -952,7 +959,8 @@ async function handlePipelineOperation(this: IExecuteFunctions, operation: strin
 async function handleCardOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
 	const cardId = this.getNodeParameter('cardId', index, '') as string;
 	const returnAll = this.getNodeParameter('returnAll', index, false) as boolean;
-	const limit = this.getNodeParameter('limit', index, 50) as number;
+	const requestedLimit = this.getNodeParameter('limit', index, 50) as number;
+	const limit = Math.min(Math.max(Math.trunc(requestedLimit || 50), 1), 500);
 
 	switch (operation) {
 		case 'create': {
@@ -968,9 +976,14 @@ async function handleCardOperation(this: IExecuteFunctions, operation: string, i
 				title,
 			};
 			if (additionalFields.contactId) body.contact_id = additionalFields.contactId;
-			if (additionalFields.value) body.expected_revenue = additionalFields.value;
+			if (isObjectWithOwnProperty(additionalFields, 'value')) {
+				body.expected_revenue = additionalFields.value;
+			}
+			if (additionalFields.currency) body.currency = normalizeCardCurrency(additionalFields.currency);
 			if (additionalFields.expectedCloseDate) body.deadline = additionalFields.expectedCloseDate;
-			if (additionalFields.assigneeId) body.owner_id = additionalFields.assigneeId;
+			if (isObjectWithOwnProperty(additionalFields, 'assigneeId')) {
+				body.owner_id = normalizeCardOwnerId(additionalFields.assigneeId);
+			}
 			return await nooviChatApiRequest.call(this, 'POST', '/pipeline_cards', body);
 		}
 		case 'get':
@@ -986,7 +999,14 @@ async function handleCardOperation(this: IExecuteFunctions, operation: string, i
 			const qs = buildCardFilterQs(filters);
 			if (!returnAll) qs.limit = limit;
 			if (returnAll) {
-				return await nooviChatApiRequestAllItems.call(this, 'GET', '/pipeline_cards', {}, qs);
+				return await nooviChatApiRequestAllCursorItems.call(
+					this,
+					'GET',
+					'/pipeline_cards',
+					{},
+					qs,
+					500,
+				);
 			}
 			return await nooviChatApiRequest.call(this, 'GET', '/pipeline_cards', {}, qs);
 		}
@@ -994,9 +1014,14 @@ async function handleCardOperation(this: IExecuteFunctions, operation: string, i
 			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
 			const body: any = {};
 			if (additionalFields.title) body.title = additionalFields.title;
-			if (additionalFields.value) body.expected_revenue = additionalFields.value;
+			if (isObjectWithOwnProperty(additionalFields, 'value')) {
+				body.expected_revenue = additionalFields.value;
+			}
+			if (additionalFields.currency) body.currency = normalizeCardCurrency(additionalFields.currency);
 			if (additionalFields.expectedCloseDate) body.deadline = additionalFields.expectedCloseDate;
-			if (additionalFields.assigneeId) body.owner_id = additionalFields.assigneeId;
+			if (isObjectWithOwnProperty(additionalFields, 'assigneeId')) {
+				body.owner_id = normalizeCardOwnerId(additionalFields.assigneeId);
+			}
 			return await nooviChatApiRequest.call(this, 'PATCH', `/pipeline_cards/${cardId}`, body);
 		}
 		case 'delete':
@@ -1019,6 +1044,25 @@ async function handleCardOperation(this: IExecuteFunctions, operation: string, i
 			const cardIdValues = this.getNodeParameter('cardIds.values', index, []) as Array<{ id: string }>;
 			const updateFields = this.getNodeParameter('updateFields', index) as any;
 			const parsed = parseJsonValue(updateFields);
+			// `pipeline_stage` inside this free-form JSON is deliberately NOT guarded here:
+			// which stages are terminal lives in each pipeline's configuration, so the node
+			// cannot tell a won/lost stage from a regular one without an extra round trip.
+			// Since the 2026-08 audit the backend closes that door itself — a generic
+			// PATCH that enters or leaves a won/lost stage answers 422
+			// (pipeline_stage: requires_deal_transition / requires_reopen), because the
+			// shortcut skipped the closing value and the opportunity ledger entry.
+			// The dedicated Mark Won / Mark Lost / Reopen operations (and Bulk Move, which
+			// posts to move_to_stage) remain the supported path. Documented in the
+			// "Update Fields" hint on this operation.
+			const hasRootStatus = isObjectWithOwnProperty(parsed, 'status');
+			const hasWrappedStatus = isObjectWithOwnProperty(parsed?.pipeline_card, 'status');
+			if (hasRootStatus || hasWrappedStatus) {
+				throw new NodeOperationError(
+					this.getNode(),
+					'Card status cannot be changed through Bulk Update. Use Mark Won, Mark Lost, or Reopen.',
+					{ itemIndex: index },
+				);
+			}
 			const results = [];
 			for (const card of cardIdValues) {
 				const result = await nooviChatApiRequest.call(this, 'PATCH', `/pipeline_cards/${card.id}`, parsed);
@@ -1115,14 +1159,58 @@ function buildCardFilterQs(filters: any): any {
 	if (filters.stageId) qs.pipeline_stage = filters.stageId;
 	if (filters.contactId) qs.contact_id = filters.contactId;
 	if (filters.conversationDisplayId) qs.conversation_display_id = filters.conversationDisplayId;
-	if (filters.labels) {
-		const labels = String(filters.labels)
-			.split(',')
-			.map((l: string) => l.trim())
-			.filter((l: string) => l !== '');
-		if (labels.length > 0) qs['labels[]'] = labels;
+	if (filters.excludeId) qs.exclude_id = filters.excludeId;
+	if (filters.search) {
+		const search = String(filters.search).trim();
+		if (search.length > 200) {
+			throw new Error('Card search must be 200 characters or fewer.');
+		}
+		if (search) qs.search = search;
 	}
+	const labels = normalizeCardListFilter(filters.labels);
+	if (labels.length > 0) qs['labels[]'] = labels;
+	const priorities = normalizeCardListFilter(filters.priority);
+	if (priorities.length > 0) qs['priority[]'] = priorities;
+	if (isPresentCardFilter(filters, 'valueMin')) qs.value_min = filters.valueMin;
+	if (isPresentCardFilter(filters, 'valueMax')) qs.value_max = filters.valueMax;
+	if (isPresentCardFilter(filters, 'agentId')) qs.agent_id = filters.agentId;
+	if (filters.dateStart) qs.date_start = filters.dateStart;
+	if (filters.dateEnd) qs.date_end = filters.dateEnd;
+	if (filters.status) qs.status = filters.status;
+	if (filters.slaExceeded === true || filters.slaExceeded === 'true') qs.sla_exceeded = true;
+	const stages = normalizeCardListFilter(filters.stages);
+	if (stages.length > 0) qs['stages[]'] = stages;
 	return qs;
+}
+
+function normalizeCardListFilter(value: unknown): string[] {
+	const values = Array.isArray(value) ? value : String(value ?? '').split(',');
+	return values.map((entry) => String(entry).trim()).filter((entry) => entry !== '');
+}
+
+function isPresentCardFilter(filters: unknown, property: string): boolean {
+	return isObjectWithOwnProperty(filters, property) && (filters as Record<string, unknown>)[property] !== '';
+}
+
+function normalizeCardCurrency(value: unknown): string {
+	const currency = String(value).trim().toUpperCase();
+	if (!/^[A-Z]{3}$/.test(currency)) {
+		throw new Error('Card currency must contain exactly three letters, such as BRL or USD.');
+	}
+	return currency;
+}
+
+function normalizeCardOwnerId(value: unknown): unknown {
+	return Number(value) === 0 ? null : value;
+}
+
+function isObjectWithOwnProperty(value: unknown, property: string): boolean {
+	return Boolean(
+		value &&
+			typeof value === 'object' &&
+			!Array.isArray(value) &&
+			Object.prototype.hasOwnProperty.call(value, property),
+	);
 }
 
 // Follow-up handlers
@@ -1748,6 +1836,23 @@ async function handleAppointmentOperation(this: IExecuteFunctions, operation: st
 				qs,
 			);
 		}
+		case 'availabilityRange': {
+			const professionalId = this.getNodeParameter('professionalId', index) as string;
+			const serviceId = this.getNodeParameter('serviceId', index, '') as string;
+			const from = this.getNodeParameter('from', index) as string;
+			const to = this.getNodeParameter('to', index) as string;
+			const durationMinutes = this.getNodeParameter('durationMinutes', index, 0) as number;
+			const qs: any = { professional_id: professionalId, from, to };
+			if (hasOptionalId(serviceId)) qs.service_id = serviceId;
+			if (durationMinutes) qs.duration_minutes = durationMinutes;
+			return await nooviChatApiRequest.call(
+				this,
+				'GET',
+				'/appointments/availability_range',
+				{},
+				qs,
+			);
+		}
 		case 'getContactHistory': {
 			const contactId = this.getNodeParameter('contact_id', index) as string;
 			const page = this.getNodeParameter('page', index, 1) as number;
@@ -1758,6 +1863,16 @@ async function handleAppointmentOperation(this: IExecuteFunctions, operation: st
 				undefined,
 				{ page },
 			);
+		}
+		case 'listClients': {
+			// Diretório agregado sobre TODO o histórico de agendamentos: cada
+			// linha traz o total do cliente, a última visita e a próxima.
+			const query = (this.getNodeParameter('clientsQuery', index, '') as string).trim();
+			const sort = this.getNodeParameter('clientsSort', index, 'recent') as string;
+			const page = this.getNodeParameter('clientsPage', index, 1) as number;
+			const qs: IDataObject = { sort, page };
+			if (query) qs.q = query;
+			return await nooviChatApiRequest.call(this, 'GET', '/appointments/clients', {}, qs);
 		}
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
@@ -1959,8 +2074,22 @@ async function handlePartnerOperation(this: IExecuteFunctions, operation: string
 		}
 		case 'get':
 			return await nooviChatApiRequest.call(this, 'GET', `/partners/${partnerId}`);
-		case 'list':
-			return await nooviChatApiRequest.call(this, 'GET', '/partners');
+		case 'list': {
+			// Só ativos por padrão, como a API. O parceiro desativado fica
+			// inalcançável sem este filtro — inclusive para reativá-lo.
+			const includeInactive = this.getNodeParameter(
+				'includeInactive',
+				index,
+				false,
+			) as boolean;
+			return await nooviChatApiRequest.call(
+				this,
+				'GET',
+				'/partners',
+				{},
+				includeInactive ? { include_inactive: true } : {},
+			);
+		}
 		case 'update': {
 			const updateFields = this.getNodeParameter('updateFields', index, {}) as any;
 			const body: any = { partner: {} };

@@ -70,6 +70,50 @@ grep -r "endpoint_path" "$(git rev-parse --show-toplevel)/nodes/"
 
 ## Mudanças na API (histórico de incidents)
 
+### 2026-08-10 — Cards: transição de negócio fechada e resposta do recálculo
+
+Auditoria 2026-08 do backend (itens D1 e R6). Nada no node quebrou; o que muda
+é o que a API recusa e o que ela devolve.
+
+- **D1 — fechar/reabrir não passa mais pelo write genérico.** `POST` e `PATCH`
+  em `/pipeline_cards` respondem `422` quando `pipeline_stage` **entra** numa
+  etapa de ganho/perda (`pipeline_stage: requires_deal_transition`, inclusive
+  ao criar o card já numa etapa terminal) ou quando **sai** de uma etapa
+  terminal com o negócio ainda fechado (`requires_reopen`). O atalho gravava o
+  card como fechado sem valor de fechamento e sem a oportunidade no ledger.
+  - Operações do node afetadas apenas na documentação: **Create** (descrição do
+    campo *Pipeline Stage*) e **Bulk Update** (hint de *Update Fields*, porque
+    o JSON livre pode carregar `pipeline_stage`).
+  - **Move to Stage** e **Bulk Move** **não** foram afetados: eles postam em
+    `/pipeline_cards/:id/move_to_stage`, rota que identifica a etapa de destino
+    e executa o fechamento completo por conta própria. Continua sendo o caminho
+    recomendado para mover cards, inclusive para etapas terminais.
+  - **Mark Won**, **Mark Lost** e **Reopen** seguem sendo as transições
+    suportadas e não mudaram.
+  - O node não tenta adivinhar quais etapas são terminais: isso vive na
+    configuração de cada funil, e descobrir exigiria uma chamada extra. O guard
+    local do Bulk Update continua cobrindo só `status`; `pipeline_stage` é
+    recusado pelo backend.
+- **R6 — resposta do recálculo de lead score.** `POST
+  /pipeline_cards/:id/recalculate_score` (usada pela operação **Recalculate
+  Lead Score**) passou a devolver também `id`, `lead_score_category`,
+  `updated_at` e `card_updated_at`. É aditivo: `lead_score`,
+  `qualification_score`, `lead_score_factors` e `lead_score_updated_at`
+  mantêm nome e significado, então nenhuma expression existente quebra.
+  - Cuidado com `updated_at`: nesta rota ele é o timestamp do **card**, mas na
+    rota canônica `POST /pipeline/cards/:id/lead_scores/recalculate` (que o node
+    não expõe) ele carrega o timestamp do **cálculo**, valor legado preservado
+    de propósito. `card_updated_at` e `lead_score_updated_at` são os únicos
+    campos com o mesmo significado nas duas rotas.
+  - O recálculo persiste via `update_columns` nas colunas de score, então **não**
+    bomba o `updated_at` do card. Depois de recalcular, `card_updated_at` (e o
+    `updated_at` desta rota) vêm mais **antigos** que `lead_score_updated_at`.
+    Um workflow que detecta "mudou o score" precisa comparar
+    `lead_score_updated_at` ou o próprio `lead_score`, nunca o timestamp do card.
+- **D3 — automação sem `flow` responde 422**: não se aplica a este node. Não
+  existe resource de automação de pipeline aqui (só `SequenceDescription`
+  menciona automações, e apenas em comentário). Nada a documentar no node.
+
 ### 2026-07-21 — Envio idempotente de mensagens
 
 `POST /conversations/:id/messages` agora aceita o header opcional
@@ -91,6 +135,39 @@ do contrato do cliente.
 - `nooviChatApiRequest` aceita headers adicionais por chamada e preserva os
   headers compartilhados de autenticação e JSON. Nenhuma outra operação passa
   headers extras automaticamente.
+
+### 2026-07-18 — Pipeline cards: busca, cursor, moeda e transições de status
+
+O contrato público de cards foi alinhado ao comportamento do dashboard:
+
+- `GET /pipeline_cards` aceita os filtros `pipeline_id`, `pipeline_stage`,
+  `conversation_display_id`, `contact_id`, `exclude_id`, `labels[]`,
+  `priority[]`, `value_min`, `value_max`, `agent_id`, `date_start`, `date_end`,
+  `status`, `sla_exceeded`, `stages[]` e `search` (o backend usa no máximo 200
+  caracteres da busca). `agent_id=-1` ou `agent_id=unassigned` seleciona cards
+  sem responsável; `status=closed` reúne ganhos e perdidos. As datas são
+  interpretadas no `account.reporting_timezone`.
+- A rota pagina por `limit` (1–500), `cursor` e `offset`; `page`/`per_page` não
+  fazem parte desse contrato legacy. A opção **Return All** do node segue
+  `meta.next_cursor` até `meta.has_more=false` e elimina IDs repetidos
+  defensivamente.
+- O export CSV em `GET /pipeline/cards/export` usa os mesmos filtros funcionais
+  listados acima, mas não os parâmetros de paginação. Filtros múltiplos são
+  enviados como parâmetros Rails repetidos
+  (`labels[]=vip&labels[]=urgent`, por exemplo), nunca como índices ou uma
+  string única separada por vírgulas.
+- `POST/PATCH /pipeline_cards` aceitam `currency` junto de
+  `expected_revenue`; o node normaliza o código de três letras para maiúsculas,
+  preserva `expected_revenue=0` e converte `assigneeId=0` em `owner_id=null`
+  para criar sem responsável ou limpar o responsável atual.
+- O PATCH genérico não aceita transição por `status`. O Bulk Update rejeita
+  esse campo antes da chamada e orienta o uso de **Mark Won**, **Mark Lost** ou
+  **Reopen**, que acionam o fluxo completo de domínio.
+
+Testes de contrato cobrem paginação por cursor sem repetição, todos os filtros
+de lista/export (inclusive mínimo zero e arrays Rails repetidos), moeda e valor
+zero no create/update, limpeza de responsável e rejeição explícita de status no
+Bulk Update.
 
 ### 2026-07-03 — Pipeline card: contatos/conversas adicionais + custom fields (v0.19.0)
 
@@ -235,6 +312,15 @@ em `errors.url`. Sem mudança no código do node — apenas surface o erro.
   duração deve estar entre 1 e 2147483647, usa 60 quando omitida e a duração
   efetiva do serviço prevalece quando ele é informado. Mesmo com serviço, um
   `duration_minutes` enviado continua sendo validado pelo backend.
+- `GET /appointments/availability_range` exige `professional_id`, `from` e `to`
+  como strings estritas `YYYY-MM-DD`; `service_id` e `duration_minutes` se
+  comportam exatamente como na disponibilidade de um dia. `to` não pode ser
+  anterior a `from` e o intervalo tem no máximo 42 dias — fora disso o backend
+  responde 422. A resposta traz um item por dia do intervalo, em ordem
+  crescente, e dias sem expediente vêm com `slots` vazio em vez de ausentes:
+  omitir o dia tornaria uma agenda fechada indistinguível de uma resposta
+  truncada. Os campos `from`/`to` só aparecem na operação de intervalo e `date`
+  só na de um dia — misturá-los manda parâmetro que o endpoint não aceita.
 - `DELETE /appointments/:id` envia a razão opcional em `?reason=`. A resposta
   `204 No Content` é normalizada pelo node para `{ "success": true }`.
 - `GET /appointments` repassa a projeção summary allowlisted do backend: ela não
