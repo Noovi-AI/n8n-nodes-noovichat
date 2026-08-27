@@ -1,5 +1,6 @@
 import {
 	formatExecutionData,
+	moveCardToStage,
 	nooviChatApiRequest,
 	nooviChatApiRequestAllCursorItems,
 	nooviChatApiRequestAllItems,
@@ -511,5 +512,78 @@ describe('formatExecutionData', () => {
 	it('should handle null gracefully', () => {
 		const result = formatExecutionData(null);
 		expect(result).toEqual([{ json: null, pairedItem: { item: 0 } }]);
+	});
+});
+
+// Desde o NooviChat v4.17.0.6 o `move_to_stage` compara `expected_version` dentro
+// da mesma transacao e responde 409 em vez de sobrescrever a movimentacao de
+// outra pessoa. Para um token de agent bot o campo e OBRIGATORIO (422
+// `expected_version_required` sem ele), e a credencial nao diz de antemao se o
+// token e humano ou robo. Por isso o node sempre le o card antes.
+describe('moveCardToStage', () => {
+	beforeEach(() => {
+		jest.clearAllMocks();
+	});
+
+	it('le o card e manda a versao lida como expected_version', async () => {
+		mockRequest
+			.mockResolvedValueOnce({ id: 42, stage_version: 7 })
+			.mockResolvedValueOnce({ id: 42, pipeline_stage: 'ganho' });
+
+		await moveCardToStage.call(createContext(), '42', 'ganho');
+
+		expect(mockRequest).toHaveBeenNthCalledWith(
+			1,
+			expect.objectContaining({
+				method: 'GET',
+				uri: 'https://chat.example.com/api/v1/accounts/1/pipeline_cards/42',
+			}),
+		);
+		expect(mockRequest).toHaveBeenNthCalledWith(
+			2,
+			expect.objectContaining({
+				method: 'POST',
+				uri: 'https://chat.example.com/api/v1/accounts/1/pipeline_cards/42/move_to_stage',
+				body: { pipeline_stage: 'ganho', expected_version: 7 },
+			}),
+		);
+	});
+
+	it('aceita versao 0 — card recem-criado nunca movido', async () => {
+		// Regressao: um `if (card.stage_version)` trataria 0 como ausente e o bot
+		// levaria 422 justamente no primeiro movimento do card.
+		mockRequest
+			.mockResolvedValueOnce({ id: 43, stage_version: 0 })
+			.mockResolvedValueOnce({ id: 43 });
+
+		await moveCardToStage.call(createContext(), '43', 'contato');
+
+		expect(mockRequest).toHaveBeenNthCalledWith(
+			2,
+			expect.objectContaining({ body: { pipeline_stage: 'contato', expected_version: 0 } }),
+		);
+	});
+
+	it('omite o campo quando o servidor nao devolve stage_version', async () => {
+		// Instalacao anterior a v4.17.0.6: mandar o campo faria o servidor recusar
+		// um parametro que ele nao conhece.
+		mockRequest.mockResolvedValueOnce({ id: 44 }).mockResolvedValueOnce({ id: 44 });
+
+		await moveCardToStage.call(createContext(), '44', 'contato');
+
+		expect(mockRequest).toHaveBeenNthCalledWith(
+			2,
+			expect.objectContaining({ body: { pipeline_stage: 'contato' } }),
+		);
+	});
+
+	it('propaga o 409 em vez de tentar de novo com versao nova', async () => {
+		// Repetir com a versao fresca reproduziria exatamente a sobrescrita que o
+		// servidor esta recusando.
+		const conflito = Object.assign(new Error('conflict'), { statusCode: 409 });
+		mockRequest.mockResolvedValueOnce({ id: 45, stage_version: 3 }).mockRejectedValueOnce(conflito);
+
+		await expect(moveCardToStage.call(createContext(), '45', 'perdido')).rejects.toThrow('conflict');
+		expect(mockRequest).toHaveBeenCalledTimes(2);
 	});
 });

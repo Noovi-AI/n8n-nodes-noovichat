@@ -130,6 +130,49 @@ async function resolveRequestTarget(
 	};
 }
 
+/**
+ * Move a card between stages honouring the server-side compare-and-swap.
+ *
+ * Since NooviChat v4.17.0.6 `move_to_stage` REQUIRES `expected_version` when the
+ * caller authenticates as an agent bot: the server compares it inside the same
+ * transaction and answers 409 instead of silently overwriting a move somebody
+ * else made in between. A bot request without it fails with 422
+ * `expected_version_required`.
+ *
+ * The credential decides which contract applies — `api_access_token` resolves to
+ * a User or to an AgentBot depending on the token the user pasted, so the node
+ * cannot know upfront. We always read the card first and send the version: for a
+ * bot it is mandatory, and for a human it upgrades last-write-wins into a real
+ * conflict check. One extra GET per move is the price of not overwriting a
+ * person's work.
+ *
+ * A 409 is surfaced as-is: retrying blindly with a fresh version would reproduce
+ * exactly the overwrite the server is refusing.
+ */
+export async function moveCardToStage(
+	this: NooviChatContext,
+	cardId: string,
+	stageId: string,
+): Promise<IDataObject> {
+	const card = (await nooviChatApiRequest.call(
+		this,
+		'GET',
+		`/pipeline_cards/${cardId}`,
+	)) as IDataObject;
+
+	const body: IDataObject = { pipeline_stage: stageId };
+	if (card?.stage_version !== undefined && card?.stage_version !== null) {
+		body.expected_version = card.stage_version;
+	}
+
+	return (await nooviChatApiRequest.call(
+		this,
+		'POST',
+		`/pipeline_cards/${cardId}/move_to_stage`,
+		body,
+	)) as IDataObject;
+}
+
 export async function nooviChatApiRequest(
 	this: NooviChatContext,
 	method: IHttpRequestMethods,

@@ -12,6 +12,7 @@ import {
 	nooviChatApiRequest,
 	nooviChatApiRequestAllCursorItems,
 	nooviChatApiRequestAllItems,
+	moveCardToStage,
 	nooviChatApiRequestRaw,
 	parseJsonValue,
 } from './GenericFunctions';
@@ -1028,7 +1029,7 @@ async function handleCardOperation(this: IExecuteFunctions, operation: string, i
 			return await nooviChatApiRequest.call(this, 'DELETE', `/pipeline_cards/${cardId}`);
 		case 'moveToStage': {
 			const stageId = this.getNodeParameter('stageId', index) as string;
-			return await nooviChatApiRequest.call(this, 'POST', `/pipeline_cards/${cardId}/move_to_stage`, { pipeline_stage: stageId });
+			return await moveCardToStage.call(this, cardId, stageId);
 		}
 		case 'markWon':
 			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/cards/${cardId}/deal_status/mark_won`);
@@ -1075,7 +1076,7 @@ async function handleCardOperation(this: IExecuteFunctions, operation: string, i
 			const stageId = this.getNodeParameter('stageId', index) as string;
 			const results = [];
 			for (const card of cardIdValues) {
-				const result = await nooviChatApiRequest.call(this, 'POST', `/pipeline_cards/${card.id}/move_to_stage`, { pipeline_stage: stageId });
+				const result = await moveCardToStage.call(this, card.id, stageId);
 				results.push(result);
 			}
 			return results;

@@ -29,6 +29,22 @@
 
 ### Changed
 
+- **Card → Move to Stage now reads the card first**: since NooviChat v4.17.0.6
+  `move_to_stage` compares an `expected_version` inside the same transaction and
+  answers HTTP 409 (`stage_version_conflict`) instead of silently overwriting a
+  move somebody else made in between. When the credential authenticates as an
+  **agent bot** the field is mandatory — the server answers 422
+  (`expected_version_required`) without it. The credential cannot tell the node
+  upfront which contract applies, because `api_access_token` resolves to a User
+  or to an AgentBot depending on the token that was pasted, so the node always
+  fetches the card and sends the version it read. That costs one extra GET per
+  move; in exchange a human's move is no longer silently overwritten either.
+  A 409 surfaces as-is rather than being retried with a fresh version, since
+  retrying would reproduce exactly the overwrite the server is refusing. Servers
+  older than v4.17.0.6 do not return `stage_version`, and the field is then
+  omitted. **Bulk Move to Stage** follows the same path, card by card.
+
+
 - **Card → deal transitions are server-enforced**: NooviChat's 2026-08 audit
   closed the generic write path into and out of a won/lost stage. A `PATCH`
   (or `POST`) on `pipeline_cards` that sets `pipeline_stage` to a won/lost
