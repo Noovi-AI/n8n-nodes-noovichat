@@ -32,6 +32,9 @@
     "type": "git",
     "url": "git+https://github.com/Noovi-AI/n8n-nodes-noovichat.git"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=18.0.0"
   },

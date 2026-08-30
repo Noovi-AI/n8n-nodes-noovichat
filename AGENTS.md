@@ -9,9 +9,10 @@ NooviChat (Chatwoot fork) REST API for n8n workflows. Stack: TypeScript,
 n8n-workflow SDK, Jest, Gulp (SVG icons), ESLint (`eslint-plugin-n8n-nodes-base`).
 
 Codex may edit `nodes/`, `credentials/`, `test/`, `docs/`, and supporting
-scripts. Do not run `npm publish`, `npm version`, or `git push --follow-tags`
-unless a human explicitly requested that release action for the current turn
-— a published npm version cannot be removed, only deprecated.
+scripts. When a Chatwoot API change updates this node, **bump `package.json`
+in the same commit** and push `master` — GitHub Actions publishes if that
+version is not on npm. Do not `npm publish` from a dirty local tree. A
+published version cannot be removed, only deprecated.
 
 Cycle: `recon -> implement (reuse-first, extend GenericFunctions.ts/Description
 files, never hand-roll pagination/auth) -> review (npm run lint, npm run

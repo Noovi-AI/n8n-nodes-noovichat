@@ -8,27 +8,26 @@
 
 This project lives inside the NooviChat monorepo, which defines **5 golden rules** (`../CLAUDE.md`). The 3 below are the ones with npm-specific mechanics; golden rule 5 (atomic commits straight to main, no worktrees — `../docs/rules/git-discipline.md`) applies here exactly as written at the root. Golden rule 4 (multi-tenant isolation) does not apply directly — this package has no database access, it only calls the Chatwoot REST API, which enforces isolation server-side:
 
-### 1. No reflexive `npm publish`
+### 1. No reflexive local `npm publish`
 
-Never run `npm publish` as a reflex. A version published to npm **cannot be removed** (only deprecated). If you publish a broken version, clients who update the node break their workflows — and the damage is public.
+Do not `npm publish` from a dirty laptop. A version on npm **cannot be
+removed** (only deprecated). Routine fan-out: bump `package.json` in the
+same commit, push `master`, and `.github/workflows/publish.yml` publishes
+if that version is unpublished.
 
-### 2. Local test battery is MANDATORY before publish
+### 2. CI test battery is MANDATORY before registry publish
+
+The publish workflow runs lint, test and build on a clean checkout, then
+`publish-if-needed.sh`. Local equivalent before you push:
 
 ```bash
 git diff --exit-code && git diff --cached --exit-code
 npm run lint
 npm run build
 npm run test
-# Validate that dist/ has all expected files
 ls dist/nodes/NooviChat/NooviChat.node.js
 ls dist/nodes/NooviChat/NooviChatTrigger.node.js
 ls dist/credentials/NooviChatApi.credentials.js
-# Only then:
-npm version patch  # creates commit + tag automatically
-git push --follow-tags
-npm publish --access public
-# Validate in the registry
-npm view @nooviai/n8n-nodes-noovichat version
 ```
 
 ### 3. G1/G2 still apply; the G3 time window is Chatwoot-only
@@ -69,7 +68,10 @@ route with a complete Description — no orphan/broken operation.
 
 `recon → implement → review (build + lint + test) → operation↔route parity → real load test → contract sync → commit → close-the-cycle docs → repeat` until nothing is left to apply/adjust/polish. Single-shot answers to implementation requests are a bug.
 
-**⚙️ Autonomy contract — the loop runs end-to-end WITHOUT a human in the loop.** Every step, **including the atomic commit (step 7) and the internal-docs close (step 8)**, is the agent's to perform autonomously — never pause to ask "can I commit?". The **ONLY** hard block is **release/publish**: `npm publish` (the package is versioned, opt-in — a published version cannot be unpublished, only deprecated) plus its `npm version` bump and `git push --follow-tags`. Those always need explicit human approval + the npm golden rules (clean tree, forbidden window, registry verify). Everything up to and including committing to the repo is autonomous. If a gate fails, fix it and re-loop — never hand back a half-done cycle.
+**⚙️ Autonomy contract — the loop runs end-to-end WITHOUT a human in the loop.** Every step, **including the atomic commit (step 7) and the internal-docs close (step 8)**, is the agent's to perform autonomously — never pause to ask "can I commit?". The **ONLY** hard block is **release/publish from a dirty tree**. Routine
+fan-out: bump `package.json` in the same commit, push `master`, and
+`.github/workflows/publish.yml` publishes if the version is unpublished.
+Local `npm publish` still needs G1/G2. A published version cannot be unpublished.
 
 **⚡ Fast path (trivial change — skip the heavy gates).** A change is *trivial* only when it is **≤2 files AND touches none of**: an operation/resource/field contract (`name`/`type`/`routing` of an `INodeProperties`), the request/pagination/auth logic in `GenericFunctions.ts`, the credential schema, or the trigger `events` array. Examples: a typo in a `description:` string, a comment, a lint/format tweak, a `displayName` copy fix. Trivial changes go straight to **review (`npm run lint` + `npm run build`) → commit**; steps 4–6 and 8 (load test, contract sync, docs) are N/A by definition — say so in one line and move on. **Anything that changes an operation/field contract, the HTTP helper, credentials, or trigger events runs the full loop** (and triggers the mandatory tests below). When unsure, run the full loop.
 
@@ -79,12 +81,15 @@ route with a complete Description — no orphan/broken operation.
 4. **Operation↔route parity (fail-closed gate)** — the n8n analog of FE↔BE parity. A feature is NOT done when it compiles; it is done when **every new/changed operation actually hits a real Chatwoot route end-to-end** and every field it sends/reads matches the API. Check, for each touched operation: (a) the request `method`/`endpoint` resolves to a live `api/v1/accounts/:accountId/<resource>` route (cross-check `docs/rules/api-sync.md` and `../Chatwoot/app/controllers/api/v1/accounts/`); (b) every parameter the Description sends is accepted by that endpoint; (c) every response field the node surfaces actually exists; (d) `displayOptions` correctly gate the field to its `resource`+`operation`. No orphan operation, no Description that references a route/param that does not exist.
 5. **Real load test** — `npm run build` clean, then load the *built* node in an n8n sandbox (`npm pack` + install into a local n8n, or `npm link`) and exercise the changed operation/trigger against a **real Chatwoot instance** (dev). A green `tsc` and green jest do not prove the node loads in n8n and the operation calls the right route — prove it.
 6. **Contract sync analysis (MANDATORY for every fix AND feature)** — this node is a **consumer** of the Chatwoot REST API, so the contract flows one way: **a Chatwoot API change → update the node Description + bump minor + republish.** Ask explicitly: did the Chatwoot API change (new/renamed/removed endpoint, param, response field, status, **webhook event**), or did I change a Description that must keep mirroring it? If yes → update the matching `descriptions/*Description.ts` (a new webhook event → add it to the `NooviChatTrigger.node.ts` `events` array) and plan a `npm version minor` for release. Cross-check `docs/rules/api-sync.md` (the API→Description map + history) and the Chatwoot reverse checklist `../Chatwoot/docs/rules/n8n-sync.md`. The customer-facing n8n tutorial lives at `../Site/frontend/src/app/(docs)/docs/noovichat/tutorials/n8n-node/` — flag it if behavior visible to users changed. If nothing API-facing changed, say so explicitly. **Never leave the node drifting behind the API; never skip the question.**
-7. **Atomic commit (autonomous)** — Conventional Commits, one logical unit, deployable/revertable alone. This is NOT a human gate. The `npm version` bump belongs to the release step, not here.
+7. **Atomic commit (autonomous)** — Conventional Commits, one logical unit, deployable/revertable alone. This is NOT a human gate. Bump `package.json` in this commit when the Description/API contract changed.
 8. **⛔ Close the cycle — update internal docs — MANDATORY, NEVER skip.** Update the appropriate internal technical documentation for anything that changed (node operations, resources, API mirroring) — at minimum the API→Description map / incident history in `docs/rules/api-sync.md`, plus the Obsidian vault for anything architectural. If nothing documentable changed (pure lint/format/trivial fast-path edit), state that and skip — but always ask.
 
 **Gate honesty — fail-closed vs advisory.** The fail-closed gates are **step 3** (lint/build/test must pass — `prepublishOnly` re-runs build+lint, but do not rely on it: run them yourself and read the output) and **step 4** (operation↔route parity). Step 5 (real load test) and the model-diversity cross-review are strong gates you self-run, not hook-blocked. The root `.claude/settings.json` hook only hard-blocks at **publish time** (dirty tree / forbidden window) — it does NOT catch a lint/test/parity failure, so those are yours to enforce.
 
-**Release/publish is the only thing outside this autonomous loop** — `npm version` + `git push --follow-tags` + `npm publish --access public` — needs human approval + the npm golden rules above (run `/pre-publish-audit` first, gated by the root pre-deploy-gate hook). The internal-docs update (step 8) IS part of the loop and closes it.
+**Local `npm publish` from a dirty tree is outside this loop.** Fan-out
+bumps `package.json` in the same commit as the Description change; push
+to `master` and CI publishes. The internal-docs update (step 8) IS part
+of the loop and closes it.
 
 ### Mandatory tests (even in MVP)
 
