@@ -1,5 +1,8 @@
 name: Publish to npm
 
+# Auth: org/repo secret NPM_TOKEN, or npm Trusted Publisher for this
+# workflow filename (publish.yml) on @nooviai/n8n-nodes-noovichat.
+
 on:
   push:
     branches: [master, main]
@@ -25,9 +28,10 @@ jobs:
           fetch-tags: true
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           registry-url: https://registry.npmjs.org/
+      - run: npm install -g npm@latest
       - run: npm ci
       - run: npm run lint
       - run: npm test
