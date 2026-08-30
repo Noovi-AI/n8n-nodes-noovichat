@@ -322,8 +322,8 @@ npm link @nooviai/n8n-nodes-noovichat
 
 ## Resources
 
-- [NooviChat Documentation](https://doc.nooviai.com)
-- [NooviChat API Reference](https://doc.nooviai.com/docs/noovichat/reference/)
+- [NooviChat Documentation](https://noovichat.com/docs/noovichat)
+- [NooviChat API Reference](https://noovichat.com/docs/noovichat)
 - [n8n Community Nodes Guide](https://docs.n8n.io/integrations/community-nodes/build-community-nodes/)
 - [n8n Documentation](https://docs.n8n.io)
 
