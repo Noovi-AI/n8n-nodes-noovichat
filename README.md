@@ -333,6 +333,12 @@ npm link @nooviai/n8n-nodes-noovichat
 
 MIT — see [LICENSE](LICENSE) for details.
 
+## Development
+
+This package lives in the NooviChat workspace. Shared agent policy:
+[`AGENTS.md`](AGENTS.md). Publish is versioned opt-in (G1/G2); the Chatwoot
+time window does not apply.
+
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/nooviai/n8n-nodes-noovichat/issues)
