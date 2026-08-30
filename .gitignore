@@ -18,5 +18,4 @@ CLAUDE.local.md
 .claude/skills/
 .codex/
 .mcp.json
-AGENTS.md
 !.env.example
