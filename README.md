@@ -23,6 +23,9 @@ n8n community node for **[NooviChat](https://noovichat.com)** — an integration
 | **Campaigns (one-off & ongoing)** | ❌ | ✅ |
 | **SLA Policies & Metrics** | ❌ | ✅ |
 | **WhatsApp/WAHA Session Management** | ❌ | ✅ |
+| **UAZAPI session management** | ❌ | ✅ |
+| **Captain AI hook** (rewrite/summarize/reply/label/follow-up) | ❌ | ✅ |
+| **Companies (B2B)** | ❌ | ✅ |
 | **Expanded webhook trigger events** | ❌ (4–6 events) | ✅ |
 | **Pipeline & Card webhook events** | ❌ | ✅ |
 | **Bulk operations (update, move, delete)** | ❌ | ✅ |
@@ -116,6 +119,17 @@ Manage WhatsApp sessions directly from your n8n workflows. Monitor connection st
 | Resource | Operations |
 |----------|------------|
 | **WAHA** | Get Status · Refresh QR · Start · Stop · Reconnect · Disconnect · Update Config · Get Settings · Update Meta Tracking |
+| **UAZAPI** | Get Status · Get Settings · Update Settings · Connect · Reconnect · Disconnect · Request Pairing Code · Reconfigure Integration |
+| **Captain AI** | Get/Update Preferences · Rewrite · Summarize · Reply Suggestion · Label Suggestion · Follow Up (draft only — does not send) |
+| **Company** | Get Many · Search · Get · Create · Update · Delete |
+
+Campaign (one-off & ongoing) and SLA policies exist **in this node** and **not** in `@nooviai/noovichat-mcp`. Keep using the Campaign / SLA resources here; do not expect MCP tools for them.
+
+#### MCP dual path
+
+`@nooviai/noovichat-mcp` is the LLM/operator surface for NooviChat extras (pipeline, follow-ups, WhatsApp, Captain, companies, internal chat). It does **not** register conversation/contact/message/inbox CRUD. This n8n node is the automation surface for that helpdesk CRUD **and** for Campaign/SLA. Captain, UAZAPI and Companies are on **both** packages.
+
+Operator skills (tool names, dual-path): [`Noovi-AI/noovichat-skills`](https://github.com/Noovi-AI/noovichat-skills).
 
 ---
 
@@ -190,14 +204,23 @@ See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for a full guide covering:
 
 ## Configuration
 
+Same three values as the MCP server (`.mcp.json.example`): **Base URL**, **API Access Token**, **Account ID**. Token inherits the agent's role. Do not use a `super_admin` token for routine workflows.
+
 ### Credentials — NooviChat API
 
-1. Go to **Credentials** > **Add Credential** > search **NooviChat API**
+1. In n8n: **Credentials** → **Add Credential** → **NooviChat API**
 2. Fill in:
-   - **Base URL** — Your NooviChat instance (e.g. `https://chat.yourdomain.com`)
-   - **API Access Token** — Found in NooviChat under Settings > Account Settings
+   - **Base URL** — instance root, no trailing slash (e.g. `https://chat.example.com`). Not `/app` and not `/api`.
+   - **API Access Token** — NooviChat → Profile → **API Access**. Same token type the MCP uses (`api_access_token` header).
+3. n8n tests the credential with `GET /api/v1/profile`.
 
-> **Note:** Account ID is configured **per node instance** (not in credentials), which allows you to use expressions for multi-account workflows.
+**Account ID** is **not** stored in the credential. Each NooviChat node has an **Account ID** field (default `1`, expressions allowed) so one credential can drive several accounts.
+
+```
+Base URL:     https://chat.example.com
+API token:    Profile → API Access
+Account ID:   per node (not in the credential)
+```
 
 ### Credentials — NooviChat Webhook API (optional)
 

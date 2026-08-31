@@ -45,6 +45,9 @@ import { BroadcastOperations, BroadcastFields, BroadcastBlacklistOperations, Bro
 import { CommercialAnalysisOperations, CommercialAnalysisFields } from './descriptions/CommercialAnalysisDescription';
 import { SequenceOperations, SequenceFields } from './descriptions/SequenceDescription';
 import { WhatsAppHubOperations, WhatsAppHubFields } from './descriptions/WhatsAppHubDescription';
+import { CaptainOperations, CaptainFields } from './descriptions/CaptainDescription';
+import { UazapiOperations, UazapiFields } from './descriptions/UazapiDescription';
+import { CompanyOperations, CompanyFields } from './descriptions/CompanyDescription';
 
 export class NooviChat implements INodeType {
 	description: INodeTypeDescription = {
@@ -112,6 +115,9 @@ export class NooviChat implements INodeType {
 					{ name: 'Commercial Analysis', value: 'commercialAnalysis' },
 					{ name: 'Sequence', value: 'sequence' },
 					{ name: 'WhatsApp Hub (NooviConnect)', value: 'whatsAppHub' },
+					{ name: 'Captain AI', value: 'captain' },
+					{ name: 'UAZAPI', value: 'uazapi' },
+					{ name: 'Company', value: 'company' },
 				],
 				default: 'conversation',
 			},
@@ -172,6 +178,12 @@ export class NooviChat implements INodeType {
 			...SequenceFields,
 			...WhatsAppHubOperations,
 			...WhatsAppHubFields,
+			...CaptainOperations,
+			...CaptainFields,
+			...UazapiOperations,
+			...UazapiFields,
+			...CompanyOperations,
+			...CompanyFields,
 		],
 	};
 
@@ -269,6 +281,15 @@ export class NooviChat implements INodeType {
 						break;
 					case 'whatsAppHub':
 						responseData = await handleWhatsAppHubOperation.call(this, operation, i);
+						break;
+					case 'captain':
+						responseData = await handleCaptainOperation.call(this, operation, i);
+						break;
+					case 'uazapi':
+						responseData = await handleUazapiOperation.call(this, operation, i);
+						break;
+					case 'company':
+						responseData = await handleCompanyOperation.call(this, operation, i);
 						break;
 					default:
 						throw new NodeOperationError(this.getNode(), `Unknown resource: "${resource}"`, { itemIndex: i });
@@ -2535,6 +2556,136 @@ async function handleWhatsAppHubOperation(this: IExecuteFunctions, operation: st
 			});
 		}
 
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+async function handleCaptainOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	switch (operation) {
+		case 'getPreferences':
+			return await nooviChatApiRequest.call(this, 'GET', '/captain/preferences');
+		case 'updatePreferences': {
+			const body: any = {};
+			const models = parseJsonValue(this.getNodeParameter('captainModels', index, '{}'));
+			const features = parseJsonValue(this.getNodeParameter('captainFeatures', index, '{}'));
+			if (models && typeof models === 'object' && Object.keys(models).length > 0) {
+				body.captain_models = models;
+			}
+			if (features && typeof features === 'object' && Object.keys(features).length > 0) {
+				body.captain_features = features;
+			}
+			return await nooviChatApiRequest.call(this, 'PATCH', '/captain/preferences', body);
+		}
+		case 'rewrite': {
+			const body: any = {
+				content: this.getNodeParameter('content', index) as string,
+				operation: this.getNodeParameter('rewriteOperation', index) as string,
+			};
+			const conversationDisplayId = this.getNodeParameter('rewriteConversationDisplayId', index, 0) as number;
+			if (conversationDisplayId) body.conversation_display_id = conversationDisplayId;
+			return await nooviChatApiRequest.call(this, 'POST', '/captain/tasks/rewrite', body);
+		}
+		case 'summarize':
+			return await nooviChatApiRequest.call(this, 'POST', '/captain/tasks/summarize', {
+				conversation_display_id: this.getNodeParameter('conversationDisplayId', index),
+			});
+		case 'replySuggestion':
+			return await nooviChatApiRequest.call(this, 'POST', '/captain/tasks/reply_suggestion', {
+				conversation_display_id: this.getNodeParameter('conversationDisplayId', index),
+			});
+		case 'labelSuggestion':
+			return await nooviChatApiRequest.call(this, 'POST', '/captain/tasks/label_suggestion', {
+				conversation_display_id: this.getNodeParameter('conversationDisplayId', index),
+			});
+		case 'followUp': {
+			const body: any = {
+				conversation_display_id: this.getNodeParameter('conversationDisplayId', index),
+			};
+			const message = this.getNodeParameter('message', index, '') as string;
+			if (message) body.message = message;
+			const ctx = parseJsonValue(this.getNodeParameter('followUpContext', index, '{}'));
+			if (ctx && typeof ctx === 'object' && Object.keys(ctx).length > 0) {
+				body.follow_up_context = ctx;
+			}
+			return await nooviChatApiRequest.call(this, 'POST', '/captain/tasks/follow_up', body);
+		}
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+async function handleUazapiOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	const inboxId = this.getNodeParameter('inboxId', index) as string;
+	const base = `/uazapi/${inboxId}`;
+
+	switch (operation) {
+		case 'getStatus':
+			return await nooviChatApiRequest.call(this, 'GET', `${base}/status`);
+		case 'getSettings':
+			return await nooviChatApiRequest.call(this, 'GET', `${base}/settings`);
+		case 'updateSettings': {
+			const settings = parseJsonValue(this.getNodeParameter('settings', index, '{}'));
+			return await nooviChatApiRequest.call(this, 'PATCH', `${base}/settings`, { settings });
+		}
+		case 'connect':
+			return await nooviChatApiRequest.call(this, 'POST', `${base}/connect`);
+		case 'reconnect':
+			return await nooviChatApiRequest.call(this, 'POST', `${base}/reconnect`);
+		case 'disconnect':
+			return await nooviChatApiRequest.call(this, 'POST', `${base}/disconnect`);
+		case 'requestPairingCode':
+			return await nooviChatApiRequest.call(this, 'POST', `${base}/request_pairing_code`, {
+				phone_number: this.getNodeParameter('phoneNumber', index) as string,
+			});
+		case 'reconfigureChatwoot':
+			return await nooviChatApiRequest.call(this, 'POST', `${base}/reconfigure_chatwoot`);
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+async function handleCompanyOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	const companyId = this.getNodeParameter('companyId', index, '') as string;
+
+	switch (operation) {
+		case 'getAll': {
+			const returnAll = this.getNodeParameter('returnAll', index, false) as boolean;
+			const limit = this.getNodeParameter('limit', index, 25) as number;
+			if (returnAll) {
+				return await nooviChatApiRequestAllItems.call(this, 'GET', '/companies');
+			}
+			return await nooviChatApiRequest.call(this, 'GET', '/companies', {}, { per_page: limit });
+		}
+		case 'search': {
+			const q = this.getNodeParameter('q', index) as string;
+			return await nooviChatApiRequest.call(this, 'GET', '/companies/search', {}, { q });
+		}
+		case 'get':
+			return await nooviChatApiRequest.call(this, 'GET', `/companies/${companyId}`);
+		case 'create': {
+			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
+			const company: any = { name: this.getNodeParameter('name', index) as string };
+			if (additionalFields.domain) company.domain = additionalFields.domain;
+			if (additionalFields.industry) company.industry = additionalFields.industry;
+			if (additionalFields.website) company.website = additionalFields.website;
+			if (additionalFields.phone) company.phone = additionalFields.phone;
+			if (additionalFields.description) company.description = additionalFields.description;
+			return await nooviChatApiRequest.call(this, 'POST', '/companies', { company });
+		}
+		case 'update': {
+			const updateFields = this.getNodeParameter('updateFields', index, {}) as any;
+			const company: any = {};
+			if (updateFields.name) company.name = updateFields.name;
+			if (updateFields.domain) company.domain = updateFields.domain;
+			if (updateFields.industry) company.industry = updateFields.industry;
+			if (updateFields.website) company.website = updateFields.website;
+			if (updateFields.phone) company.phone = updateFields.phone;
+			if (updateFields.description) company.description = updateFields.description;
+			return await nooviChatApiRequest.call(this, 'PATCH', `/companies/${companyId}`, { company });
+		}
+		case 'delete':
+			return await nooviChatApiRequest.call(this, 'DELETE', `/companies/${companyId}`);
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}

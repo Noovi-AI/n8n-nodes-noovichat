@@ -19,8 +19,8 @@ export class NooviChatApi implements ICredentialType {
 				password: false,
 			},
 			default: '',
-			placeholder: 'https://chat.yourdomain.com',
-			description: 'URL of your NooviChat instance (no trailing slash)',
+			placeholder: 'https://chat.example.com',
+			description: 'URL of your NooviChat instance (no trailing slash). Same value as NOOVICHAT_BASE_URL in the MCP config.',
 			required: true,
 		},
 		{
@@ -31,7 +31,7 @@ export class NooviChatApi implements ICredentialType {
 				password: true,
 			},
 			default: '',
-			description: 'API access token. Found in NooviChat under Settings > Account Settings > API Keys',
+			description: 'API access token from NooviChat → Profile → API Access. Same token type as the MCP server. Inherits the agent role; do not use a super_admin token for routine workflows.',
 			required: true,
 		},
 	];

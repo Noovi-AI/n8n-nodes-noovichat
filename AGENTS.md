@@ -33,6 +33,17 @@ in the root `docs/rules/loop-engineering.md`) — a change on the Chatwoot side
 (`app/controllers/api/v1/accounts/*.rb`, `config/routes.rb`) may require a
 matching update here. Read `docs/rules/api-sync.md` before editing.
 
+## Credentials (same trio as MCP)
+
+n8n credential **NooviChat API**:
+- **Base URL** — instance root, no trailing slash (`https://chat.example.com`)
+- **API Access Token** — Profile → API Access (`api_access_token` header)
+- **Account ID** — field on each node, not in the credential
+
+Campaign and SLA exist in this node and **not** in `@nooviai/noovichat-mcp`.
+Conversation/contact/message/inbox CRUD is n8n (+ REST), not MCP. Captain,
+UAZAPI and Company resources exist on both surfaces.
+
 ## Codex + Claude Code Shared Usage
 
 - Este arquivo e a fonte comum de instrucoes para agentes de codigo neste repositorio.

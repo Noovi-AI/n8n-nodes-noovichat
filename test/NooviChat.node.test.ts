@@ -31,7 +31,7 @@ describe('NooviChat Node — description', () => {
 		expect(node.description.outputs).toContain('main');
 	});
 
-	it('should list all 19 resources (18 legacy + whatsappTemplate)', () => {
+	it('should list conversation, pipeline, campaign, sla, captain, uazapi and company resources', () => {
 		const resourceProperty = node.description.properties.find((p) => p.name === 'resource');
 		expect(resourceProperty).toBeDefined();
 
@@ -41,7 +41,10 @@ describe('NooviChat Node — description', () => {
 			'team', 'label', 'cannedResponse', 'customAttribute', 'webhook',
 			'pipeline', 'card', 'followUp', 'activity', 'leadScoring',
 			'campaign', 'sla', 'waha',
-			'whatsappTemplate', // Fase 1.6 M4 — NooviChat custom Meta CRUD
+			'whatsappTemplate',
+			'captain',
+			'uazapi',
+			'company',
 		];
 
 		for (const resource of expectedResources) {

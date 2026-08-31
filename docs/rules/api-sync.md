@@ -66,6 +66,12 @@ grep -r "endpoint_path" "$(git rev-parse --show-toplevel)/nodes/"
 /appointments                → AppointmentDescription.ts
 /professionals               → ProfessionalDescription.ts
 /services                    → ServiceDescription.ts
+/partners                    → PartnerDescription.ts
+/broadcasts                  → BroadcastDescription.ts
+/captain/preferences + /captain/tasks/* → CaptainDescription.ts
+/uazapi/:id/*                → UazapiDescription.ts
+/companies                   → CompanyDescription.ts
+/noovi_connect               → WhatsAppHubDescription.ts
 ```
 
 ## Mudanças na API (histórico de incidents)
