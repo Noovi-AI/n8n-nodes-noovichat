@@ -39,8 +39,8 @@ n8n community node for **[NooviChat](https://noovichat.com)** — an integration
 
 | Resource | Operations |
 |----------|------------|
-| **Conversation** | Create, Get, Get Many, Update, Delete, Assign, Toggle Status, Add Label, Filter |
-| **Message** | Send (text / template / attachment, optional idempotency key), Get Many, Delete |
+| **Conversation** | Create, Get, Get Many, Update, Delete, Assign, Toggle Status, Add Label, Filter, Get Summary, Generate Summary |
+| **Message** | Send (text / template / attachment, optional idempotency key), Get Many, Edit, Delete |
 | **Contact** | Create, Get, Get Many, Update, Delete, Search, Filter, Merge, Get Conversations |
 | **Inbox** | Create, Get, Get Many, Update, Delete, Get Agents, Update Agents |
 | **Agent** | Create, Get Many, Update, Delete |

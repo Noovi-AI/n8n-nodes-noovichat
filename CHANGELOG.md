@@ -72,6 +72,13 @@
   `lead_score_updated_at`. Compare `lead_score_updated_at` (or `lead_score`
   itself) instead.
 
+## 0.21.1 (2026-08-30)
+
+### Changed
+
+- README Conversation operations now list Get Summary and Generate Summary;
+  Message operations now list Edit.
+
 ## 0.18.0 (2026-07-02)
 
 ### Added
