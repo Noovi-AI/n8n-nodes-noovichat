@@ -22,12 +22,13 @@ const PAGE_SIZE = 25;
 // Sources:
 //   - contacts_controller.rb:12  → RESULTS_PER_PAGE = 15
 //   - notifications_controller.rb → 15
-//   - audit_logs_controller.rb → 15
+//   - audit_logs_controller.rb → 25, which is already PAGE_SIZE: no override.
+//     It was 15 until the filters (q/types/since/until/sort) were implemented;
+//     the endpoint now reports its page size as `per_page` in the response.
 // (messages uses cursor-based `before` pagination, handled separately by the handler.)
 const ENDPOINT_PAGE_SIZE_OVERRIDES: Array<[RegExp, number]> = [
 	[/^\/contacts(?:\/search|\/filter)?(?:\?|$)/, 15],
 	[/^\/notifications(?:\?|$)/, 15],
-	[/^\/audit_logs(?:\?|$)/, 15],
 ];
 
 function effectivePageSize(endpoint: string): number {

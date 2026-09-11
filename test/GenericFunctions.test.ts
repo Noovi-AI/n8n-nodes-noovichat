@@ -324,15 +324,21 @@ describe('nooviChatApiRequestAllItems', () => {
 		expect(mockRequest.mock.calls[2][0].qs).toEqual({ page: 3, per_page: 15 });
 	});
 
-	it('should use per_page=15 for /notifications and /audit_logs', async () => {
+	it('should use per_page=15 for /notifications', async () => {
 		mockRequest.mockResolvedValue({ payload: [{ id: 1 }] });
 
 		await nooviChatApiRequestAllItems.call(createContext(), 'GET', '/notifications');
 		expect(mockRequest.mock.calls[0][0].qs).toEqual({ page: 1, per_page: 15 });
+	});
 
-		mockRequest.mockClear();
+	// audit_logs_controller.rb serves 25 per page since the filters landed, which
+	// is already the default. An override left at 15 would make the
+	// `items.length < pageSize` stop heuristic read a full page as a partial one.
+	it('should use the default per_page=25 for /audit_logs', async () => {
+		mockRequest.mockResolvedValue({ payload: [{ id: 1 }] });
+
 		await nooviChatApiRequestAllItems.call(createContext(), 'GET', '/audit_logs');
-		expect(mockRequest.mock.calls[0][0].qs).toEqual({ page: 1, per_page: 15 });
+		expect(mockRequest.mock.calls[0][0].qs).toEqual({ page: 1, per_page: 25 });
 	});
 
 	it('should fall back to response.activities for pipeline/activities endpoint', async () => {
