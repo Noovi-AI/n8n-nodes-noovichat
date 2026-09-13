@@ -57,6 +57,12 @@ export const CardOperations: INodeProperties[] = [
 				name: 'Recalculate Lead Score',
 				value: 'recalculateLeadScore',
 				action: 'Recalculate lead score',
+				// Rota legacy: sobrescreve o override manual do card (a rota canônica
+				// do namespace pipeline o preserva). Numa conta com Lead Score por
+				// regras, o motor de regras é o dono da coluna e nenhuma das duas
+				// rotas a sobrescreve — a resposta traz `recalculated: false`.
+				description:
+					'Recalculate the lead score with the heuristic engine. Overwrites a manual score override. Returns recalculated: false without changing the score when the account uses rule-based Lead Score',
 			},
 			{
 				name: 'Add Contact',
