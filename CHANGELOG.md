@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.22.0 (2026-09-13)
+
 ### Added
 
 - **Appointment → Get Availability Range**: answers availability for every day
@@ -28,6 +30,17 @@
   idempotency header.
 
 ### Changed
+
+- **Follow-Up → Create Template Item: the mapping documents the media header**:
+  an approved template with a DOCUMENT/IMAGE/VIDEO header requires the header
+  parameter on every send — Meta rejects the message without it rather than
+  delivering it without the file. The field is free-form JSON, so the header
+  already travelled; what was missing was the description saying it exists.
+  Alongside `body`, send
+  `"header": { "media_url": "https://…", "media_type": "document", "media_name": "file.pdf" }`.
+  `media_url` must be a public https URL, because WhatsApp fetches it at send
+  time. Requires NooviChat with the follow-up media header fix (2026-09-13) —
+  before it the server dropped the header silently.
 
 - **Card → Move to Stage now reads the card first**: since NooviChat v4.17.0.6
   `move_to_stage` compares an `expected_version` inside the same transaction and
