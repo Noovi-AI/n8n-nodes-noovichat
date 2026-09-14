@@ -286,7 +286,7 @@ export const FollowUpFields: INodeProperties[] = [
 		},
 		default: '{\n  "body": [\n    { "type": "variable", "value": "contact_name" }\n  ]\n}',
 		description:
-			'Parameter mapping. Each "body" entry fills {{1}}, {{2}}, … with a follow-up variable (type "variable", value e.g. "contact_name") or literal text (type "text"). Add "header": { "media_url": "https://…", "media_type": "document", "media_name": "file.pdf" } when the approved template has a media header — Meta rejects the send without it',
+			'Parameter mapping. Each "body" entry fills {{1}}, {{2}}, … with a follow-up variable (type "variable", value e.g. "contact_name") or literal text (type "text"). Add "header": { "media_url": "https://…", "media_type": "document", "media_name": "file.pdf" } when the approved template has a media header — Meta rejects the send without it. Inside "header", media_url and media_type are required together (media_type is one of document, image, video) and the server answers 422 if either is missing',
 	},
 	{
 		displayName: 'Template Name',

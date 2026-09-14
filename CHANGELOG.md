@@ -39,8 +39,10 @@
   Alongside `body`, send
   `"header": { "media_url": "https://…", "media_type": "document", "media_name": "file.pdf" }`.
   `media_url` must be a public https URL, because WhatsApp fetches it at send
-  time. Requires NooviChat with the follow-up media header fix (2026-09-13) —
-  before it the server dropped the header silently.
+  time, and `media_type` (one of `document`, `image`, `video`) is required
+  alongside it — the server answers 422 if either is missing. Requires
+  NooviChat with the follow-up media header fix (2026-09-13) — before it the
+  server dropped the header silently.
 
 - **Card → Move to Stage now reads the card first**: since NooviChat v4.17.0.6
   `move_to_stage` compares an `expected_version` inside the same transaction and
