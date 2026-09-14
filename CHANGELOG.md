@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+## 0.22.1 (2026-09-14)
+
+### Changed
+
+- **Follow-Up → Create Template Item: `media_url` and `media_type` are required
+  together inside `header`.** NooviChat started validating the block (server
+  commit `126a035ddf`) and answers 422 when either is missing; `media_type` is
+  one of `document`, `image`, `video`, and `media_url` is capped at 2000
+  characters. The field is free-form JSON, so the description is the only place
+  this rule can be stated. Until the server validated it, a header without its
+  type reached Meta as a TEXT parameter for a document header, which Meta
+  refuses.
+
 ## 0.22.0 (2026-09-13)
 
 ### Added
@@ -39,10 +52,8 @@
   Alongside `body`, send
   `"header": { "media_url": "https://…", "media_type": "document", "media_name": "file.pdf" }`.
   `media_url` must be a public https URL, because WhatsApp fetches it at send
-  time, and `media_type` (one of `document`, `image`, `video`) is required
-  alongside it — the server answers 422 if either is missing. Requires
-  NooviChat with the follow-up media header fix (2026-09-13) — before it the
-  server dropped the header silently.
+  time. Requires NooviChat with the follow-up media header fix (2026-09-13) —
+  before it the server dropped the header silently.
 
 - **Card → Move to Stage now reads the card first**: since NooviChat v4.17.0.6
   `move_to_stage` compares an `expected_version` inside the same transaction and
