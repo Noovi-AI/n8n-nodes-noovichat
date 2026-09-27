@@ -303,6 +303,34 @@ describe('NooviChat Node — execute', () => {
 		);
 	});
 
+	// FU-36: the conversation follow-up list and the template list are not
+	// paginated — Return All used to request page 2, 3, … and get the same
+	// records back every time.
+	it.each([
+		['getAll', { conversationId: '42' }, '/conversations/42/follow-ups'],
+		['getTemplates', {}, '/follow-up-templates'],
+	])('followUp.%s makes one request on Return All and repeats nothing', async (operation, params, path) => {
+		const ctx = buildContext('followUp', operation, { returnAll: true, ...params });
+		const page = Array.from({ length: 30 }, (_v, n) => ({ id: n + 1 }));
+		ctx._mockRequest.mockResolvedValue({ payload: page });
+
+		const [result] = await node.execute.call(ctx);
+
+		expect(ctx._mockRequest).toHaveBeenCalledTimes(1);
+		expect(ctx._mockRequest.mock.calls[0][0].uri).toContain(path);
+		expect(result.map((item: any) => item.json.id)).toEqual(page.map((row) => row.id));
+	});
+
+	it('followUp.getAll on a conversation applies Limit client-side', async () => {
+		const ctx = buildContext('followUp', 'getAll', { conversationId: '42', limit: 2 });
+		ctx._mockRequest.mockResolvedValue({ payload: [{ id: 1 }, { id: 2 }, { id: 3 }] });
+
+		const [result] = await node.execute.call(ctx);
+
+		expect(result.map((item: any) => item.json.id)).toEqual([1, 2]);
+		expect(ctx._mockRequest.mock.calls[0][0].qs ?? {}).not.toHaveProperty('per_page');
+	});
+
 	it('should call GET /sla_policies on sla.getAllPolicies', async () => {
 		const ctx = buildContext('sla', 'getAllPolicies');
 		await node.execute.call(ctx);

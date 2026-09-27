@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 0.23.1 (2026-09-27)
+
+### Fixed
+
+- **Follow-up "Return All" repeated records.** Get Many on a conversation's
+  follow-ups and Get Templates hit endpoints the API does not paginate: each
+  page request returned the whole list again, so Return All repeated it up to
+  the page cap. Both now make a single request; Limit is applied by the node.
+
 ## 0.23.0 (2026-09-27)
 
 ### Added

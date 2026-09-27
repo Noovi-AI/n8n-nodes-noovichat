@@ -1429,6 +1429,17 @@ async function handleFollowUpOperation(this: IExecuteFunctions, operation: strin
 	const returnAll = this.getNodeParameter('returnAll', index, false) as boolean;
 	const limit = this.getNodeParameter('limit', index, 50) as number;
 
+	// The conversation follow-up list and the template list are NOT paginated: the
+	// API ignores page/per_page and answers { payload: [...] } with everything.
+	// Paging through them repeated the same records up to MAX_PAGES times on
+	// "Return All" (Chatwoot audit 2026-09-27, FU-36). One request; Limit is
+	// applied here because the server does not.
+	const listUnpaginated = async (endpoint: string) => {
+		const response = await nooviChatApiRequest.call(this, 'GET', endpoint);
+		const items: any[] = Array.isArray(response?.payload) ? response.payload : [];
+		return returnAll ? items : items.slice(0, limit);
+	};
+
 	switch (operation) {
 		case 'create': {
 			const title = this.getNodeParameter('title', index, '') as string;
@@ -1443,10 +1454,7 @@ async function handleFollowUpOperation(this: IExecuteFunctions, operation: strin
 		}
 		case 'getAll': {
 			if (conversationId) {
-				if (returnAll) {
-					return await nooviChatApiRequestAllItems.call(this, 'GET', `/conversations/${conversationId}/follow-ups`);
-				}
-				return await nooviChatApiRequest.call(this, 'GET', `/conversations/${conversationId}/follow-ups`, {}, { per_page: limit });
+				return await listUnpaginated(`/conversations/${conversationId}/follow-ups`);
 			}
 			if (returnAll) {
 				return await nooviChatApiRequestAllItems.call(this, 'GET', '/follow-ups');
@@ -1474,12 +1482,8 @@ async function handleFollowUpOperation(this: IExecuteFunctions, operation: strin
 			const templateContent = this.getNodeParameter('templateContent', index) as string;
 			return await nooviChatApiRequest.call(this, 'POST', '/follow-up-templates', { name: templateName, content: templateContent });
 		}
-		case 'getTemplates': {
-			if (returnAll) {
-				return await nooviChatApiRequestAllItems.call(this, 'GET', '/follow-up-templates');
-			}
-			return await nooviChatApiRequest.call(this, 'GET', '/follow-up-templates', {}, { per_page: limit });
-		}
+		case 'getTemplates':
+			return await listUnpaginated('/follow-up-templates');
 		case 'updateTemplate': {
 			const templateName = this.getNodeParameter('templateName', index, '') as string;
 			const templateContent = this.getNodeParameter('templateContent', index, '') as string;
