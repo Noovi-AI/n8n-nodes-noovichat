@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.23.0 (2026-09-27)
+
 ### Added
 
 - **Pipeline API coverage normalized.** Every Pipeline route a workflow can
