@@ -60,6 +60,13 @@ grep -r "endpoint_path" "$(git rev-parse --show-toplevel)/nodes/"
 /teams                       → TeamDescription.ts
 /sla_policies                → SlaDescription.ts
 /activities                  → ActivityDescription.ts
+/pipeline/activity_templates → ActivityTemplateDescription.ts
+/pipeline/activity_sequences + /pipeline/sequence_analytics → SequenceDefinitionDescription.ts
+/pipeline/automations + /pipeline/automation_templates → PipelineAutomationDescription.ts
+/pipeline/webhooks           → PipelineWebhookDescription.ts
+/pipeline/products           → PipelineProductDescription.ts
+/pipeline/cards/:id/opportunities + /pipeline/opportunities/* → PipelineOpportunityDescription.ts
+/follow-up-automations + /pipelines/:id/follow-up-rules → FollowUpAutomationDescription.ts
 /waha/*                      → WahaDescription.ts
 /webhooks                    → WebhookDescription.ts (trigger)
 /whatsapp_templates          → WhatsappTemplateDescription.ts (NooviChat custom — Meta Cloud CRUD)
@@ -116,9 +123,10 @@ Auditoria 2026-08 do backend (itens D1 e R6). Nada no node quebrou; o que muda
     `updated_at` desta rota) vêm mais **antigos** que `lead_score_updated_at`.
     Um workflow que detecta "mudou o score" precisa comparar
     `lead_score_updated_at` ou o próprio `lead_score`, nunca o timestamp do card.
-- **D3 — automação sem `flow` responde 422**: não se aplica a este node. Não
-  existe resource de automação de pipeline aqui (só `SequenceDescription`
-  menciona automações, e apenas em comentário). Nada a documentar no node.
+- **D3 — automação sem `flow` responde 422**: desde a normalização da API de
+  Pipeline (2026-09-27) existe o resource **Pipeline Automation**
+  (`PipelineAutomationDescription.ts`), e as descrições de Create/Update/Active
+  documentam esse 422.
 
 ### 2026-07-21 — Envio idempotente de mensagens
 

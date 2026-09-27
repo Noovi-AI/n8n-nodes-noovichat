@@ -48,6 +48,18 @@ import { WhatsAppHubOperations, WhatsAppHubFields } from './descriptions/WhatsAp
 import { CaptainOperations, CaptainFields } from './descriptions/CaptainDescription';
 import { UazapiOperations, UazapiFields } from './descriptions/UazapiDescription';
 import { CompanyOperations, CompanyFields } from './descriptions/CompanyDescription';
+import { PipelineAutomationOperations, PipelineAutomationFields } from './descriptions/PipelineAutomationDescription';
+import { PipelineWebhookOperations, PipelineWebhookFields } from './descriptions/PipelineWebhookDescription';
+import { SequenceDefinitionOperations, SequenceDefinitionFields } from './descriptions/SequenceDefinitionDescription';
+import { ActivityTemplateOperations, ActivityTemplateFields } from './descriptions/ActivityTemplateDescription';
+import { PipelineProductOperations, PipelineProductFields } from './descriptions/PipelineProductDescription';
+import { PipelineOpportunityOperations, PipelineOpportunityFields } from './descriptions/PipelineOpportunityDescription';
+import {
+	FollowUpAutomationOperations,
+	FollowUpAutomationFields,
+	PipelineFollowUpRuleOperations,
+	PipelineFollowUpRuleFields,
+} from './descriptions/FollowUpAutomationDescription';
 
 export class NooviChat implements INodeType {
 	description: INodeTypeDescription = {
@@ -118,6 +130,14 @@ export class NooviChat implements INodeType {
 					{ name: 'Captain AI', value: 'captain' },
 					{ name: 'UAZAPI', value: 'uazapi' },
 					{ name: 'Company', value: 'company' },
+					{ name: 'Pipeline Automation', value: 'pipelineAutomation' },
+					{ name: 'Pipeline Webhook', value: 'pipelineWebhook' },
+					{ name: 'Pipeline Follow-up Rule', value: 'pipelineFollowUpRule' },
+					{ name: 'Sequence Definition', value: 'sequenceDefinition' },
+					{ name: 'Activity Template', value: 'activityTemplate' },
+					{ name: 'Product', value: 'pipelineProduct' },
+					{ name: 'Opportunity', value: 'pipelineOpportunity' },
+					{ name: 'Follow-up Automation', value: 'followUpAutomation' },
 				],
 				default: 'conversation',
 			},
@@ -184,6 +204,22 @@ export class NooviChat implements INodeType {
 			...UazapiFields,
 			...CompanyOperations,
 			...CompanyFields,
+			...PipelineAutomationOperations,
+			...PipelineAutomationFields,
+			...PipelineWebhookOperations,
+			...PipelineWebhookFields,
+			...PipelineFollowUpRuleOperations,
+			...PipelineFollowUpRuleFields,
+			...SequenceDefinitionOperations,
+			...SequenceDefinitionFields,
+			...ActivityTemplateOperations,
+			...ActivityTemplateFields,
+			...PipelineProductOperations,
+			...PipelineProductFields,
+			...PipelineOpportunityOperations,
+			...PipelineOpportunityFields,
+			...FollowUpAutomationOperations,
+			...FollowUpAutomationFields,
 		],
 	};
 
@@ -290,6 +326,30 @@ export class NooviChat implements INodeType {
 						break;
 					case 'company':
 						responseData = await handleCompanyOperation.call(this, operation, i);
+						break;
+					case 'pipelineAutomation':
+						responseData = await handlePipelineAutomationOperation.call(this, operation, i);
+						break;
+					case 'pipelineWebhook':
+						responseData = await handlePipelineWebhookOperation.call(this, operation, i);
+						break;
+					case 'pipelineFollowUpRule':
+						responseData = await handlePipelineFollowUpRuleOperation.call(this, operation, i);
+						break;
+					case 'sequenceDefinition':
+						responseData = await handleSequenceDefinitionOperation.call(this, operation, i);
+						break;
+					case 'activityTemplate':
+						responseData = await handleActivityTemplateOperation.call(this, operation, i);
+						break;
+					case 'pipelineProduct':
+						responseData = await handlePipelineProductOperation.call(this, operation, i);
+						break;
+					case 'pipelineOpportunity':
+						responseData = await handlePipelineOpportunityOperation.call(this, operation, i);
+						break;
+					case 'followUpAutomation':
+						responseData = await handleFollowUpAutomationOperation.call(this, operation, i);
 						break;
 					default:
 						throw new NodeOperationError(this.getNode(), `Unknown resource: "${resource}"`, { itemIndex: i });
@@ -972,6 +1032,57 @@ async function handlePipelineOperation(this: IExecuteFunctions, operation: strin
 		}
 		case 'getLostReasons':
 			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/deal_status/common_reasons');
+		case 'getLostReasonsAnalytics': {
+			const qs: any = {};
+			if (startDate) qs.start_date = startDate;
+			if (endDate) qs.end_date = endDate;
+			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/deal_status/lost_reasons', {}, qs);
+		}
+		case 'getForecast': {
+			const analyticsPipelineId = this.getNodeParameter('analyticsPipelineId', index, '') as string;
+			const monthsAhead = this.getNodeParameter('monthsAhead', index, 6) as number;
+			const qs: any = { months_ahead: monthsAhead };
+			if (analyticsPipelineId) qs.pipeline_id = analyticsPipelineId;
+			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/analytics/forecast', {}, qs);
+		}
+		case 'getPipelineAnalysis': {
+			const analyticsPipelineId = this.getNodeParameter('analyticsPipelineId', index) as string;
+			const qs: any = { pipeline_id: analyticsPipelineId };
+			if (startDate) qs.start_date = startDate;
+			if (endDate) qs.end_date = endDate;
+			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/analytics/pipeline_analysis', {}, qs);
+		}
+		case 'getPipelineDashboard': {
+			const analyticsPipelineId = this.getNodeParameter('analyticsPipelineId', index) as string;
+			const dateStart = (this.getNodeParameter('dashboardDateStart', index, '') as string).trim();
+			const dateEnd = (this.getNodeParameter('dashboardDateEnd', index, '') as string).trim();
+			if (Boolean(dateStart) !== Boolean(dateEnd)) {
+				throw new NodeOperationError(this.getNode(), 'Date Start and Date End must be provided together.', { itemIndex: index });
+			}
+			const qs: any = {
+				pipeline_id: analyticsPipelineId,
+				activity_page: this.getNodeParameter('activityPage', index, 1) as number,
+				activity_per_page: this.getNodeParameter('activityPerPage', index, 10) as number,
+			};
+			if (dateStart) {
+				qs.date_start = dateStart;
+				qs.date_end = dateEnd;
+			}
+			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/analytics/pipeline_dashboard', {}, qs);
+		}
+		case 'exportReport': {
+			// GET /pipeline/analytics/export → text/csv (KPIs + per-stage breakdown).
+			const analyticsPipelineId = this.getNodeParameter('analyticsPipelineId', index) as string;
+			const qs: any = { pipeline_id: analyticsPipelineId };
+			if (startDate) qs.start_date = startDate;
+			if (endDate) qs.end_date = endDate;
+			const csv = await nooviChatApiRequestRaw.call(this, 'GET', '/pipeline/analytics/export', qs);
+			return { csv };
+		}
+		case 'getAgentPipeline': {
+			const agentUserId = this.getNodeParameter('agentUserId', index) as string;
+			return await nooviChatApiRequest.call(this, 'GET', `/pipeline/analytics/pipeline/${agentUserId}`);
+		}
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
@@ -1159,6 +1270,81 @@ async function handleCardOperation(this: IExecuteFunctions, operation: string, i
 			const csv = await nooviChatApiRequestRaw.call(this, 'GET', '/pipeline/cards/template');
 			return { csv };
 		}
+		case 'getDiscarded': {
+			// GET /pipeline/cards/discarded → { data: [...], meta } (page/per_page, max 100).
+			const discardedPipelineId = this.getNodeParameter('discardedPipelineId', index, '') as string;
+			const qs: any = {};
+			if (discardedPipelineId) qs.pipeline_id = discardedPipelineId;
+			if (returnAll) {
+				return await nooviChatApiRequestAllItems.call(this, 'GET', '/pipeline/cards/discarded', {}, qs);
+			}
+			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/cards/discarded', {}, {
+				...qs,
+				per_page: Math.min(limit, 100),
+			});
+		}
+		case 'restore':
+			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/cards/${cardId}/restore`);
+		case 'deletePermanently':
+			return await nooviChatApiRequest.call(this, 'DELETE', `/pipeline/cards/${cardId}/permanently_delete`);
+		case 'assignOwner': {
+			// Pipeline::OwnersController#assign: a missing owner key is 422; only an
+			// explicit null unassigns, so 0 is translated to null (same convention as Create/Update).
+			const ownerId = this.getNodeParameter('ownerId', index) as number;
+			const notify = this.getNodeParameter('notifyOwner', index, false) as boolean;
+			const body: any = { owner_id: normalizeCardOwnerId(ownerId) };
+			if (notify) body.notify = true;
+			return await nooviChatApiRequest.call(this, 'PATCH', `/pipeline/cards/${cardId}/assign`, body);
+		}
+		case 'bulkAssign': {
+			const cards = this.getNodeParameter('cardIds.values', index, []) as Array<{ id: string }>;
+			const distribution = this.getNodeParameter('ownerDistribution', index, 'direct') as string;
+			const body: any = { item_ids: cards.map((c) => c.id) };
+			// The server treats the ABSENCE of `distribution` as a direct assignment.
+			if (distribution === 'direct') {
+				const ownerId = this.getNodeParameter('ownerId', index) as number;
+				body.owner_id = normalizeCardOwnerId(ownerId);
+			} else {
+				body.distribution = distribution;
+			}
+			return await nooviChatApiRequest.call(this, 'POST', '/pipeline/cards/bulk_assign', body);
+		}
+		case 'bulkSetPriority': {
+			const cards = this.getNodeParameter('cardIds.values', index, []) as Array<{ id: string }>;
+			const priority = this.getNodeParameter('bulkPriority', index) as string;
+			const stageFilter = this.getNodeParameter('bulkStageFilter', index, '') as string;
+			const body: any = { card_ids: cards.map((c) => c.id), priority };
+			if (stageFilter) body.pipeline_stage = stageFilter;
+			return await nooviChatApiRequest.call(this, 'POST', '/pipeline/bulk_actions/set_priority', body);
+		}
+		case 'bulkDiscard': {
+			const cards = this.getNodeParameter('cardIds.values', index, []) as Array<{ id: string }>;
+			const reason = this.getNodeParameter('discardReason', index, '') as string;
+			const stageFilter = this.getNodeParameter('bulkStageFilter', index, '') as string;
+			const body: any = { card_ids: cards.map((c) => c.id) };
+			if (reason) body.reason = reason;
+			if (stageFilter) body.pipeline_stage = stageFilter;
+			return await nooviChatApiRequest.call(this, 'POST', '/pipeline/bulk_actions/delete', body);
+		}
+		case 'updateQualificationChecklist': {
+			const checklist = parseJsonValue(this.getNodeParameter('qualificationChecklist', index, {}));
+			if (!checklist || typeof checklist !== 'object' || Array.isArray(checklist)) {
+				throw new NodeOperationError(this.getNode(), 'Qualification Checklist must be a JSON object keyed by criterion ID.', { itemIndex: index });
+			}
+			return await nooviChatApiRequest.call(this, 'PATCH', `/pipeline_cards/${cardId}/update_qualification_checklist`, {
+				qualification_checklist: checklist,
+			});
+		}
+		case 'overrideLeadScore': {
+			const score = this.getNodeParameter('overrideScore', index) as number;
+			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/cards/${cardId}/lead_scores/override`, { score });
+		}
+		case 'getAttachments':
+			return await nooviChatApiRequest.call(this, 'GET', `/pipeline/cards/${cardId}/attachments`);
+		case 'deleteAttachment': {
+			const attachmentId = this.getNodeParameter('attachmentId', index) as string;
+			return await nooviChatApiRequest.call(this, 'DELETE', `/pipeline/cards/${cardId}/attachments/${attachmentId}`);
+		}
 		// TODO(follow-up): import-upload (POST /pipeline/cards/import) is NOT implemented here.
 		// It requires multipart/form-data (import_file binary + pipeline_id) which the current
 		// nooviChatApiRequest (json:true) and nooviChatApiRequestRaw helpers do not support.
@@ -1330,6 +1516,52 @@ async function handleFollowUpOperation(this: IExecuteFunctions, operation: strin
 				follow_up_template_item: itemBody,
 			});
 		}
+		case 'getTemplate':
+			return await nooviChatApiRequest.call(this, 'GET', `/follow-up-templates/${templateId}`);
+		case 'getTemplateVariables':
+			return await nooviChatApiRequest.call(this, 'GET', '/follow-up-templates/variables');
+		case 'deleteTemplateAttachment': {
+			const attachmentId = this.getNodeParameter('templateAttachmentId', index) as string;
+			return await nooviChatApiRequest.call(this, 'DELETE', `/follow-up-templates/${templateId}/attachments/${attachmentId}`);
+		}
+		case 'getTemplateItems':
+			// Not paginated: { payload: [...] } with every step in order.
+			return await nooviChatApiRequest.call(this, 'GET', `/follow-up-templates/${templateId}/items`);
+		case 'getTemplateItem': {
+			const itemId = this.getNodeParameter('templateItemId', index) as string;
+			return await nooviChatApiRequest.call(this, 'GET', `/follow-up-templates/${templateId}/items/${itemId}`);
+		}
+		case 'updateTemplateItem': {
+			const itemId = this.getNodeParameter('templateItemId', index) as string;
+			const f = this.getNodeParameter('templateItemUpdateFields', index, {}) as any;
+			const itemBody: any = {};
+			if (f.content !== undefined) itemBody.content = f.content;
+			if (f.delaySeconds !== undefined) itemBody.delay_seconds = f.delaySeconds;
+			if (f.itemType !== undefined) itemBody.item_type = f.itemType;
+			if (f.position !== undefined) itemBody.position = f.position;
+			if (f.whatsappTemplateName !== undefined) itemBody.whatsapp_template_name = f.whatsappTemplateName;
+			if (f.whatsappTemplateLanguage !== undefined) itemBody.whatsapp_template_language = f.whatsappTemplateLanguage;
+			if (f.whatsappTemplateNamespace !== undefined) itemBody.whatsapp_template_namespace = f.whatsappTemplateNamespace;
+			if (f.whatsappTemplateMapping !== undefined) itemBody.whatsapp_template_mapping = parseJsonValue(f.whatsappTemplateMapping);
+			return await nooviChatApiRequest.call(this, 'PATCH', `/follow-up-templates/${templateId}/items/${itemId}`, {
+				follow_up_template_item: itemBody,
+			});
+		}
+		case 'deleteTemplateItem': {
+			const itemId = this.getNodeParameter('templateItemId', index) as string;
+			return await nooviChatApiRequest.call(this, 'DELETE', `/follow-up-templates/${templateId}/items/${itemId}`);
+		}
+		case 'reorderTemplateItems': {
+			const rawOrder = this.getNodeParameter('templateItemOrder', index) as string;
+			const ids = String(rawOrder ?? '').split(',').map((v) => v.trim()).filter((v) => v !== '');
+			if (ids.length === 0) {
+				throw new NodeOperationError(this.getNode(), 'At least one item ID is required.', { itemIndex: index });
+			}
+			// Omitting delay_seconds keeps each item's current delay (server-side fallback).
+			return await nooviChatApiRequest.call(this, 'POST', `/follow-up-templates/${templateId}/items/reorder`, {
+				items: ids.map((id) => ({ id })),
+			});
+		}
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
@@ -1404,6 +1636,67 @@ async function handleActivityOperation(this: IExecuteFunctions, operation: strin
 			if (endDate) qs.date_to = endDate;
 			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/activities/analytics', {}, qs);
 		}
+		case 'search': {
+			const searchQuery = this.getNodeParameter('searchQuery', index, '') as string;
+			const f = this.getNodeParameter('searchFilters', index, {}) as any;
+			const qs: any = {};
+			if (searchQuery) qs.q = searchQuery;
+			if (f.type) qs.type = f.type;
+			if (f.status) qs.status = f.status;
+			if (f.priority) qs.priority = f.priority;
+			if (f.assignedToId) qs.assigned_to_id = f.assignedToId;
+			if (f.pipelineCardId) qs.pipeline_card_id = f.pipelineCardId;
+			if (f.dateFrom) qs.date_from = f.dateFrom;
+			if (f.dateTo) qs.date_to = f.dateTo;
+			if (returnAll) {
+				return await nooviChatApiRequestAllItems.call(this, 'GET', '/pipeline/activities/search', {}, qs);
+			}
+			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/activities/search', {}, { ...qs, per_page: Math.min(limit, 100) });
+		}
+		case 'reschedule': {
+			const pipelineCardId = this.getNodeParameter('pipelineCardId', index) as string;
+			const scheduledAt = this.getNodeParameter('rescheduleAt', index) as string;
+			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/activities/${activityId}/reschedule`, { scheduled_at: scheduledAt }, { pipeline_card_id: pipelineCardId });
+		}
+		case 'bulkCreate': {
+			const rawIds = this.getNodeParameter('bulkCardIds', index) as string;
+			const ids = String(rawIds ?? '').split(',').map((v) => v.trim()).filter((v) => v !== '');
+			if (ids.length === 0) {
+				throw new NodeOperationError(this.getNode(), 'At least one card ID is required.', { itemIndex: index });
+			}
+			const title = this.getNodeParameter('title', index) as string;
+			const activityType = this.getNodeParameter('activityType', index) as string;
+			const additionalFields = this.getNodeParameter('additionalFields', index, {}) as any;
+			const activityBody: any = { activity_type: activityType, title };
+			if (additionalFields.description) activityBody.description = additionalFields.description;
+			if (additionalFields.scheduledAt) activityBody.scheduled_at = additionalFields.scheduledAt;
+			if (additionalFields.duration) activityBody.duration = additionalFields.duration;
+			if (additionalFields.assigneeId) activityBody.assigned_to_id = additionalFields.assigneeId;
+			if (additionalFields.contactId) activityBody.contact_id = additionalFields.contactId;
+			return await nooviChatApiRequest.call(this, 'POST', '/pipeline/activities/bulk_create', {
+				pipeline_card_ids: ids,
+				activity: activityBody,
+			});
+		}
+		case 'createFromTemplate': {
+			const pipelineCardId = this.getNodeParameter('pipelineCardId', index) as string;
+			const templateId = this.getNodeParameter('activityTemplateId', index) as string;
+			const o = this.getNodeParameter('templateOverrides', index, {}) as any;
+			const overrides: any = {};
+			if (o.title) overrides.title = o.title;
+			if (o.description) overrides.description = o.description;
+			if (o.scheduledAt) overrides.scheduled_at = o.scheduledAt;
+			if (o.dueAt) overrides.due_at = o.dueAt;
+			if (o.assigneeId) overrides.assigned_to_id = o.assigneeId;
+			const body: any = { template_id: templateId };
+			// Only send the `activity` wrapper when there is something to override:
+			// the controller runs params.require(:activity), which rejects an empty
+			// object, while Rails' JSON params wrapper builds `activity` from the flat
+			// body when the key is absent (the template_id itself is then discarded
+			// by the permit list and the template values are used unchanged).
+			if (Object.keys(overrides).length > 0) body.activity = overrides;
+			return await nooviChatApiRequest.call(this, 'POST', '/pipeline/activities/create_from_template', body, { pipeline_card_id: pipelineCardId });
+		}
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
@@ -1453,7 +1746,48 @@ async function handleLeadScoringOperation(this: IExecuteFunctions, operation: st
 		case 'createDefaultRules':
 			return await nooviChatApiRequest.call(this, 'POST', '/lead_score_rules/create_defaults');
 		case 'getDashboard':
-			return await nooviChatApiRequest.call(this, 'GET', '/lead_score/reports/dashboard');
+		case 'getDistributionReport':
+		case 'getTrends':
+		case 'getTopLeads':
+		case 'getCategoryChanges': {
+			const reportPaths: Record<string, string> = {
+				getDashboard: 'dashboard',
+				getDistributionReport: 'distribution',
+				getTrends: 'trends',
+				getTopLeads: 'top_leads',
+				getCategoryChanges: 'category_changes',
+			};
+			const qs: any = {};
+			const reportStartDate = this.getNodeParameter('reportStartDate', index, '') as string;
+			const reportEndDate = this.getNodeParameter('reportEndDate', index, '') as string;
+			if (reportStartDate) qs.start_date = reportStartDate;
+			if (reportEndDate) qs.end_date = reportEndDate;
+			if (operation === 'getTopLeads' || operation === 'getCategoryChanges') {
+				qs.limit = this.getNodeParameter('reportLimit', index, 10) as number;
+			}
+			return await nooviChatApiRequest.call(this, 'GET', `/lead_score/reports/${reportPaths[operation]}`, {}, qs);
+		}
+		case 'getCardScoreDistribution':
+			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/lead_scores/distribution');
+		case 'bulkRecalculate':
+			return await nooviChatApiRequest.call(this, 'POST', '/lead_score/reports/bulk_recalculate');
+		case 'getLogs': {
+			const f = this.getNodeParameter('logFilters', index, {}) as any;
+			const qs: any = {};
+			if (f.pipelineCardId) qs.pipeline_card_id = f.pipelineCardId;
+			if (f.eventType) qs.event_type = f.eventType;
+			if (f.startDate) qs.start_date = f.startDate;
+			if (f.endDate) qs.end_date = f.endDate;
+			if (f.categoryChangesOnly === true) qs.category_changes_only = true;
+			if (returnAll) {
+				return await nooviChatApiRequestAllItems.call(this, 'GET', '/lead_score/logs', {}, qs);
+			}
+			return await nooviChatApiRequest.call(this, 'GET', '/lead_score/logs', {}, { ...qs, per_page: Math.min(limit, 100) });
+		}
+		case 'getLog': {
+			const logId = this.getNodeParameter('logId', index) as string;
+			return await nooviChatApiRequest.call(this, 'GET', `/lead_score/logs/${logId}`);
+		}
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}
@@ -2686,6 +3020,487 @@ async function handleCompanyOperation(this: IExecuteFunctions, operation: string
 		}
 		case 'delete':
 			return await nooviChatApiRequest.call(this, 'DELETE', `/companies/${companyId}`);
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Pipeline Pro resources added by the API-coverage normalization.
+// Every body uses the controller's real strong-params wrapper; lists use the
+// pagination style of each controller (page/per_page, limit/offset or none).
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Copy the keys present in an n8n collection, renamed, parsing JSON-typed ones. */
+function pickCollection(
+	source: any,
+	mapping: Record<string, string>,
+	jsonKeys: string[] = [],
+): IDataObject {
+	const out: IDataObject = {};
+	for (const [from, to] of Object.entries(mapping)) {
+		if (source?.[from] === undefined) continue;
+		out[to] = jsonKeys.includes(from) ? parseJsonValue(source[from]) : source[from];
+	}
+	return out;
+}
+
+/** Split a comma-separated list of IDs, dropping blanks. */
+function splitIdList(raw: unknown): string[] {
+	return String(raw ?? '')
+		.split(',')
+		.map((v) => v.trim())
+		.filter((v) => v !== '');
+}
+
+async function handlePipelineAutomationOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	const automationId = this.getNodeParameter('automationId', index, '') as string;
+	const base = '/pipeline/automations';
+	const fieldMap = {
+		name: 'name',
+		description: 'description',
+		active: 'active',
+		triggerType: 'trigger_type',
+		pipelineId: 'pipeline_id',
+		trigger: 'trigger',
+		conditions: 'conditions',
+		actions: 'actions',
+		flow: 'flow',
+		scheduleConfig: 'schedule_config',
+	};
+	const jsonKeys = ['trigger', 'conditions', 'actions', 'flow', 'scheduleConfig'];
+	const pagination = (): IDataObject => ({
+		limit: this.getNodeParameter('automationLimit', index, 50) as number,
+		offset: this.getNodeParameter('automationOffset', index, 0) as number,
+	});
+	const executionContext = (): IDataObject => {
+		const ctx = this.getNodeParameter('executionContext', index, {}) as any;
+		const body: IDataObject = {};
+		if (ctx.conversationId) body.conversation_id = ctx.conversationId;
+		if (ctx.contactId) body.contact_id = ctx.contactId;
+		return body;
+	};
+
+	switch (operation) {
+		case 'getAll':
+			// Not paginated: a bare array with per-automation execution stats.
+			return await nooviChatApiRequest.call(this, 'GET', base);
+		case 'get':
+			return await nooviChatApiRequest.call(this, 'GET', `${base}/${automationId}`);
+		case 'create': {
+			const fields = this.getNodeParameter('automationFields', index, {}) as any;
+			const payload = pickCollection(fields, fieldMap, jsonKeys);
+			payload.name = this.getNodeParameter('automationName', index) as string;
+			return await nooviChatApiRequest.call(this, 'POST', base, { pipeline_automation: payload });
+		}
+		case 'update': {
+			const fields = this.getNodeParameter('automationFields', index, {}) as any;
+			const payload = pickCollection(fields, fieldMap, jsonKeys);
+			return await nooviChatApiRequest.call(this, 'PATCH', `${base}/${automationId}`, { pipeline_automation: payload });
+		}
+		case 'delete':
+			return await nooviChatApiRequest.call(this, 'DELETE', `${base}/${automationId}`);
+		case 'execute':
+			return await nooviChatApiRequest.call(this, 'POST', `${base}/${automationId}/execute`, executionContext());
+		case 'dryRun':
+			return await nooviChatApiRequest.call(this, 'POST', `${base}/${automationId}/dry_run`, executionContext());
+		case 'validate':
+			return await nooviChatApiRequest.call(this, 'POST', `${base}/${automationId}/validate`);
+		case 'duplicate':
+			return await nooviChatApiRequest.call(this, 'POST', `${base}/${automationId}/duplicate`);
+		case 'getStats':
+			return await nooviChatApiRequest.call(this, 'GET', `${base}/${automationId}/stats`);
+		case 'getExecutions':
+		case 'getAllExecutions': {
+			const qs = pagination();
+			const status = this.getNodeParameter('executionStatus', index, '') as string;
+			if (status) qs.status = status;
+			const path = operation === 'getExecutions' ? `${base}/${automationId}/executions` : `${base}/all_executions`;
+			return await nooviChatApiRequest.call(this, 'GET', path, {}, qs);
+		}
+		case 'getAuditLogs':
+			return await nooviChatApiRequest.call(this, 'GET', `${base}/${automationId}/audit_logs`, {}, pagination());
+		case 'getAllAuditLogs': {
+			const qs = pagination();
+			const f = this.getNodeParameter('auditLogFilters', index, {}) as any;
+			// The filter param is `audit_action` — `action` is Rails' routing param.
+			if (f.auditAction) qs.audit_action = f.auditAction;
+			if (f.userId) qs.user_id = f.userId;
+			if (f.since) qs.since = f.since;
+			if (f.until) qs.until = f.until;
+			return await nooviChatApiRequest.call(this, 'GET', `${base}/all_audit_logs`, {}, qs);
+		}
+		case 'getDashboard':
+			return await nooviChatApiRequest.call(this, 'GET', `${base}/dashboard`);
+		case 'export':
+			return await nooviChatApiRequest.call(this, 'GET', `${base}/${automationId}/export`);
+		case 'import': {
+			const data = parseJsonValue(this.getNodeParameter('importData', index, {}));
+			if (!data || typeof data !== 'object' || Array.isArray(data)) {
+				throw new NodeOperationError(this.getNode(), 'Automation JSON must be a JSON object.', { itemIndex: index });
+			}
+			return await nooviChatApiRequest.call(this, 'POST', `${base}/import`, { automation: data });
+		}
+		case 'getTemplates': {
+			const f = this.getNodeParameter('templateFilters', index, {}) as any;
+			const qs: IDataObject = {};
+			if (f.category) qs.category = f.category;
+			if (f.locale) qs.locale = f.locale;
+			if (f.featured === true) qs.featured = 'true';
+			if (f.order === 'popular') qs.order = 'popular';
+			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/automation_templates', {}, qs);
+		}
+		case 'getTemplate': {
+			const templateId = this.getNodeParameter('automationTemplateId', index) as string;
+			return await nooviChatApiRequest.call(this, 'GET', `/pipeline/automation_templates/${templateId}`);
+		}
+		case 'getTemplateCategories':
+			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/automation_templates/categories');
+		case 'createFromTemplate': {
+			const templateId = this.getNodeParameter('automationTemplateId', index) as string;
+			const name = this.getNodeParameter('templateAutomationName', index, '') as string;
+			const body: IDataObject = {};
+			if (name) body.name = name;
+			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/automation_templates/${templateId}/use`, body);
+		}
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+async function handlePipelineWebhookOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	const webhookId = this.getNodeParameter('pipelineWebhookId', index, '') as string;
+	const base = '/pipeline/webhooks';
+
+	switch (operation) {
+		case 'getAll':
+			// Not paginated: { payload: [...] }.
+			return await nooviChatApiRequest.call(this, 'GET', base);
+		case 'get':
+			return await nooviChatApiRequest.call(this, 'GET', `${base}/${webhookId}`);
+		case 'create': {
+			const extra = this.getNodeParameter('webhookAdditionalFields', index, {}) as any;
+			const payload: IDataObject = {
+				name: this.getNodeParameter('webhookName', index) as string,
+				url: this.getNodeParameter('webhookUrl', index) as string,
+				events: this.getNodeParameter('webhookEvents', index, []) as string[],
+			};
+			if (extra.active !== undefined) payload.active = extra.active;
+			if (extra.pipelineId) payload.pipeline_id = extra.pipelineId;
+			return await nooviChatApiRequest.call(this, 'POST', base, { pipeline_webhook: payload });
+		}
+		case 'update': {
+			const f = this.getNodeParameter('webhookUpdateFields', index, {}) as any;
+			const payload = pickCollection(f, { name: 'name', url: 'url', events: 'events', active: 'active', pipelineId: 'pipeline_id' });
+			return await nooviChatApiRequest.call(this, 'PATCH', `${base}/${webhookId}`, { pipeline_webhook: payload });
+		}
+		case 'delete':
+			return await nooviChatApiRequest.call(this, 'DELETE', `${base}/${webhookId}`);
+		case 'test':
+			return await nooviChatApiRequest.call(this, 'POST', `${base}/${webhookId}/test`);
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+async function handlePipelineFollowUpRuleOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	const pipelineId = this.getNodeParameter('rulePipelineId', index) as string;
+	const ruleId = this.getNodeParameter('followUpRuleId', index, '') as string;
+	const base = `/pipelines/${pipelineId}/follow-up-rules`;
+	const fieldMap = {
+		followUpTemplateId: 'follow_up_template_id',
+		fromStage: 'from_stage',
+		toStage: 'to_stage',
+		delayMinutes: 'delay_minutes',
+		enabled: 'enabled',
+		senderId: 'sender_id',
+		senderAgentBotId: 'sender_agent_bot_id',
+		contentMode: 'content_mode',
+		aiInstruction: 'ai_instruction',
+		conditions: 'conditions',
+		sendWindow: 'send_window',
+	};
+	const jsonKeys = ['conditions', 'sendWindow'];
+
+	switch (operation) {
+		case 'getAll':
+			// Not paginated: { payload: [...] } ordered by to_stage.
+			return await nooviChatApiRequest.call(this, 'GET', base);
+		case 'get':
+			return await nooviChatApiRequest.call(this, 'GET', `${base}/${ruleId}`);
+		case 'create': {
+			const fields = this.getNodeParameter('ruleFields', index, {}) as any;
+			const payload = pickCollection(fields, fieldMap, jsonKeys);
+			payload.to_stage = this.getNodeParameter('ruleToStage', index) as string;
+			return await nooviChatApiRequest.call(this, 'POST', base, { pipeline_follow_up_rule: payload });
+		}
+		case 'update': {
+			const fields = this.getNodeParameter('ruleFields', index, {}) as any;
+			const payload = pickCollection(fields, fieldMap, jsonKeys);
+			return await nooviChatApiRequest.call(this, 'PATCH', `${base}/${ruleId}`, { pipeline_follow_up_rule: payload });
+		}
+		case 'delete':
+			return await nooviChatApiRequest.call(this, 'DELETE', `${base}/${ruleId}`);
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+async function handleSequenceDefinitionOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	const definitionId = this.getNodeParameter('sequenceDefinitionId', index, '') as string;
+	const returnAll = this.getNodeParameter('returnAll', index, false) as boolean;
+	const limit = this.getNodeParameter('limit', index, 50) as number;
+	const base = '/pipeline/activity_sequences';
+	const fieldMap = {
+		name: 'name',
+		description: 'description',
+		triggerType: 'trigger_type',
+		active: 'active',
+		triggerConditions: 'trigger_conditions',
+		steps: 'steps',
+	};
+	const jsonKeys = ['triggerConditions', 'steps'];
+
+	switch (operation) {
+		case 'getAll': {
+			const f = this.getNodeParameter('sequenceFilters', index, {}) as any;
+			const qs: IDataObject = {};
+			if (f.active) qs.active = f.active;
+			if (f.q) qs.q = f.q;
+			if (f.triggerType) qs.trigger_type = f.triggerType;
+			if (returnAll) {
+				return await nooviChatApiRequestAllItems.call(this, 'GET', base, {}, qs);
+			}
+			return await nooviChatApiRequest.call(this, 'GET', base, {}, { ...qs, per_page: Math.min(limit, 100) });
+		}
+		case 'get':
+			return await nooviChatApiRequest.call(this, 'GET', `${base}/${definitionId}`);
+		case 'create': {
+			const fields = this.getNodeParameter('sequenceFields', index, {}) as any;
+			const payload = pickCollection(fields, fieldMap, jsonKeys);
+			payload.name = this.getNodeParameter('sequenceName', index) as string;
+			payload.trigger_type = this.getNodeParameter('sequenceTriggerType', index) as string;
+			payload.steps = parseJsonValue(this.getNodeParameter('sequenceSteps', index));
+			return await nooviChatApiRequest.call(this, 'POST', base, { pipeline_activity_sequence: payload });
+		}
+		case 'update': {
+			const fields = this.getNodeParameter('sequenceFields', index, {}) as any;
+			const payload = pickCollection(fields, fieldMap, jsonKeys);
+			return await nooviChatApiRequest.call(this, 'PATCH', `${base}/${definitionId}`, { pipeline_activity_sequence: payload });
+		}
+		case 'delete':
+			return await nooviChatApiRequest.call(this, 'DELETE', `${base}/${definitionId}`);
+		case 'activate':
+			return await nooviChatApiRequest.call(this, 'POST', `${base}/${definitionId}/activate`);
+		case 'deactivate':
+			return await nooviChatApiRequest.call(this, 'POST', `${base}/${definitionId}/deactivate`);
+		case 'duplicate': {
+			const name = this.getNodeParameter('duplicateName', index, '') as string;
+			return await nooviChatApiRequest.call(this, 'POST', `${base}/${definitionId}/duplicate`, name ? { name } : {});
+		}
+		case 'getAnalytics': {
+			const daysBack = this.getNodeParameter('daysBack', index, 7) as number;
+			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/sequence_analytics', {}, { days_back: daysBack });
+		}
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+async function handleActivityTemplateOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	const templateId = this.getNodeParameter('activityTemplateId', index, '') as string;
+	const returnAll = this.getNodeParameter('returnAll', index, false) as boolean;
+	const limit = this.getNodeParameter('limit', index, 50) as number;
+	const base = '/pipeline/activity_templates';
+	const fieldMap = {
+		name: 'name',
+		description: 'description',
+		activityType: 'activity_type',
+		category: 'category',
+		defaultContent: 'default_content',
+		defaultDuration: 'default_duration',
+		active: 'active',
+		defaultMetadata: 'default_metadata',
+	};
+
+	switch (operation) {
+		case 'getAll': {
+			const f = this.getNodeParameter('activityTemplateFilters', index, {}) as any;
+			const qs: IDataObject = {};
+			if (f.active) qs.active = f.active;
+			if (f.activityType) qs.activity_type = f.activityType;
+			if (f.category) qs.category = f.category;
+			if (f.mostUsed === true) qs.sort = 'most_used';
+			if (returnAll) {
+				return await nooviChatApiRequestAllItems.call(this, 'GET', base, {}, qs);
+			}
+			return await nooviChatApiRequest.call(this, 'GET', base, {}, { ...qs, per_page: Math.min(limit, 100) });
+		}
+		case 'get':
+			return await nooviChatApiRequest.call(this, 'GET', `${base}/${templateId}`);
+		case 'create': {
+			const fields = this.getNodeParameter('activityTemplateFields', index, {}) as any;
+			const payload = pickCollection(fields, fieldMap, ['defaultMetadata']);
+			payload.name = this.getNodeParameter('activityTemplateName', index) as string;
+			payload.activity_type = this.getNodeParameter('templateActivityType', index) as string;
+			return await nooviChatApiRequest.call(this, 'POST', base, { pipeline_activity_template: payload });
+		}
+		case 'update': {
+			const fields = this.getNodeParameter('activityTemplateFields', index, {}) as any;
+			const payload = pickCollection(fields, fieldMap, ['defaultMetadata']);
+			return await nooviChatApiRequest.call(this, 'PATCH', `${base}/${templateId}`, { pipeline_activity_template: payload });
+		}
+		case 'delete':
+			return await nooviChatApiRequest.call(this, 'DELETE', `${base}/${templateId}`);
+		case 'duplicate': {
+			const name = this.getNodeParameter('duplicateName', index, '') as string;
+			return await nooviChatApiRequest.call(this, 'POST', `${base}/${templateId}/duplicate`, name ? { name } : {});
+		}
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+async function handlePipelineProductOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	const productId = this.getNodeParameter('productId', index, '') as string;
+	const base = '/pipeline/products';
+	const buildPayload = (fields: any): IDataObject => {
+		const payload = pickCollection(fields, {
+			name: 'name',
+			sku: 'sku',
+			description: 'description',
+			category: 'category',
+			defaultValue: 'default_value',
+			currency: 'currency',
+			active: 'active',
+			position: 'position',
+		});
+		if (fields?.pipelineIds !== undefined) payload.pipeline_ids = splitIdList(fields.pipelineIds);
+		return payload;
+	};
+
+	switch (operation) {
+		case 'getAll': {
+			const f = this.getNodeParameter('productFilters', index, {}) as any;
+			const qs: IDataObject = {
+				per_page: this.getNodeParameter('productLimit', index, 50) as number,
+				offset: this.getNodeParameter('productOffset', index, 0) as number,
+			};
+			if (f.activeOnly === true) qs.active_only = true;
+			if (f.pipelineId) qs.pipeline_id = f.pipelineId;
+			return await nooviChatApiRequest.call(this, 'GET', base, {}, qs);
+		}
+		case 'get':
+			return await nooviChatApiRequest.call(this, 'GET', `${base}/${productId}`);
+		case 'create': {
+			const payload = buildPayload(this.getNodeParameter('productFields', index, {}));
+			payload.name = this.getNodeParameter('productName', index) as string;
+			return await nooviChatApiRequest.call(this, 'POST', base, { pipeline_product: payload });
+		}
+		case 'update': {
+			const payload = buildPayload(this.getNodeParameter('productFields', index, {}));
+			return await nooviChatApiRequest.call(this, 'PATCH', `${base}/${productId}`, { pipeline_product: payload });
+		}
+		case 'delete':
+			return await nooviChatApiRequest.call(this, 'DELETE', `${base}/${productId}`);
+		case 'getPerformance': {
+			const f = this.getNodeParameter('performanceFilters', index, {}) as any;
+			const qs: IDataObject = {};
+			if (f.pipelineId) qs.pipeline_id = f.pipelineId;
+			if (f.wonStart) qs.won_start = f.wonStart;
+			if (f.wonEnd) qs.won_end = f.wonEnd;
+			return await nooviChatApiRequest.call(this, 'GET', `${base}/performance`, {}, qs);
+		}
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+async function handlePipelineOpportunityOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	switch (operation) {
+		case 'getAll': {
+			const cardId = this.getNodeParameter('opportunityCardId', index) as string;
+			return await nooviChatApiRequest.call(this, 'GET', `/pipeline/cards/${cardId}/opportunities`, {}, {
+				per_page: this.getNodeParameter('opportunityLimit', index, 50) as number,
+				offset: this.getNodeParameter('opportunityOffset', index, 0) as number,
+			});
+		}
+		case 'create': {
+			const cardId = this.getNodeParameter('opportunityCardId', index) as string;
+			const fields = this.getNodeParameter('saleFields', index, {}) as any;
+			const body = pickCollection(fields, {
+				totalValue: 'total_value',
+				unitValue: 'unit_value',
+				quantity: 'quantity',
+				title: 'title',
+				note: 'note',
+				pipelineProductId: 'pipeline_product_id',
+			});
+			const rawItems = this.getNodeParameter('saleItems', index, '');
+			const items = parseJsonValue(rawItems);
+			if (items !== '' && items !== undefined && items !== null) {
+				if (!Array.isArray(items)) {
+					throw new NodeOperationError(this.getNode(), 'Items must be a JSON array.', { itemIndex: index });
+				}
+				body.items = items;
+			}
+			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/cards/${cardId}/opportunities`, body);
+		}
+		case 'void': {
+			const opportunityId = this.getNodeParameter('opportunityId', index) as string;
+			const reason = this.getNodeParameter('voidReason', index, '') as string;
+			return await nooviChatApiRequest.call(this, 'POST', `/pipeline/opportunities/${opportunityId}/void`, reason ? { reason } : {});
+		}
+		case 'getReport': {
+			const f = this.getNodeParameter('reportFilters', index, {}) as any;
+			const qs: IDataObject = {};
+			if (f.startDate) qs.start_date = f.startDate;
+			if (f.endDate) qs.end_date = f.endDate;
+			if (f.pipelineId) qs.pipeline_id = f.pipelineId;
+			return await nooviChatApiRequest.call(this, 'GET', '/pipeline/opportunities/report', {}, qs);
+		}
+		default:
+			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
+	}
+}
+
+async function handleFollowUpAutomationOperation(this: IExecuteFunctions, operation: string, index: number): Promise<any> {
+	const automationId = this.getNodeParameter('followUpAutomationId', index, '') as string;
+	const base = '/follow-up-automations';
+	const fieldMap = {
+		name: 'name',
+		triggerType: 'trigger_type',
+		followUpTemplateId: 'follow_up_template_id',
+		delayMinutes: 'delay_minutes',
+		enabled: 'enabled',
+		contentMode: 'content_mode',
+		aiInstruction: 'ai_instruction',
+		triggerConfig: 'trigger_config',
+		conditions: 'conditions',
+		sendWindow: 'send_window',
+	};
+	const jsonKeys = ['triggerConfig', 'conditions', 'sendWindow'];
+
+	switch (operation) {
+		case 'getAll':
+			// Not paginated: { payload: [...] }.
+			return await nooviChatApiRequest.call(this, 'GET', base);
+		case 'get':
+			return await nooviChatApiRequest.call(this, 'GET', `${base}/${automationId}`);
+		case 'create': {
+			const fields = this.getNodeParameter('followUpAutomationFields', index, {}) as any;
+			const payload = pickCollection(fields, fieldMap, jsonKeys);
+			payload.name = this.getNodeParameter('followUpAutomationName', index) as string;
+			payload.trigger_type = this.getNodeParameter('followUpTriggerType', index) as string;
+			return await nooviChatApiRequest.call(this, 'POST', base, { follow_up_automation: payload });
+		}
+		case 'update': {
+			const fields = this.getNodeParameter('followUpAutomationFields', index, {}) as any;
+			const payload = pickCollection(fields, fieldMap, jsonKeys);
+			return await nooviChatApiRequest.call(this, 'PATCH', `${base}/${automationId}`, { follow_up_automation: payload });
+		}
+		case 'delete':
+			return await nooviChatApiRequest.call(this, 'DELETE', `${base}/${automationId}`);
 		default:
 			throw new NodeOperationError(this.getNode(), `Unknown operation: "${operation}"`, { itemIndex: index });
 	}

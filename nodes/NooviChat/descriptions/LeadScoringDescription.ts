@@ -32,6 +32,24 @@ export const LeadScoringOperations: INodeProperties[] = [
 			{ name: 'Delete Rule', value: 'deleteRule', action: 'Delete a lead scoring rule' },
 			{ name: 'Create Default Rules', value: 'createDefaultRules', action: 'Create default rules' },
 			{ name: 'Get Dashboard', value: 'getDashboard', action: 'Get lead scoring dashboard' },
+			{ name: 'Get Distribution Report', value: 'getDistributionReport', action: 'Get the lead score distribution report' },
+			{ name: 'Get Trends', value: 'getTrends', action: 'Get lead score trends' },
+			{ name: 'Get Top Leads', value: 'getTopLeads', action: 'Get the top scored leads' },
+			{ name: 'Get Category Changes', value: 'getCategoryChanges', action: 'Get recent lead category changes' },
+			{
+				name: 'Get Card Score Distribution',
+				value: 'getCardScoreDistribution',
+				action: 'Get the hot warm cold count of cards',
+				description: 'Current hot / warm / cold count and average score of the cards in the pipelines you can see',
+			},
+			{
+				name: 'Bulk Recalculate',
+				value: 'bulkRecalculate',
+				action: 'Recalculate every lead score in the background',
+				description: 'Queue a background recalculation of every lead score of the account. Answers 202 immediately.',
+			},
+			{ name: 'Get Many Logs', value: 'getLogs', action: 'Get many lead score logs' },
+			{ name: 'Get Log', value: 'getLog', action: 'Get a lead score log' },
 		],
 		default: 'getAllRules',
 	},
@@ -138,7 +156,7 @@ export const LeadScoringFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['leadScoring'],
-				operation: ['getAllRules'],
+				operation: ['getAllRules', 'getLogs'],
 			},
 		},
 		default: false,
@@ -151,11 +169,120 @@ export const LeadScoringFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['leadScoring'],
-				operation: ['getAllRules'],
+				operation: ['getAllRules', 'getLogs'],
 				returnAll: [false],
 			},
 		},
 		default: 50,
 		description: 'Maximum number of results to return',
+	},
+
+	// ── Reports (LeadScore::ReportsController) ───────────────────────────
+	// Dates are strict YYYY-MM-DD in the account timezone; omitted = last 30 days.
+	{
+		displayName: 'Start Date',
+		name: 'reportStartDate',
+		type: 'string',
+		displayOptions: {
+			show: {
+				resource: ['leadScoring'],
+				operation: ['getDashboard', 'getDistributionReport', 'getTrends', 'getTopLeads', 'getCategoryChanges'],
+			},
+		},
+		default: '',
+		placeholder: 'YYYY-MM-DD',
+		description: 'Start of the period (account timezone). Defaults to 30 days ago.',
+	},
+	{
+		displayName: 'End Date',
+		name: 'reportEndDate',
+		type: 'string',
+		displayOptions: {
+			show: {
+				resource: ['leadScoring'],
+				operation: ['getDashboard', 'getDistributionReport', 'getTrends', 'getTopLeads', 'getCategoryChanges'],
+			},
+		},
+		default: '',
+		placeholder: 'YYYY-MM-DD',
+		description: 'End of the period (account timezone). Defaults to today.',
+	},
+	{
+		displayName: 'Limit',
+		name: 'reportLimit',
+		type: 'number',
+		typeOptions: { minValue: 1, maxValue: 100 },
+		displayOptions: {
+			show: {
+				resource: ['leadScoring'],
+				operation: ['getTopLeads', 'getCategoryChanges'],
+			},
+		},
+		default: 10,
+		description: 'Maximum number of rows (the server clamps it to 1–100)',
+	},
+
+	// ── Logs (LeadScore::LogsController) ─────────────────────────────────
+	{
+		displayName: 'Log ID',
+		name: 'logId',
+		type: 'string',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['leadScoring'],
+				operation: ['getLog'],
+			},
+		},
+		default: '',
+	},
+	{
+		displayName: 'Filters',
+		name: 'logFilters',
+		type: 'collection',
+		placeholder: 'Add Filter',
+		displayOptions: {
+			show: {
+				resource: ['leadScoring'],
+				operation: ['getLogs'],
+			},
+		},
+		default: {},
+		options: [
+			{
+				displayName: 'Category Changes Only',
+				name: 'categoryChangesOnly',
+				type: 'boolean',
+				default: false,
+				description: 'Whether to return only the logs where the lead category changed',
+			},
+			{
+				displayName: 'End Date',
+				name: 'endDate',
+				type: 'string',
+				default: '',
+				placeholder: 'YYYY-MM-DD',
+			},
+			{
+				displayName: 'Event Type',
+				name: 'eventType',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g., message_received',
+			},
+			{
+				displayName: 'Pipeline Card ID',
+				name: 'pipelineCardId',
+				type: 'string',
+				default: '',
+			},
+			{
+				displayName: 'Start Date',
+				name: 'startDate',
+				type: 'string',
+				default: '',
+				placeholder: 'YYYY-MM-DD',
+			},
+		],
 	},
 ];

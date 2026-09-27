@@ -2,6 +2,35 @@
 
 ## Unreleased
 
+### Added
+
+- **Pipeline API coverage normalized.** Every Pipeline route a workflow can
+  reasonably automate is now reachable from the node, each one mapped to the
+  real Chatwoot route, strong-params wrapper and pagination style:
+  - **Card**: Get Discarded, Restore, Delete Permanently, Assign Owner, Bulk
+    Assign Owner (single owner, round robin or workload balanced), Bulk Set
+    Priority, Bulk Discard, Update Qualification Checklist, Override Lead Score,
+    Get Attachments, Delete Attachment.
+  - **Pipeline**: Get Lost Reasons Analytics, Get Forecast, Get Pipeline
+    Analysis, Get Pipeline Dashboard, Export Report (CSV), Get Agent Pipeline.
+  - **Activity**: Search, Reschedule, Bulk Create, Create From Template.
+  - **Lead Scoring**: Distribution Report, Trends, Top Leads, Category Changes,
+    Card Score Distribution, Bulk Recalculate, Get Many Logs, Get Log; the
+    report operations accept a start/end date.
+  - **Follow-up**: Get Template, Get Template Variables, Delete Template
+    Attachment, Get/Update/Delete Template Item, Reorder Template Items.
+  - New resources: **Pipeline Automation** (CRUD, execute, dry run, validate,
+    duplicate, stats, executions, audit logs, dashboard, export/import and the
+    template catalog), **Pipeline Webhook** (CRUD + test), **Pipeline Follow-up
+    Rule**, **Follow-up Automation**, **Sequence Definition** (CRUD,
+    activate/deactivate, duplicate, analytics), **Activity Template**,
+    **Product** and **Opportunity** (sales ledger of a card + revenue report).
+- Deliberately left out: routes that only serve a screen or need a file upload
+  (automation rate limits, flow-editor validation, CSV/attachment uploads,
+  attachment download) and every route that returns or rotates a secret
+  (automation webhook credentials/token, sequence webhook credentials, pipeline
+  webhook secret regeneration).
+
 ## 0.22.1 (2026-09-14)
 
 ### Changed

@@ -34,6 +34,19 @@ export const ActivityOperations: INodeProperties[] = [
 			{ name: 'Complete', value: 'complete', action: 'Complete an activity' },
 			{ name: 'Cancel', value: 'cancel', action: 'Cancel an activity' },
 			{ name: 'Get Analytics', value: 'getAnalytics', action: 'Get activity analytics' },
+			{ name: 'Search', value: 'search', action: 'Search activities' },
+			{ name: 'Reschedule', value: 'reschedule', action: 'Reschedule an activity' },
+			{
+				name: 'Bulk Create',
+				value: 'bulkCreate',
+				action: 'Create the same activity on many cards',
+				description: 'Create the same activity on up to 100 cards. Cards you cannot see are skipped.',
+			},
+			{
+				name: 'Create From Template',
+				value: 'createFromTemplate',
+				action: 'Create an activity from a template',
+			},
 		],
 		default: 'getAll',
 	},
@@ -48,7 +61,7 @@ export const ActivityFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['activity'],
-				operation: ['create', 'get', 'update', 'delete', 'start', 'complete', 'cancel'],
+				operation: ['create', 'get', 'update', 'delete', 'start', 'complete', 'cancel', 'reschedule', 'createFromTemplate'],
 			},
 		},
 		default: '',
@@ -63,7 +76,7 @@ export const ActivityFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['activity'],
-				operation: ['get', 'update', 'delete', 'start', 'complete', 'cancel'],
+				operation: ['get', 'update', 'delete', 'start', 'complete', 'cancel', 'reschedule'],
 			},
 		},
 		default: '',
@@ -80,7 +93,7 @@ export const ActivityFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['activity'],
-				operation: ['create'],
+				operation: ['create', 'bulkCreate'],
 			},
 		},
 		default: '',
@@ -95,7 +108,7 @@ export const ActivityFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['activity'],
-				operation: ['create'],
+				operation: ['create', 'bulkCreate'],
 			},
 		},
 		options: [
@@ -116,7 +129,7 @@ export const ActivityFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['activity'],
-				operation: ['create'],
+				operation: ['create', 'bulkCreate'],
 			},
 		},
 		default: {},
@@ -242,7 +255,7 @@ export const ActivityFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['activity'],
-				operation: ['getAll'],
+				operation: ['getAll', 'search'],
 			},
 		},
 		default: false,
@@ -256,11 +269,203 @@ export const ActivityFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['activity'],
-				operation: ['getAll'],
+				operation: ['getAll', 'search'],
 				returnAll: [false],
 			},
 		},
 		default: 50,
 		description: 'Maximum number of results to return',
+	},
+
+	// ── Reschedule (POST /pipeline/activities/:id/reschedule) ────────────
+	{
+		displayName: 'Scheduled At',
+		name: 'rescheduleAt',
+		type: 'dateTime',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['activity'],
+				operation: ['reschedule'],
+			},
+		},
+		default: '',
+		description: 'New date and time of the activity. Pending reminders move with it (15 minutes before).',
+	},
+
+	// ── Bulk Create (POST /pipeline/activities/bulk_create) ──────────────
+	{
+		displayName: 'Card IDs',
+		name: 'bulkCardIds',
+		type: 'string',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['activity'],
+				operation: ['bulkCreate'],
+			},
+		},
+		default: '',
+		placeholder: 'e.g., 12, 15, 19',
+		description: 'Comma-separated IDs of the cards that receive the activity (max 100)',
+	},
+
+	// ── Create From Template (POST /pipeline/activities/create_from_template) ──
+	{
+		displayName: 'Template ID',
+		name: 'activityTemplateId',
+		type: 'string',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['activity'],
+				operation: ['createFromTemplate'],
+			},
+		},
+		default: '',
+		description: 'ID of the activity template (see the Activity Template resource)',
+	},
+	{
+		displayName: 'Overrides',
+		name: 'templateOverrides',
+		type: 'collection',
+		placeholder: 'Add Override',
+		displayOptions: {
+			show: {
+				resource: ['activity'],
+				operation: ['createFromTemplate'],
+			},
+		},
+		default: {},
+		description: 'Values that replace the ones copied from the template',
+		options: [
+			{
+				displayName: 'Assignee ID',
+				name: 'assigneeId',
+				type: 'number',
+				default: 0,
+				description: 'ID of the agent responsible',
+			},
+			{
+				displayName: 'Description',
+				name: 'description',
+				type: 'string',
+				default: '',
+				typeOptions: { rows: 3 },
+			},
+			{
+				displayName: 'Due At',
+				name: 'dueAt',
+				type: 'dateTime',
+				default: '',
+			},
+			{
+				displayName: 'Scheduled At',
+				name: 'scheduledAt',
+				type: 'dateTime',
+				default: '',
+			},
+			{
+				displayName: 'Title',
+				name: 'title',
+				type: 'string',
+				default: '',
+			},
+		],
+	},
+
+	// ── Search (GET /pipeline/activities/search) ─────────────────────────
+	{
+		displayName: 'Query',
+		name: 'searchQuery',
+		type: 'string',
+		displayOptions: {
+			show: {
+				resource: ['activity'],
+				operation: ['search'],
+			},
+		},
+		default: '',
+		description: 'Text searched in the activities',
+	},
+	{
+		displayName: 'Filters',
+		name: 'searchFilters',
+		type: 'collection',
+		placeholder: 'Add Filter',
+		displayOptions: {
+			show: {
+				resource: ['activity'],
+				operation: ['search'],
+			},
+		},
+		default: {},
+		options: [
+			{
+				displayName: 'Assignee ID',
+				name: 'assignedToId',
+				type: 'string',
+				default: '',
+			},
+			{
+				displayName: 'Date From',
+				name: 'dateFrom',
+				type: 'string',
+				default: '',
+				placeholder: 'YYYY-MM-DD',
+			},
+			{
+				displayName: 'Date To',
+				name: 'dateTo',
+				type: 'string',
+				default: '',
+				placeholder: 'YYYY-MM-DD',
+			},
+			{
+				displayName: 'Pipeline Card ID',
+				name: 'pipelineCardId',
+				type: 'string',
+				default: '',
+			},
+			{
+				displayName: 'Priority',
+				name: 'priority',
+				type: 'options',
+				options: [
+					{ name: 'Low', value: 'low' },
+					{ name: 'Medium', value: 'medium' },
+					{ name: 'High', value: 'high' },
+					{ name: 'Urgent', value: 'urgent' },
+				],
+				default: 'medium',
+			},
+			{
+				displayName: 'Status',
+				name: 'status',
+				type: 'options',
+				options: [
+					{ name: 'Pending', value: 'pending' },
+					{ name: 'In Progress', value: 'in_progress' },
+					{ name: 'Completed', value: 'completed' },
+					{ name: 'Cancelled', value: 'cancelled' },
+				],
+				default: 'pending',
+			},
+			{
+				displayName: 'Type',
+				name: 'type',
+				type: 'options',
+				options: [
+					{ name: 'Call', value: 'call' },
+					{ name: 'Demo', value: 'demo' },
+					{ name: 'Email', value: 'email' },
+					{ name: 'Follow-Up', value: 'follow_up' },
+					{ name: 'Meeting', value: 'meeting' },
+					{ name: 'Note', value: 'note' },
+					{ name: 'Task', value: 'task' },
+				],
+				default: 'task',
+			},
+		],
 	},
 ];

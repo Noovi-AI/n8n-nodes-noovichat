@@ -67,8 +67,13 @@ Full CRM pipeline management directly from n8n. Create pipelines, manage stages,
 
 | Resource | Operations |
 |----------|------------|
-| **Pipeline** | Create, Get, Get Many, Update, Delete · Stage CRUD · Stage Reorder · Analytics: dashboard, win rate, conversion rate, velocity, team performance, lost reasons |
-| **Card** | Create, Get, Get Many, Update, Delete · Move to Stage · Mark Won / Lost / Reopen · Get Timeline · **Bulk Update · Bulk Move · Bulk Delete** |
+| **Pipeline** | Create, Get, Get Many, Update, Delete · Stage CRUD · Stage Reorder · Analytics: dashboard, win rate, conversion rate, velocity, team performance, lost reasons, lost reasons analytics, forecast, pipeline analysis, pipeline dashboard, agent pipeline · Export Report (CSV) |
+| **Card** | Create, Get, Get Many, Update, Delete · Move to Stage · Mark Won / Lost / Reopen · Get Timeline · **Bulk Update · Bulk Move · Bulk Delete** · Bulk Assign Owner · Bulk Set Priority · Bulk Discard · Assign Owner · Get Discarded · Restore · Delete Permanently · Update Qualification Checklist · Override / Recalculate Lead Score · Get / Delete Attachments · Additional contacts & conversations · Export / Import Template (CSV) |
+| **Opportunity** | Get Many (sales of a card) · Create (stand-alone sale) · Void · Get Report |
+| **Product** | Create, Get, Get Many, Update, Deactivate · Get Performance |
+| **Pipeline Automation** | Create, Get, Get Many, Update, Delete · Execute · Dry Run · Validate · Duplicate · Stats · Executions · Audit Logs · Dashboard · Export / Import (JSON) · Templates (list, get, categories, create from template) |
+| **Pipeline Webhook** | Create, Get, Get Many, Update, Delete · Test |
+| **Sequence** / **Sequence Definition** | Run a definition on a card (start, pause, resume, complete step, cancel) · Definition CRUD · Activate / Deactivate · Duplicate · Analytics |
 
 > ⚠️ **Closing a deal is never a side effect of a generic write.** Won and lost
 > stages stay out of reach of the plain create/update path: **Create** refuses
@@ -89,15 +94,18 @@ Never miss a follow-up again. Schedule tasks, track activities and automate remi
 
 | Resource | Operations |
 |----------|------------|
-| **Follow-up** | Create, Get, Get Many, Update, Delete, Cancel · Template CRUD · Template Preview |
-| **Activity** | Create, Get, Get Many, Update, Delete · Start · Complete · Cancel · Get Analytics |
+| **Follow-up** | Create, Get, Get Many, Update, Delete, Cancel · Template CRUD · Template Preview · Template Variables · Template Items (create, get, update, delete, reorder) · Delete Template Attachment |
+| **Follow-up Automation** | Create, Get, Get Many, Update, Delete (account-level triggers, send window, template or AI content) |
+| **Pipeline Follow-up Rule** | Create, Get, Get Many, Update, Delete (stage-transition follow-ups of a pipeline) |
+| **Activity** | Create, Get, Get Many, Update, Delete · Start · Complete · Cancel · Reschedule · Search · Bulk Create · Create From Template · Get Analytics |
+| **Activity Template** | Create, Get, Get Many, Update, Delete · Duplicate |
 
 #### 🎯 Lead Scoring
 Score contacts automatically based on rules and conditions. Build rule-based scoring engines and monitor results via dashboard.
 
 | Resource | Operations |
 |----------|------------|
-| **Lead Scoring** | Create Rule · Get Many Rules · Update Rule · Delete Rule · Create Defaults · Get Dashboard |
+| **Lead Scoring** | Create Rule · Get Many Rules · Update Rule · Delete Rule · Create Defaults · Get Dashboard · Distribution Report · Trends · Top Leads · Category Changes · Card Score Distribution · Bulk Recalculate · Logs |
 
 #### 📣 Campaigns
 Send targeted messages at scale. Supports both one-off blasts and ongoing automated campaigns.

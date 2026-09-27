@@ -41,6 +41,39 @@ export const PipelineOperations: INodeProperties[] = [
 			{ name: 'Get Sales Velocity', value: 'getSalesVelocity', action: 'Get sales velocity' },
 			{ name: 'Get Team Performance', value: 'getTeamPerformance', action: 'Get team performance' },
 			{ name: 'Get Lost Reasons', value: 'getLostReasons', action: 'Get lost reasons' },
+			{
+				name: 'Get Lost Reasons Analytics',
+				value: 'getLostReasonsAnalytics',
+				action: 'Get lost reasons analytics',
+				description: 'How many deals were lost per reason in the period, for the pipelines you can see',
+			},
+			{
+				name: 'Get Forecast',
+				value: 'getForecast',
+				action: 'Get the revenue forecast',
+				description: 'Open deals with an expected close date, grouped by month',
+			},
+			{
+				name: 'Get Pipeline Analysis',
+				value: 'getPipelineAnalysis',
+				action: 'Get the stage analysis of a pipeline',
+			},
+			{
+				name: 'Get Pipeline Dashboard',
+				value: 'getPipelineDashboard',
+				action: 'Get the dashboard of a pipeline',
+			},
+			{
+				name: 'Export Report (CSV)',
+				value: 'exportReport',
+				action: 'Export the pipeline report as CSV',
+				description: 'Export the report numbers (KPIs and per-stage breakdown) of one pipeline as CSV text',
+			},
+			{
+				name: 'Get Agent Pipeline',
+				value: 'getAgentPipeline',
+				action: 'Get the pipeline metrics of an agent',
+			},
 		],
 		default: 'getAll',
 	},
@@ -270,7 +303,7 @@ export const PipelineFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['pipeline'],
-				operation: ['getAnalyticsDashboard', 'getWinRate', 'getConversionMetrics', 'getSalesVelocity', 'getTeamPerformance'],
+				operation: ['getAnalyticsDashboard', 'getWinRate', 'getConversionMetrics', 'getSalesVelocity', 'getTeamPerformance', 'getLostReasonsAnalytics', 'getPipelineAnalysis', 'exportReport'],
 			},
 		},
 		default: '',
@@ -283,7 +316,7 @@ export const PipelineFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['pipeline'],
-				operation: ['getAnalyticsDashboard', 'getWinRate', 'getConversionMetrics', 'getSalesVelocity', 'getTeamPerformance'],
+				operation: ['getAnalyticsDashboard', 'getWinRate', 'getConversionMetrics', 'getSalesVelocity', 'getTeamPerformance', 'getLostReasonsAnalytics', 'getPipelineAnalysis', 'exportReport'],
 			},
 		},
 		default: '',
@@ -349,5 +382,121 @@ export const PipelineFields: INodeProperties[] = [
 		},
 		default: 50,
 		description: 'Maximum number of results to return',
+	},
+
+	// ── Per-pipeline analytics (Pipeline::AnalyticsController / OwnersController) ──
+	{
+		displayName: 'Pipeline ID',
+		name: 'analyticsPipelineId',
+		type: 'string',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['pipeline'],
+				operation: ['getPipelineAnalysis', 'getPipelineDashboard', 'exportReport'],
+			},
+		},
+		default: '',
+		placeholder: 'e.g., 3',
+		description: 'ID of the pipeline to analyse',
+	},
+	{
+		displayName: 'Pipeline ID',
+		name: 'analyticsPipelineId',
+		type: 'string',
+		displayOptions: {
+			show: {
+				resource: ['pipeline'],
+				operation: ['getForecast'],
+			},
+		},
+		default: '',
+		placeholder: 'e.g., 3',
+		description: 'Limit the forecast to one pipeline. Leave empty to aggregate every pipeline you can see.',
+	},
+	{
+		displayName: 'Months Ahead',
+		name: 'monthsAhead',
+		type: 'number',
+		typeOptions: { minValue: 1, maxValue: 24 },
+		displayOptions: {
+			show: {
+				resource: ['pipeline'],
+				operation: ['getForecast'],
+			},
+		},
+		default: 6,
+		description: 'How many months ahead the forecast covers (the server clamps it to 1–24)',
+	},
+	{
+		displayName: 'Date Start',
+		name: 'dashboardDateStart',
+		type: 'string',
+		displayOptions: {
+			show: {
+				resource: ['pipeline'],
+				operation: ['getPipelineDashboard'],
+			},
+		},
+		default: '',
+		placeholder: 'YYYY-MM-DD',
+		description: 'Start of the period (strict YYYY-MM-DD, account timezone). Must be sent together with Date End.',
+	},
+	{
+		displayName: 'Date End',
+		name: 'dashboardDateEnd',
+		type: 'string',
+		displayOptions: {
+			show: {
+				resource: ['pipeline'],
+				operation: ['getPipelineDashboard'],
+			},
+		},
+		default: '',
+		placeholder: 'YYYY-MM-DD',
+		description: 'End of the period (strict YYYY-MM-DD, account timezone). Must be sent together with Date Start.',
+	},
+	{
+		displayName: 'Activity Page',
+		name: 'activityPage',
+		type: 'number',
+		typeOptions: { minValue: 1 },
+		displayOptions: {
+			show: {
+				resource: ['pipeline'],
+				operation: ['getPipelineDashboard'],
+			},
+		},
+		default: 1,
+		description: 'Page of the recent-activity list included in the dashboard',
+	},
+	{
+		displayName: 'Activity Per Page',
+		name: 'activityPerPage',
+		type: 'number',
+		typeOptions: { minValue: 1, maxValue: 50 },
+		displayOptions: {
+			show: {
+				resource: ['pipeline'],
+				operation: ['getPipelineDashboard'],
+			},
+		},
+		default: 10,
+		description: 'Size of the recent-activity page (1–50)',
+	},
+	{
+		displayName: 'Agent ID',
+		name: 'agentUserId',
+		type: 'string',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['pipeline'],
+				operation: ['getAgentPipeline'],
+			},
+		},
+		default: '',
+		placeholder: 'e.g., 7',
+		description: 'ID of the agent (user) whose pipeline metrics are returned',
 	},
 ];

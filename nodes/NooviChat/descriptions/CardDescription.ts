@@ -90,6 +90,50 @@ export const CardOperations: INodeProperties[] = [
 				value: 'getImportTemplate',
 				action: 'Get the CSV import template',
 			},
+			{
+				name: 'Get Discarded',
+				value: 'getDiscarded',
+				action: 'Get discarded cards',
+				description: 'List cards in the trash (discarded). Admin-only on the server.',
+			},
+			{ name: 'Restore', value: 'restore', action: 'Restore a discarded card' },
+			{
+				name: 'Delete Permanently',
+				value: 'deletePermanently',
+				action: 'Permanently delete a discarded card',
+				description: 'Irreversibly delete a card that is already in the trash. The server answers 422 when the card was not discarded first.',
+			},
+			{ name: 'Assign Owner', value: 'assignOwner', action: 'Assign an owner to a card' },
+			{
+				name: 'Bulk Assign Owner',
+				value: 'bulkAssign',
+				action: 'Bulk assign an owner to cards',
+				description: 'Assign one owner to many cards, or distribute them by round robin / workload balance (max 200 cards)',
+			},
+			{
+				name: 'Bulk Set Priority',
+				value: 'bulkSetPriority',
+				action: 'Bulk set the priority of cards',
+				description: 'Set the priority of many cards in one server-side call (max 500 cards)',
+			},
+			{
+				name: 'Bulk Discard',
+				value: 'bulkDiscard',
+				action: 'Bulk discard cards',
+				description: 'Move many cards to the trash in one server-side call, with an optional reason (max 500 cards)',
+			},
+			{
+				name: 'Update Qualification Checklist',
+				value: 'updateQualificationChecklist',
+				action: 'Update the qualification checklist of a card',
+			},
+			{
+				name: 'Override Lead Score',
+				value: 'overrideLeadScore',
+				action: 'Manually override the lead score of a card',
+			},
+			{ name: 'Get Attachments', value: 'getAttachments', action: 'Get the attachments of a card' },
+			{ name: 'Delete Attachment', value: 'deleteAttachment', action: 'Delete an attachment from a card' },
 		],
 		default: 'getAll',
 	},
@@ -104,7 +148,7 @@ export const CardFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['card'],
-				operation: ['get', 'update', 'delete', 'moveToStage', 'markWon', 'markLost', 'reopen', 'getTimeline', 'getLeadScore', 'recalculateLeadScore', 'addContact', 'removeContact', 'addConversation', 'removeConversation'],
+				operation: ['get', 'update', 'delete', 'moveToStage', 'markWon', 'markLost', 'reopen', 'getTimeline', 'getLeadScore', 'recalculateLeadScore', 'addContact', 'removeContact', 'addConversation', 'removeConversation', 'restore', 'deletePermanently', 'assignOwner', 'updateQualificationChecklist', 'overrideLeadScore', 'getAttachments', 'deleteAttachment'],
 			},
 		},
 		default: '',
@@ -358,7 +402,7 @@ export const CardFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['card'],
-				operation: ['bulkUpdate', 'bulkMove', 'bulkDelete'],
+				operation: ['bulkUpdate', 'bulkMove', 'bulkDelete', 'bulkAssign', 'bulkSetPriority', 'bulkDiscard'],
 			},
 		},
 		default: { values: [{ id: '' }] },
@@ -405,7 +449,7 @@ export const CardFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['card'],
-				operation: ['getAll'],
+				operation: ['getAll', 'getDiscarded'],
 			},
 		},
 		default: false,
@@ -419,7 +463,7 @@ export const CardFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['card'],
-				operation: ['getAll'],
+				operation: ['getAll', 'getDiscarded'],
 				returnAll: [false],
 			},
 		},
@@ -572,5 +616,185 @@ export const CardFields: INodeProperties[] = [
 				description: 'Filter by multiple stage identifiers, separated with commas',
 			},
 		],
+	},
+
+	// ── Trash (discarded cards) ──────────────────────────────────────────
+	// Backend: Pipeline::CardsController#discarded / #restore / #permanently_delete.
+	{
+		displayName: 'Pipeline ID',
+		name: 'discardedPipelineId',
+		type: 'string',
+		displayOptions: {
+			show: {
+				resource: ['card'],
+				operation: ['getDiscarded'],
+			},
+		},
+		default: '',
+		placeholder: 'e.g., 3',
+		description: 'Only list the trash of this pipeline. Leave empty for the whole account.',
+	},
+
+	// ── Owner assignment ─────────────────────────────────────────────────
+	// Backend: Pipeline::OwnersController#assign / #bulk_assign. `owner_id` is the
+	// canonical key; an explicit null unassigns. A missing key is a 422.
+	{
+		displayName: 'Distribution',
+		name: 'ownerDistribution',
+		type: 'options',
+		displayOptions: {
+			show: {
+				resource: ['card'],
+				operation: ['bulkAssign'],
+			},
+		},
+		options: [
+			{ name: 'Single Owner', value: 'direct', description: 'Assign every card to the owner below' },
+			{ name: 'Round Robin', value: 'round_robin', description: 'Distribute the cards among the available agents in turn' },
+			{ name: 'Workload Balanced', value: 'workload_balanced', description: 'Give each card to the agent with the fewest open cards' },
+		],
+		default: 'direct',
+		description: 'How the cards are distributed among owners',
+	},
+	{
+		displayName: 'Owner ID',
+		name: 'ownerId',
+		type: 'number',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['card'],
+				operation: ['assignOwner'],
+			},
+		},
+		default: 0,
+		description: 'ID of the agent that becomes the owner. Use 0 to remove the current owner.',
+	},
+	{
+		displayName: 'Owner ID',
+		name: 'ownerId',
+		type: 'number',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['card'],
+				operation: ['bulkAssign'],
+				ownerDistribution: ['direct'],
+			},
+		},
+		default: 0,
+		description: 'ID of the agent that becomes the owner of every card. Use 0 to remove the owner of every card.',
+	},
+	{
+		displayName: 'Notify Owner',
+		name: 'notifyOwner',
+		type: 'boolean',
+		displayOptions: {
+			show: {
+				resource: ['card'],
+				operation: ['assignOwner'],
+			},
+		},
+		default: false,
+		description: 'Whether to notify the new owner about the assignment',
+	},
+
+	// ── Server-side bulk actions ─────────────────────────────────────────
+	// Backend: Pipeline::BulkActionsController — body { card_ids: [], pipeline_stage?, priority?, reason? }.
+	{
+		displayName: 'Priority',
+		name: 'bulkPriority',
+		type: 'options',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['card'],
+				operation: ['bulkSetPriority'],
+			},
+		},
+		options: [
+			{ name: 'None', value: 'none' },
+			{ name: 'Low', value: 'low' },
+			{ name: 'Medium', value: 'medium' },
+			{ name: 'High', value: 'high' },
+			{ name: 'Urgent', value: 'urgent' },
+		],
+		default: 'medium',
+		description: 'Priority to set on every selected card',
+	},
+	{
+		displayName: 'Only Cards in Stage',
+		name: 'bulkStageFilter',
+		type: 'string',
+		displayOptions: {
+			show: {
+				resource: ['card'],
+				operation: ['bulkSetPriority', 'bulkDiscard'],
+			},
+		},
+		default: '',
+		placeholder: 'e.g., 1_lead',
+		description: 'Optional stage key: only the selected cards that are currently in this stage are affected',
+	},
+	{
+		displayName: 'Reason',
+		name: 'discardReason',
+		type: 'string',
+		displayOptions: {
+			show: {
+				resource: ['card'],
+				operation: ['bulkDiscard'],
+			},
+		},
+		default: '',
+		description: 'Optional reason stored with each discarded card',
+	},
+
+	// ── Qualification checklist / lead score override ────────────────────
+	{
+		displayName: 'Qualification Checklist',
+		name: 'qualificationChecklist',
+		type: 'json',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['card'],
+				operation: ['updateQualificationChecklist'],
+			},
+		},
+		default: '{}',
+		description:
+			'Object keyed by criterion ID. Each criterion accepts id, name, checked, points, required, category, checked_at, checked_by and notes; other keys are dropped by the server. The qualification score is the sum of the points of the checked criteria. Example: {"budget": {"name": "Has budget", "checked": true, "points": 20}}.',
+	},
+	{
+		displayName: 'Score',
+		name: 'overrideScore',
+		type: 'number',
+		required: true,
+		typeOptions: { minValue: 0, maxValue: 100 },
+		displayOptions: {
+			show: {
+				resource: ['card'],
+				operation: ['overrideLeadScore'],
+			},
+		},
+		default: 50,
+		description: 'Manual lead score between 0 and 100. Automatic heuristic recalculations keep it; the Recalculate Lead Score operation overwrites it.',
+	},
+
+	// ── Attachments ──────────────────────────────────────────────────────
+	{
+		displayName: 'Attachment ID',
+		name: 'attachmentId',
+		type: 'string',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['card'],
+				operation: ['deleteAttachment'],
+			},
+		},
+		default: '',
+		description: 'ID of the attachment, as returned by Get Attachments',
 	},
 ];
