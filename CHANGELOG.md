@@ -10,6 +10,9 @@
   follow-ups and Get Templates hit endpoints the API does not paginate: each
   page request returned the whole list again, so Return All repeated it up to
   the page cap. Both now make a single request; Limit is applied by the node.
+- **Follow-up Limit above 100 came back as 100.** The account-wide Get Many
+  now honors `per_page` with a ceiling of 100, so a larger Limit was silently
+  reduced. The Limit field now accepts 1-100.
 
 ## 0.23.0 (2026-09-27)
 

@@ -386,8 +386,9 @@ export const FollowUpFields: INodeProperties[] = [
 				returnAll: [false],
 			},
 		},
+		typeOptions: { minValue: 1, maxValue: 100 },
 		default: 50,
-		description: 'Maximum number of results to return',
+		description: 'Max number of results to return',
 	},
 
 	// ── Template attachments / items (follow_up_templates#delete_attachment,

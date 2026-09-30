@@ -82,6 +82,17 @@ describe('NooviChat Node — description', () => {
 		expect(idempotencyKey?.description).toContain('HTTP 503');
 	});
 
+	it('should cap the follow-up limit at the per_page ceiling the API enforces', () => {
+		// GET /follow-ups honors per_page up to 100 and silently answers 100 above
+		// that (Chatwoot 6f1939d2ef); a Limit of 500 would return 100 without warning.
+		const followUpLimit = node.description.properties.find(
+			(p) =>
+				p.name === 'limit' &&
+				((p.displayOptions?.show?.resource as string[] | undefined) || []).includes('followUp'),
+		);
+		expect(followUpLimit?.typeOptions).toEqual({ minValue: 1, maxValue: 100 });
+	});
+
 	it('should expose the current card financial fields, filters, and limit contract', () => {
 		const cardLimit = node.description.properties.find(
 			(p) =>
