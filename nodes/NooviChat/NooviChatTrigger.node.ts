@@ -103,6 +103,7 @@ export class NooviChatTrigger implements INodeType {
 					{ name: 'Broadcast Follow-up Sent', value: 'broadcast_follow_up_sent', description: 'A broadcast follow-up was sent to a non-replier' },
 					{ name: 'Broadcast Started', value: 'broadcast_started', description: 'A broadcast started sending (entered running state)' },
 					{ name: 'Broadcast Completed', value: 'broadcast_completed', description: 'A broadcast finished sending all contacts' },
+					{ name: 'Broadcast Auto-Paused', value: 'broadcast_auto_paused', description: 'The system paused a broadcast because Meta returned an error that repeats for every contact (expired token, restricted account, paused template). Payload carries auto_pause_reason' },
 				],
 				description: 'Event type to listen for',
 			},

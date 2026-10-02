@@ -6,6 +6,11 @@
 
 ### Added
 
+- **Trigger: Broadcast Auto-Paused.** New event `broadcast_auto_paused`: the
+  NooviChat server paused a broadcast because Meta returned an error that
+  repeats for every contact (expired token, restricted account, payment,
+  paused/disabled template). The payload carries `auto_pause_reason`.
+
 - **Broadcast: continue the contact's conversation and assign it.** Create
   Broadcast gets three Additional Fields: Conversation Mode (reuse the contact's
   latest conversation in the inbox, open or resolved, instead of opening a new
