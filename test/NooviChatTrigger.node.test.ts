@@ -85,6 +85,7 @@ describe('NooviChatTrigger — description', () => {
 			'broadcast_follow_up_sent',
 			'broadcast_started',
 			'broadcast_completed',
+			'broadcast_auto_paused',
 		]);
 	});
 
