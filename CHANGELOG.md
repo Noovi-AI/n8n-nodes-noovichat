@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 0.24.0 (2026-10-02)
+
+### Added
+
+- **Broadcast: continue the contact's conversation and assign it.** Create
+  Broadcast gets three Additional Fields: Conversation Mode (reuse the contact's
+  latest conversation in the inbox, open or resolved, instead of opening a new
+  one per broadcast), Assignee ID and Team ID. They are sent inside
+  `source_config`.
+
 ## 0.23.1 (2026-09-27)
 
 ### Fixed

@@ -2492,6 +2492,12 @@ async function handleBroadcastOperation(this: IExecuteFunctions, operation: stri
 				broadcast.inbox_ids = inboxIdsRaw.split(',').map((s) => Number(s.trim())).filter((n) => !Number.isNaN(n));
 			}
 			if (additionalFields.description) broadcast.description = additionalFields.description;
+			// Conversation routing lives inside source_config on the API.
+			const routing: Record<string, unknown> = {};
+			if (additionalFields.conversationMode) routing.conversation_mode = additionalFields.conversationMode;
+			if (additionalFields.assigneeId) routing.assignee_id = additionalFields.assigneeId;
+			if (additionalFields.teamId) routing.team_id = additionalFields.teamId;
+			if (Object.keys(routing).length) broadcast.source_config = { ...(broadcast.source_config || {}), ...routing };
 			if (additionalFields.rotationMode) broadcast.rotation_mode = additionalFields.rotationMode;
 			if (additionalFields.inboxWeights) broadcast.inbox_weights = parseJsonValue(additionalFields.inboxWeights);
 			if (additionalFields.delayMinSeconds !== undefined) broadcast.delay_min_seconds = additionalFields.delayMinSeconds;

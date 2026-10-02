@@ -82,7 +82,7 @@ export const BroadcastFields: INodeProperties[] = [
 		required: true,
 		displayOptions: { show: { resource: ['broadcast'], operation: ['create'], sourceType: ['csv', 'tags', 'kanban'] } },
 		default: '{}',
-		description: 'Audience config. csv: { "csv_rows": [{ "telefone": "...", "nome": "..." }] }; tags: { "tag_ids": [1,2] }; kanban: { "funnel_id": 1, "stage_ids": [5] }',
+		description: 'Audience config. csv: { "csv_rows": [{ "telefone": "...", "nome": "..." }] }; tags: { "tag_ids": [1,2] }; kanban: { "funnel_id": 1, "stage_ids": [5] }. Conversation mode/assignee/team go in Additional Fields',
 	},
 	{
 		displayName: 'Group Targets (JSON)',
@@ -132,6 +132,18 @@ export const BroadcastFields: INodeProperties[] = [
 		default: {},
 		options: [
 			{ displayName: 'Description', name: 'description', type: 'string', default: '' },
+			{
+				displayName: 'Conversation Mode', name: 'conversationMode', type: 'options',
+				options: [
+					{ name: 'Default for Source', value: '', description: 'Tags reuse the existing conversation; CSV opens a new one' },
+					{ name: 'Reuse Existing Conversation', value: 'reuse', description: 'Send in the contact latest conversation in the inbox (open or resolved), keeping the same conversation ID. A resolved one stays resolved until the customer replies.' },
+					{ name: 'Always New Conversation', value: 'new' },
+				],
+				default: '',
+				description: 'Not used by the WhatsApp Group source. Kanban always sends in the card conversation.',
+			},
+			{ displayName: 'Assignee ID', name: 'assigneeId', type: 'number', default: 0, description: 'Agent that receives the conversation. Must be an inbox member (or administrator) in every selected inbox. New conversations are created assigned; an existing one only gets the agent when nobody (agent or bot) handles it.' },
+			{ displayName: 'Team ID', name: 'teamId', type: 'number', default: 0, description: 'Team that receives the conversation. With an assignee, the agent must belong to this team.' },
 			{
 				displayName: 'Rotation Mode', name: 'rotationMode', type: 'options',
 				options: [

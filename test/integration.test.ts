@@ -973,6 +973,42 @@ describe('Broadcast — WhatsApp Group source (NC-32)', () => {
 		expect(body.broadcast).not.toHaveProperty('broadcast_targets');
 		expect(body.broadcast.source_type).toBe('csv');
 	});
+
+	it('broadcast.create — merges conversation mode, assignee and team into source_config', async () => {
+		const ctx = buildContext('broadcast', 'create', {
+			name: 'Monthly reminder',
+			sourceType: 'csv',
+			messageType: 'custom',
+			sourceConfig: '{ "csv_rows": [{ "telefone": "+5511999999999" }] }',
+			messagePayload: '{ "messages": [] }',
+			inboxIds: '2',
+			additionalFields: { conversationMode: 'reuse', assigneeId: 7, teamId: 3 },
+		});
+		await node.execute.call(ctx);
+
+		const body = ctx._mockRequest.mock.calls[0][0].body;
+		expect(body.broadcast.source_config).toEqual({
+			csv_rows: [{ telefone: '+5511999999999' }],
+			conversation_mode: 'reuse',
+			assignee_id: 7,
+			team_id: 3,
+		});
+	});
+
+	it('broadcast.create — leaves source_config untouched without routing fields', async () => {
+		const ctx = buildContext('broadcast', 'create', {
+			name: 'CSV blast',
+			sourceType: 'csv',
+			messageType: 'custom',
+			sourceConfig: '{ "csv_rows": [] }',
+			messagePayload: '{ "messages": [] }',
+			inboxIds: '',
+			additionalFields: { conversationMode: '', assigneeId: 0, teamId: 0 },
+		});
+		await node.execute.call(ctx);
+
+		expect(ctx._mockRequest.mock.calls[0][0].body.broadcast.source_config).toEqual({ csv_rows: [] });
+	});
 });
 
 // ---------------------------------------------------------------------------
